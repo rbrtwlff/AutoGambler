@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from wsim.core.events import EventLog
+
 
 class GameRng:
     """Central deterministic RNG wrapper for a game."""
@@ -74,6 +76,7 @@ class GameState(BaseModel):
     deck: DeckState
     propaganda_track: PropagandaTrackState
     round: RoundState
+    event_log: EventLog = Field(default_factory=EventLog)
 
     def total_population(self) -> int:
         return self.neutral_population + sum(faction.population for faction in self.factions.values())
@@ -112,8 +115,13 @@ class GameState(BaseModel):
             },
             "propaganda_track": self.propaganda_track.model_dump(),
             "round": self.round.model_dump(),
+            "event_count": len(self.event_log.events),
         }
 
     def to_analysis_view(self) -> dict[str, Any]:
-        return self.model_dump()
+        data = self.model_dump()
+        data["events"] = self.event_log.export_events_as_dicts()
+        return data
 
+    def export_events_as_dicts(self) -> list[dict[str, Any]]:
+        return self.event_log.export_events_as_dicts()

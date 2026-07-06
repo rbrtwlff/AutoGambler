@@ -111,3 +111,11 @@ def test_public_view_hides_other_players_secret_information() -> None:
     assert "secret_faction_id" not in view["players"]["P2"]
     assert "hand_size" in view["players"]["P2"]
 
+
+def test_initial_state_contains_setup_events() -> None:
+    state = _base_state(seed=123)
+    events = state.export_events_as_dicts()
+
+    assert events[0]["event_type"] == "game_started"
+    assert events[-1]["event_type"] == "initial_state_created"
+    assert any(event["event_type"] == "card_drawn" for event in events)

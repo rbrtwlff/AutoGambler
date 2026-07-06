@@ -12,6 +12,7 @@ from wsim.core.models import (
     RoundFlowConfig,
     VictoryConfig,
 )
+from wsim.core.events import EventBus, EventLog, EventType, GameEvent
 from wsim.core.state import (
     DeckState,
     FactionState,
@@ -42,4 +43,8 @@ __all__ = [
     "PlayerState",
     "PropagandaTrackState",
     "RoundState",
+    "EventBus",
+    "EventLog",
+    "EventType",
+    "GameEvent",
 ]

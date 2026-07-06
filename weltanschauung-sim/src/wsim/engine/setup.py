@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from wsim.config import ConfigError
+from wsim.core.events import EventBus, EventType
 from wsim.core.models import CardConfig, GameConfig
 from wsim.core.state import (
     DeckState,
@@ -15,6 +16,7 @@ from wsim.core.state import (
 
 def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int) -> GameState:
     rng = GameRng(seed)
+    event_bus = EventBus(run_id=f"{config.game_id}-{seed}", game_id=config.game_id)
     ordered_players = sorted(config.players, key=lambda player: player.seat)
     player_ids = [player.id for player in ordered_players]
     if player_ids != [f"P{index}" for index in range(1, len(player_ids) + 1)]:
@@ -28,6 +30,15 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
         )
         for faction in config.factions
     }
+    event_bus.emit(
+        EventType.GAME_STARTED,
+        {
+            "seed": seed,
+            "player_ids": player_ids,
+            "faction_ids": list(factions),
+            "total_population": config.population.total_population,
+        },
+    )
 
     enabled_cards = [card for card in cards if card.enabled]
     disabled_cards = sorted(card.id for card in cards if not card.enabled)
@@ -67,6 +78,21 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
 
         hand = _draw_many(regular_deck, config.draft.starting_hand_size)
         hidden_orders = _draw_many(research_order_pool, config.draft.hidden_research_orders)
+        for card_id in hand:
+            event_bus.emit(
+                EventType.CARD_DRAWN,
+                {"player_id": player.id, "card_id": card_id, "destination": "hand", "reason": "starting_hand"},
+            )
+        for card_id in hidden_orders:
+            event_bus.emit(
+                EventType.CARD_DRAWN,
+                {
+                    "player_id": player.id,
+                    "card_id": card_id,
+                    "destination": "hidden_research_orders",
+                    "reason": "initial_research_order",
+                },
+            )
         players[player.id] = PlayerState(
             id=player.id,
             seat=player.seat,
@@ -79,6 +105,22 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
             sources=[],
             max_sources=config.draft.max_sources,
         )
+
+    event_bus.emit(
+        EventType.INITIAL_STATE_CREATED,
+        {
+            "start_player_id": start_player_id,
+            "journalist_player_id": journalist_player_id,
+            "media_mogul_player_id": media_mogul_player_id,
+            "saboteur_player_ids": sorted(saboteur_player_ids),
+            "hand_size": config.draft.starting_hand_size,
+            "hidden_research_orders": config.draft.hidden_research_orders,
+            "remaining_draw_pile": len(regular_deck),
+            "remaining_research_order_pool": len(research_order_pool),
+            "neutral_population": config.population.neutral_start,
+            "faction_population": {faction_id: faction.population for faction_id, faction in factions.items()},
+        },
+    )
 
     return GameState(
         seed=seed,
@@ -101,6 +143,7 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
             media_mogul_player_id=media_mogul_player_id,
             role_assignment_notes=media_mogul_notes,
         ),
+        event_log=event_bus.event_log,
     )
 
 
@@ -157,4 +200,3 @@ def _draw_many(deck: list[str], count: int) -> list[str]:
     drawn = deck[:count]
     del deck[:count]
     return drawn
-
