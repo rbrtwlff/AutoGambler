@@ -3,7 +3,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from wsim.analytics import generate_report
+from wsim.analytics import generate_charts, generate_report
 from wsim.cli import app
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import SimulationBatchRunner
@@ -82,3 +82,39 @@ def test_report_cli_works(tmp_path):
     assert result.exit_code == 0
     assert (run_dir / "metrics.json").exists()
     assert (run_dir / "report.md").exists()
+
+
+def test_chart_files_are_created(tmp_path):
+    run_dir = tmp_path / "chart_run"
+    create_run(run_dir, games=4)
+
+    chart_files = generate_charts(run_dir)
+
+    assert (run_dir / "charts" / "winrates_by_faction.html").exists()
+    assert (run_dir / "charts" / "winrates_by_player_position.html").exists()
+    assert (run_dir / "charts" / "round_length_histogram.html").exists()
+    assert (run_dir / "charts" / "average_population_by_round.html").exists()
+    assert (run_dir / "charts" / "final_population_boxplot.html").exists()
+    assert (run_dir / "charts" / "neutral_population_by_round.html").exists()
+    assert "charts/winrates_by_faction.html" in chart_files
+
+
+def test_report_links_chart_files(tmp_path):
+    run_dir = tmp_path / "linked_chart_run"
+    create_run(run_dir, games=4)
+
+    generate_report(run_dir)
+
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert "(charts/winrates_by_faction.html)" in report
+    assert "(charts/average_population_by_round.html)" in report
+
+
+def test_charts_cli_handles_small_runs(tmp_path):
+    run_dir = tmp_path / "small_chart_run"
+    create_run(run_dir, games=1)
+
+    result = CliRunner().invoke(app, ["charts", "--run", str(run_dir)])
+
+    assert result.exit_code == 0
+    assert (run_dir / "charts" / "round_length_histogram.html").exists()

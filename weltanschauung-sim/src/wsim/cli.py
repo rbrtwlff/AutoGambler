@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 
 from wsim import __version__
-from wsim.analytics import generate_report
+from wsim.analytics import generate_charts, generate_report
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import GameEngine, SimulationBatchRunner
 
@@ -144,6 +144,22 @@ def report(
     console.print(f"games: {metrics['overview']['game_count']}")
     console.print(f"metrics: {run / 'metrics.json'}")
     console.print(f"report: {run / 'report.md'}")
+
+
+@app.command("charts")
+def charts(
+    run: Path = typer.Option(..., "--run", help="Ausgabeordner eines Simulationslaufs."),
+) -> None:
+    """Erzeugt lokale Plotly-HTML-Grafiken fuer einen Simulationslauf."""
+    try:
+        chart_files = generate_charts(run)
+    except ValueError as exc:
+        console.print(f"[red]Charts failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Charts complete[/green]")
+    console.print(f"charts: {run / 'charts'}")
+    console.print(f"files: {len(chart_files)}")
 
 
 if __name__ == "__main__":

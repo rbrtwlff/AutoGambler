@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
+import plotly.graph_objects as go
 from pydantic import BaseModel
 
 
@@ -26,12 +27,34 @@ def generate_report(run_dir: str | Path) -> dict[str, Any]:
     round_summaries = _read_table(run_path, "round_summaries")
     metadata = _read_metadata(run_path)
     metrics = build_metrics(run_path.name, metadata, game_summaries, round_summaries)
+    chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
+    metrics["charts"] = chart_files
 
     metrics_path = run_path / "metrics.json"
     report_path = run_path / "report.md"
     metrics_path.write_text(json.dumps(metrics, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
     report_path.write_text(render_markdown_report(metrics), encoding="utf-8")
     return metrics
+
+
+def generate_charts(run_dir: str | Path) -> list[str]:
+    run_path = Path(run_dir)
+    if not run_path.exists() or not run_path.is_dir():
+        raise ValueError(f"Run directory does not exist: {run_path}")
+
+    game_summaries = _read_table(run_path, "game_summaries")
+    round_summaries = _read_table(run_path, "round_summaries")
+    metadata = _read_metadata(run_path)
+    metrics = build_metrics(run_path.name, metadata, game_summaries, round_summaries)
+    chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
+    metrics["charts"] = chart_files
+
+    (run_path / "metrics.json").write_text(
+        json.dumps(metrics, ensure_ascii=True, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    (run_path / "report.md").write_text(render_markdown_report(metrics), encoding="utf-8")
+    return chart_files
 
 
 def build_metrics(
@@ -58,6 +81,7 @@ def build_metrics(
             "Rates are computed over completed game summary rows.",
             "Comebacks are heuristic: a winning faction counts when it trailed the round leader earlier.",
             "Shared faction wins are split equally across the listed winning factions.",
+            "Plotly chart HTML files are written with embedded JavaScript for offline viewing.",
         ],
     }
 
@@ -100,6 +124,9 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         "### Durchschnittsbevoelkerung je Runde",
         _markdown_round_population(population["average_population_by_round"]),
         "",
+        "## Grafiken",
+        _markdown_chart_links(metrics.get("charts", [])),
+        "",
         "## Hinweise fuer ChatGPT",
         "- Pruefe Balancing-Signale: dauerhaft dominante Fraktionen, hohe Siegquoten einzelner Spielerpositionen, extreme Population-Gaps.",
         "- Fuehrungswechsel, Comebacks und Swings sind erste Heuristiken und sollten spaeter mit feineren Event-Analysen validiert werden.",
@@ -107,6 +134,165 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+def _generate_charts_from_data(
+    run_path: Path,
+    metrics: dict[str, Any],
+    game_summaries: pl.DataFrame,
+    round_summaries: pl.DataFrame,
+) -> list[str]:
+    charts_dir = run_path / "charts"
+    charts_dir.mkdir(parents=True, exist_ok=True)
+    chart_files: list[str] = []
+
+    overview = metrics["overview"]
+    population = metrics["population"]
+    faction_ids = list(overview["faction_win_rates"].keys())
+    game_rows = game_summaries.to_dicts()
+    round_rows = round_summaries.to_dicts()
+
+    chart_files.append(
+        _write_chart(
+            charts_dir / "winrates_by_faction.html",
+            _bar_chart(
+                "Siegquoten je Fraktion",
+                list(overview["faction_win_rates"].keys()),
+                [value * 100 for value in overview["faction_win_rates"].values()],
+                "Siegquote (%)",
+            ),
+        )
+    )
+    chart_files.append(
+        _write_chart(
+            charts_dir / "winrates_by_player_position.html",
+            _bar_chart(
+                "Siegquoten je Spielerposition",
+                list(overview["player_position_win_rates"].keys()),
+                [value * 100 for value in overview["player_position_win_rates"].values()],
+                "Siegquote (%)",
+            ),
+        )
+    )
+    chart_files.append(
+        _write_chart(
+            charts_dir / "round_length_histogram.html",
+            _histogram_chart("Rundenlaengen", [row.get("rounds_played") for row in game_rows], "Runden"),
+        )
+    )
+    chart_files.append(
+        _write_chart(
+            charts_dir / "average_population_by_round.html",
+            _average_population_chart(population["average_population_by_round"], faction_ids),
+        )
+    )
+    chart_files.append(
+        _write_chart(
+            charts_dir / "final_population_boxplot.html",
+            _final_population_boxplot(game_rows, faction_ids),
+        )
+    )
+    chart_files.append(
+        _write_chart(
+            charts_dir / "neutral_population_by_round.html",
+            _neutral_population_chart(population["average_population_by_round"]),
+        )
+    )
+
+    saboteur_chart = _saboteur_winrate_by_round_chart(game_rows)
+    if saboteur_chart is not None:
+        chart_files.append(_write_chart(charts_dir / "saboteur_winrate_by_round.html", saboteur_chart))
+
+    return [f"charts/{Path(path).name}" for path in chart_files]
+
+
+def _write_chart(path: Path, figure: go.Figure) -> str:
+    figure.update_layout(template="plotly_white", margin={"l": 56, "r": 24, "t": 72, "b": 56})
+    figure.write_html(path, include_plotlyjs=True, full_html=True)
+    return str(path)
+
+
+def _bar_chart(title: str, labels: list[str], values: list[float], y_title: str) -> go.Figure:
+    figure = go.Figure()
+    figure.add_bar(x=labels, y=values)
+    figure.update_layout(title=title, xaxis_title="", yaxis_title=y_title)
+    return figure
+
+
+def _histogram_chart(title: str, values: list[Any], x_title: str) -> go.Figure:
+    numeric = [value for value in values if _to_float(value) is not None]
+    figure = go.Figure()
+    figure.add_histogram(x=numeric)
+    figure.update_layout(title=title, xaxis_title=x_title, yaxis_title="Anzahl Spiele")
+    return figure
+
+
+def _average_population_chart(rows: list[dict[str, Any]], faction_ids: list[str]) -> go.Figure:
+    figure = go.Figure()
+    rounds = [row["round"] for row in rows]
+    for faction_id in faction_ids:
+        figure.add_scatter(
+            x=rounds,
+            y=[row.get(faction_id) for row in rows],
+            mode="lines+markers",
+            name=faction_id,
+        )
+    figure.update_layout(
+        title="Durchschnittsbevoelkerung je Runde",
+        xaxis_title="Runde",
+        yaxis_title="Durchschnittliche Bevoelkerung",
+    )
+    return figure
+
+
+def _final_population_boxplot(game_rows: list[dict[str, Any]], faction_ids: list[str]) -> go.Figure:
+    figure = go.Figure()
+    for faction_id in faction_ids:
+        values = [row.get(f"{faction_id}_population") for row in game_rows if row.get(f"{faction_id}_population") is not None]
+        figure.add_box(y=values, name=faction_id)
+    figure.update_layout(title="Endbevoelkerung je Fraktion", xaxis_title="Fraktion", yaxis_title="Bevoelkerung")
+    return figure
+
+
+def _neutral_population_chart(rows: list[dict[str, Any]]) -> go.Figure:
+    figure = go.Figure()
+    figure.add_scatter(
+        x=[row["round"] for row in rows],
+        y=[row.get("neutral") for row in rows],
+        mode="lines+markers",
+        name="neutral",
+    )
+    figure.update_layout(
+        title="Neutraler Pool je Runde",
+        xaxis_title="Runde",
+        yaxis_title="Durchschnittlicher neutraler Pool",
+    )
+    return figure
+
+
+def _saboteur_winrate_by_round_chart(game_rows: list[dict[str, Any]]) -> go.Figure | None:
+    if not game_rows or not any(row.get("winner_type") == "saboteur" for row in game_rows):
+        return None
+
+    rows_by_round: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in game_rows:
+        if row.get("rounds_played") is not None:
+            rows_by_round[int(row["rounds_played"])].append(row)
+
+    rounds = sorted(rows_by_round)
+    rates = [
+        _rate(sum(1 for row in rows_by_round[round_number] if row.get("winner_type") == "saboteur"), len(rows_by_round[round_number]))
+        * 100
+        for round_number in rounds
+    ]
+    figure = go.Figure()
+    figure.add_scatter(x=rounds, y=rates, mode="lines+markers", name="saboteur")
+    figure.update_layout(
+        title="Saboteur-Siegquote nach Spielende-Runde",
+        xaxis_title="Runden gespielt",
+        yaxis_title="Saboteur-Siegquote (%)",
+    )
+    return figure
 
 
 def _overview_metrics(game_rows: list[dict[str, Any]], faction_ids: list[str], game_count: int) -> dict[str, Any]:
@@ -368,3 +554,9 @@ def _markdown_round_population(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return "- Keine Rundendaten"
     return "\n".join(f"- Runde {row['round']}: {json.dumps(row, ensure_ascii=True, sort_keys=True)}" for row in rows)
+
+
+def _markdown_chart_links(chart_files: list[str]) -> str:
+    if not chart_files:
+        return "- Keine Grafiken erzeugt"
+    return "\n".join(f"- [{Path(chart_file).name}]({chart_file})" for chart_file in chart_files)
