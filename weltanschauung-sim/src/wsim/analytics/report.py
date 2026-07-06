@@ -25,14 +25,28 @@ def generate_report(run_dir: str | Path) -> dict[str, Any]:
 
     game_summaries = _read_table(run_path, "game_summaries")
     round_summaries = _read_table(run_path, "round_summaries")
+    bot_metrics_frame = _read_table(run_path, "bot_metrics")
+    event_rows = _read_event_logs(run_path)
     metadata = _read_metadata(run_path)
     metrics = build_metrics(run_path.name, metadata, game_summaries, round_summaries)
+    card_metrics = build_card_metrics(event_rows, game_summaries)
+    propaganda_metrics = build_propaganda_metrics(event_rows)
+    bot_metrics = build_bot_metrics(event_rows, game_summaries, bot_metrics_frame)
+    metrics["cards"] = card_metrics
+    metrics["propaganda_advanced"] = propaganda_metrics
+    metrics["bots"] = bot_metrics
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
 
     metrics_path = run_path / "metrics.json"
     report_path = run_path / "report.md"
     metrics_path.write_text(json.dumps(metrics, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
+    (run_path / "metrics_cards.json").write_text(json.dumps(card_metrics, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
+    (run_path / "metrics_propaganda.json").write_text(
+        json.dumps(propaganda_metrics, ensure_ascii=True, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    (run_path / "metrics_bots.json").write_text(json.dumps(bot_metrics, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
     report_path.write_text(render_markdown_report(metrics), encoding="utf-8")
     return metrics
 
@@ -44,8 +58,13 @@ def generate_charts(run_dir: str | Path) -> list[str]:
 
     game_summaries = _read_table(run_path, "game_summaries")
     round_summaries = _read_table(run_path, "round_summaries")
+    bot_metrics_frame = _read_table(run_path, "bot_metrics")
+    event_rows = _read_event_logs(run_path)
     metadata = _read_metadata(run_path)
     metrics = build_metrics(run_path.name, metadata, game_summaries, round_summaries)
+    metrics["cards"] = build_card_metrics(event_rows, game_summaries)
+    metrics["propaganda_advanced"] = build_propaganda_metrics(event_rows)
+    metrics["bots"] = build_bot_metrics(event_rows, game_summaries, bot_metrics_frame)
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
 
@@ -127,6 +146,17 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         "## Grafiken",
         _markdown_chart_links(metrics.get("charts", [])),
         "",
+        "## Kartenanalyse",
+        _markdown_top_metric(metrics.get("cards", {}).get("cards", {}), "swing_value"),
+        "",
+        "## Propagandaanalyse",
+        f"- Propagandawechsel je Spiel: {json.dumps(metrics.get('propaganda_advanced', {}).get('propaganda_switches_by_game', {}), ensure_ascii=True, sort_keys=True)}",
+        f"- Haeufigste Konstellationen: {json.dumps(metrics.get('propaganda_advanced', {}).get('most_common_constellations', []), ensure_ascii=True, sort_keys=True)}",
+        "",
+        "## Botanalyse",
+        _markdown_mapping(metrics.get("bots", {}).get("win_rate_by_bot_type", {}), percent=True),
+        f"- Bot-Typ-Metriken: {json.dumps(metrics.get('bots', {}).get('by_bot_type', {}), ensure_ascii=True, sort_keys=True)}",
+        "",
         "## Hinweise fuer ChatGPT",
         "- Pruefe Balancing-Signale: dauerhaft dominante Fraktionen, hohe Siegquoten einzelner Spielerpositionen, extreme Population-Gaps.",
         "- Fuehrungswechsel, Comebacks und Swings sind erste Heuristiken und sollten spaeter mit feineren Event-Analysen validiert werden.",
@@ -134,6 +164,183 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFrame) -> dict[str, Any]:
+    game_rows = game_summaries.to_dicts()
+    game_count = len(game_rows)
+    winning_games = {
+        row.get("game_index")
+        for row in game_rows
+        if row.get("winner_type") not in (None, "none", "draw")
+    }
+    cards: dict[str, dict[str, Any]] = defaultdict(_empty_card_metric)
+    played_by_game: dict[str, set[Any]] = defaultdict(set)
+    prop_by_game: dict[str, set[Any]] = defaultdict(set)
+
+    for event in events:
+        payload = event.get("payload", {})
+        game_index = event.get("game_index")
+        event_type = event.get("event_type")
+        if event_type == "card_drawn":
+            for card_id in _payload_card_ids(payload):
+                cards[card_id]["draw_count"] += 1
+        elif event_type == "action_revealed":
+            for card_id in payload.get("committed_card_ids", []):
+                cards[card_id]["play_count"] += 1
+                played_by_game[card_id].add(game_index)
+        elif event_type == "card_discarded":
+            card_id = payload.get("card_id")
+            if card_id:
+                cards[card_id]["discard_count"] += 1
+        elif event_type == "propaganda_placed":
+            card_id = payload.get("card_id")
+            if card_id:
+                cards[card_id]["propaganda_count"] += 1
+                prop_by_game[card_id].add(game_index)
+        elif event_type == "effect_triggered":
+            card_id = payload.get("card_id")
+            if card_id:
+                amount = abs(int(payload.get("amount") or payload.get("result", {}).get("amount") or 0))
+                cards[card_id]["activation_count"] += 1
+                cards[card_id]["effect_amount_total"] += amount
+        elif event_type == "population_changed":
+            delta = abs(int(payload.get("applied_delta") or 0))
+            for card_id in _cards_revealed_in_round(events, event):
+                cards[card_id]["population_swing_total"] += delta
+
+    for card_id, row in cards.items():
+        exposures = row["play_count"] + row["propaganda_count"]
+        row["draw_rate"] = _rate(row["draw_count"], game_count)
+        row["play_rate"] = _rate(row["play_count"], game_count)
+        row["discard_rate"] = _rate(row["discard_count"], max(1, row["draw_count"]))
+        row["propaganda_rate"] = _rate(row["propaganda_count"], game_count)
+        row["activation_rate"] = _rate(row["activation_count"], max(1, exposures))
+        row["ineffectiveness_rate"] = 1 - row["activation_rate"] if exposures else 0.0
+        row["average_effect"] = _rate(row["effect_amount_total"], row["activation_count"])
+        row["win_rate_when_played"] = _rate(len(played_by_game[card_id].intersection(winning_games)), len(played_by_game[card_id]))
+        row["win_rate_when_propaganda"] = _rate(len(prop_by_game[card_id].intersection(winning_games)), len(prop_by_game[card_id]))
+        row["swing_value"] = row["population_swing_total"] + row["effect_amount_total"]
+
+    return {
+        "event_log_available": bool(events),
+        "card_count": len(cards),
+        "cards": dict(sorted(cards.items())),
+    }
+
+
+def build_propaganda_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
+    placements: dict[tuple[Any, str], list[int]] = defaultdict(list)
+    lifetimes: dict[str, list[int]] = defaultdict(list)
+    switches_by_game: dict[str, int] = defaultdict(int)
+    constellation_counts: dict[str, int] = defaultdict(int)
+    constellation_effects: dict[str, int] = defaultdict(int)
+    current_constellation_by_game: dict[Any, str] = {}
+    slot_triggers = 0
+    prop_placements = 0
+
+    for event in events:
+        payload = event.get("payload", {})
+        game_index = event.get("game_index")
+        event_type = event.get("event_type")
+        if event_type == "propaganda_placed":
+            card_id = payload.get("card_id")
+            if card_id:
+                prop_placements += 1
+                placements[(game_index, card_id)].append(int(event.get("round") or 0))
+                switches_by_game[str(game_index)] += 1
+            constellation = _constellation(payload.get("slots", []))
+            current_constellation_by_game[game_index] = constellation
+            constellation_counts[constellation] += 1
+        elif event_type == "propaganda_removed":
+            card_id = payload.get("card_id")
+            if card_id and placements[(game_index, card_id)]:
+                start_round = placements[(game_index, card_id)].pop(0)
+                lifetimes[card_id].append(max(0, int(event.get("round") or 0) - start_round))
+                switches_by_game[str(game_index)] += 1
+            constellation = _constellation(payload.get("slots", []))
+            current_constellation_by_game[game_index] = constellation
+            constellation_counts[constellation] += 1
+        elif event_type == "effect_triggered":
+            if payload.get("trigger") == "when_in_propaganda_before_action_resolution":
+                slot_triggers += 1
+                constellation_effects[current_constellation_by_game.get(game_index, "")] += abs(int(payload.get("amount") or 0))
+
+    average_lifetime = {card_id: _average(values) for card_id, values in lifetimes.items()}
+    sorted_constellations = sorted(constellation_counts.items(), key=lambda item: item[1], reverse=True)
+    strongest = sorted(constellation_effects.items(), key=lambda item: item[1], reverse=True)
+    ineffective = [
+        {"constellation": constellation, "count": count}
+        for constellation, count in sorted_constellations
+        if constellation_effects.get(constellation, 0) == 0
+    ][:10]
+    return {
+        "event_log_available": bool(events),
+        "average_lifetime_by_card": average_lifetime,
+        "slot_trigger_rate": _rate(slot_triggers, prop_placements),
+        "most_common_constellations": [{"constellation": key, "count": value} for key, value in sorted_constellations[:10]],
+        "strongest_constellations": [{"constellation": key, "effect_total": value} for key, value in strongest[:10]],
+        "least_effective_constellations": ineffective,
+        "propaganda_switches_by_game": dict(switches_by_game),
+    }
+
+
+def build_bot_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFrame, bot_metrics_frame: pl.DataFrame) -> dict[str, Any]:
+    rows = bot_metrics_frame.to_dicts()
+    game_rows = game_summaries.to_dicts()
+    winner_players_by_game: dict[Any, set[str]] = {}
+    for game in game_rows:
+        winner_players_by_game[game.get("game_index")] = set(_split_winners(game.get("winner_player")))
+
+    by_type: dict[str, dict[str, Any]] = defaultdict(_empty_bot_type_metric)
+    for row in rows:
+        bot_type = row.get("bot_type") or "unknown"
+        metric = by_type[bot_type]
+        metric["rows"] += 1
+        metric["attacks"] += int(row.get("attacks") or 0)
+        metric["supports"] += int(row.get("supports") or 0)
+        metric["population_damage"] += int(row.get("population_damage") or 0)
+        metric["population_benefit"] += int(row.get("population_benefit") or 0)
+        metric["wins"] += int(row.get("player_id") in winner_players_by_game.get(row.get("game_index"), set()))
+        metric["games"] += 1
+
+    decision_counts: dict[str, int] = defaultdict(int)
+    fallback_counts: dict[str, int] = defaultdict(int)
+    direct_counts: dict[str, int] = defaultdict(int)
+    disguised_counts: dict[str, int] = defaultdict(int)
+    secrets_by_game_player = _secret_factions_by_game_player(events)
+    for event in events:
+        if event.get("event_type") != "action_committed":
+            continue
+        payload = event.get("payload", {})
+        bot_type = _bot_type_from_reason(payload.get("action_type_reason", ""))
+        decision_counts[bot_type] += 1
+        reason_blob = json.dumps(payload, ensure_ascii=True)
+        if "RandomBot" in reason_blob or "illegal" in reason_blob or "fallback" in reason_blob:
+            fallback_counts[bot_type] += 1
+        secret = secrets_by_game_player.get((event.get("game_index"), payload.get("player_id")))
+        if secret and payload.get("target_faction_id") == secret:
+            direct_counts[bot_type] += 1
+        elif secret:
+            disguised_counts[bot_type] += 1
+
+    for bot_type, metric in by_type.items():
+        actions = metric["attacks"] + metric["supports"]
+        metric["attack_support_ratio"] = metric["attacks"] / metric["supports"] if metric["supports"] else float(metric["attacks"])
+        metric["average_damage"] = _rate(metric["population_damage"], metric["rows"])
+        metric["average_support"] = _rate(metric["population_benefit"], metric["rows"])
+        metric["win_rate"] = _rate(metric["wins"], metric["games"])
+        metric["directness_score"] = _rate(direct_counts[bot_type], decision_counts[bot_type])
+        metric["secrecy_score"] = _rate(disguised_counts[bot_type], decision_counts[bot_type])
+        metric["fallback_random_decision_rate"] = _rate(fallback_counts[bot_type], decision_counts[bot_type])
+        metric["action_count"] = actions
+
+    return {
+        "event_log_available": bool(events),
+        "bot_metrics_available": bool(rows),
+        "win_rate_by_bot_type": {bot_type: metric["win_rate"] for bot_type, metric in by_type.items()},
+        "by_bot_type": dict(sorted(by_type.items())),
+    }
 
 
 def _generate_charts_from_data(
@@ -481,6 +688,93 @@ def _read_metadata(run_path: Path) -> dict[str, Any]:
         return {"warning": "run_metadata.json could not be parsed"}
 
 
+def _read_event_logs(run_path: Path) -> list[dict[str, Any]]:
+    event_path = run_path / "event_logs_sample.jsonl"
+    if not event_path.exists() or event_path.stat().st_size == 0:
+        return []
+    events: list[dict[str, Any]] = []
+    with event_path.open("r", encoding="utf-8") as file:
+        for line in file:
+            if not line.strip():
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return events
+
+
+def _empty_card_metric() -> dict[str, Any]:
+    return {
+        "draw_count": 0,
+        "play_count": 0,
+        "discard_count": 0,
+        "propaganda_count": 0,
+        "activation_count": 0,
+        "effect_amount_total": 0,
+        "population_swing_total": 0,
+    }
+
+
+def _empty_bot_type_metric() -> dict[str, Any]:
+    return {
+        "rows": 0,
+        "games": 0,
+        "wins": 0,
+        "attacks": 0,
+        "supports": 0,
+        "population_damage": 0,
+        "population_benefit": 0,
+    }
+
+
+def _payload_card_ids(payload: dict[str, Any]) -> list[str]:
+    if payload.get("card_id"):
+        return [payload["card_id"]]
+    if payload.get("card_ids"):
+        return list(payload["card_ids"])
+    return []
+
+
+def _cards_revealed_in_round(events: list[dict[str, Any]], event: dict[str, Any]) -> set[str]:
+    game_index = event.get("game_index")
+    round_number = event.get("round")
+    player_id = event.get("payload", {}).get("player_id")
+    cards: set[str] = set()
+    for candidate in events:
+        if candidate.get("event_type") != "action_revealed":
+            continue
+        payload = candidate.get("payload", {})
+        if candidate.get("game_index") == game_index and candidate.get("round") == round_number and payload.get("player_id") == player_id:
+            cards.update(payload.get("committed_card_ids", []))
+    return cards
+
+
+def _constellation(slots: list[Any]) -> str:
+    cards = [str(card_id) for card_id in slots if card_id is not None]
+    return "|".join(cards) if cards else "empty"
+
+
+def _secret_factions_by_game_player(events: list[dict[str, Any]]) -> dict[tuple[Any, str], str]:
+    mapping: dict[tuple[Any, str], str] = {}
+    for event in events:
+        if event.get("event_type") != "initial_state_created":
+            continue
+        game_index = event.get("game_index")
+        for player_id, faction_id in event.get("payload", {}).get("secret_faction_by_player", {}).items():
+            mapping[(game_index, player_id)] = faction_id
+    return mapping
+
+
+def _bot_type_from_reason(reason: str) -> str:
+    for bot_type in ["loyalist", "deceptive", "saboteur", "heuristic"]:
+        if f"profile={bot_type}" in reason:
+            return bot_type
+    if "RandomBot" in reason:
+        return "random"
+    return "unknown"
+
+
 def _population_factions(game_summaries: pl.DataFrame, round_summaries: pl.DataFrame) -> list[str]:
     columns = list(game_summaries.columns) + list(round_summaries.columns)
     faction_ids = {
@@ -560,3 +854,10 @@ def _markdown_chart_links(chart_files: list[str]) -> str:
     if not chart_files:
         return "- Keine Grafiken erzeugt"
     return "\n".join(f"- [{Path(chart_file).name}]({chart_file})" for chart_file in chart_files)
+
+
+def _markdown_top_metric(items: dict[str, dict[str, Any]], metric_name: str) -> str:
+    if not items:
+        return "- Keine Kartenmetriken verfuegbar"
+    top_items = sorted(items.items(), key=lambda item: item[1].get(metric_name, 0), reverse=True)[:10]
+    return "\n".join(f"- {card_id}: {metric_name}={_fmt(values.get(metric_name))}" for card_id, values in top_items)

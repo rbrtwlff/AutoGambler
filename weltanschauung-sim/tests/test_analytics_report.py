@@ -118,3 +118,44 @@ def test_charts_cli_handles_small_runs(tmp_path):
 
     assert result.exit_code == 0
     assert (run_dir / "charts" / "round_length_histogram.html").exists()
+
+
+def test_advanced_metrics_are_created_from_eventlog(tmp_path):
+    run_dir = tmp_path / "advanced_report_run"
+    create_run(run_dir, games=4)
+
+    metrics = generate_report(run_dir)
+
+    assert (run_dir / "metrics_cards.json").exists()
+    assert (run_dir / "metrics_propaganda.json").exists()
+    assert (run_dir / "metrics_bots.json").exists()
+    assert metrics["cards"]["event_log_available"] is True
+    assert metrics["cards"]["card_count"] > 0
+    assert metrics["propaganda_advanced"]["event_log_available"] is True
+    assert metrics["bots"]["bot_metrics_available"] is True
+
+
+def test_report_mentions_advanced_metrics(tmp_path):
+    run_dir = tmp_path / "advanced_report_run"
+    create_run(run_dir, games=3)
+
+    generate_report(run_dir)
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+
+    assert "Kartenanalyse" in report
+    assert "Propagandaanalyse" in report
+    assert "Botanalyse" in report
+
+
+def test_missing_eventlogs_are_handled_cleanly(tmp_path):
+    run_dir = tmp_path / "missing_events_run"
+    create_run(run_dir, games=2)
+    (run_dir / "event_logs_sample.jsonl").unlink()
+
+    metrics = generate_report(run_dir)
+
+    assert metrics["cards"]["event_log_available"] is False
+    assert metrics["propaganda_advanced"]["event_log_available"] is False
+    assert (run_dir / "metrics_cards.json").exists()
+    assert (run_dir / "metrics_propaganda.json").exists()
+    assert (run_dir / "metrics_bots.json").exists()
