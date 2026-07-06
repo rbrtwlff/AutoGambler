@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 
 from wsim import __version__
-from wsim.analytics import generate_charts, generate_report
+from wsim.analytics import GameInspectError, export_game, generate_charts, generate_report, inspect_game, render_game_markdown
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import GameEngine, SimulationBatchRunner
 
@@ -113,6 +113,7 @@ def run_batch(
             games=games,
             master_seed=seed,
             output_dir=output,
+            source_paths={"rules": rules, "cards": cards, "bots": bots},
         ).run()
     except ConfigError as exc:
         console.print(f"[red]Batch run failed:[/red] {exc}")
@@ -160,6 +161,43 @@ def charts(
     console.print("[green]Charts complete[/green]")
     console.print(f"charts: {run / 'charts'}")
     console.print(f"files: {len(chart_files)}")
+
+
+@app.command("inspect")
+def inspect(
+    run: Path = typer.Option(..., "--run", help="Ausgabeordner eines Simulationslaufs."),
+    game_id: str = typer.Option(..., "--game-id", help="Spielindex oder gespeicherte Game-ID."),
+    analysis: bool = typer.Option(False, "--analysis", help="Zeigt Analyseinformationen wie geheime Fraktionen."),
+) -> None:
+    """Zeigt ein einzelnes Spiel Runde fuer Runde in der Konsole."""
+    try:
+        report_data = inspect_game(run, game_id, analysis_mode=analysis)
+    except GameInspectError as exc:
+        console.print(f"[red]Inspect failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(render_game_markdown(report_data))
+
+
+@app.command("export-game")
+def export_game_command(
+    run: Path = typer.Option(..., "--run", help="Ausgabeordner eines Simulationslaufs."),
+    game_id: str = typer.Option(..., "--game-id", help="Spielindex oder gespeicherte Game-ID."),
+    export_format: str = typer.Option(..., "--format", help="Exportformat: markdown oder json."),
+    analysis: bool = typer.Option(True, "--analysis/--public", help="Exportiert Analyseinformationen, wenn vorhanden."),
+) -> None:
+    """Exportiert ein einzelnes Spiel als Markdown oder JSON."""
+    if export_format not in {"markdown", "json"}:
+        console.print("[red]Export failed:[/red] --format must be markdown or json")
+        raise typer.Exit(code=1)
+    try:
+        output_path = export_game(run, game_id, export_format=export_format, analysis_mode=analysis)
+    except GameInspectError as exc:
+        console.print(f"[red]Export failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Game export complete[/green]")
+    console.print(f"output: {output_path}")
 
 
 if __name__ == "__main__":

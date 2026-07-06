@@ -34,6 +34,7 @@ class SimulationBatchRunner:
         master_seed: int,
         output_dir: Path,
         show_progress: bool = True,
+        source_paths: dict[str, str] | None = None,
     ) -> None:
         self.rules = rules
         self.cards = cards
@@ -43,6 +44,7 @@ class SimulationBatchRunner:
         self.output_dir = output_dir
         self.run_id = output_dir.name
         self.show_progress = show_progress
+        self.source_paths = source_paths or {}
 
     def run(self) -> BatchRunResult:
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -207,6 +209,7 @@ class SimulationBatchRunner:
             "games": self.games,
             "master_seed": self.master_seed,
             "analytics": self.rules.analytics.model_dump(),
+            "source_paths": self.source_paths,
             "outputs": [
                 "run_metadata.json",
                 "game_summaries.parquet",
@@ -220,4 +223,3 @@ class SimulationBatchRunner:
             json.dumps(metadata, ensure_ascii=True, indent=2, sort_keys=True),
             encoding="utf-8",
         )
-

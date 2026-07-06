@@ -113,6 +113,7 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
             "journalist_player_id": journalist_player_id,
             "media_mogul_player_id": media_mogul_player_id,
             "saboteur_player_ids": sorted(saboteur_player_ids),
+            "secret_faction_by_player": secret_faction_by_player,
             "hand_size": config.draft.starting_hand_size,
             "hidden_research_orders": config.draft.hidden_research_orders,
             "remaining_draw_pile": len(regular_deck),
