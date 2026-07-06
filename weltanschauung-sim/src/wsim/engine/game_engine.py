@@ -208,20 +208,9 @@ class GameEngine:
 
     def _phase_media_mogul_phase(self, context: PhaseContext) -> None:
         media_mogul_player_id = context.state.round.media_mogul_player_id
-        if context.config.propaganda.media_mogul_card_source != "hand":
-            context.event_bus.emit(
-                EventType.WARNING,
-                {
-                    "phase": context.phase_name,
-                    "message": "Only media_mogul_card_source=hand is implemented for MVP.",
-                    "configured_source": context.config.propaganda.media_mogul_card_source,
-                },
-            )
-            return
-
         bot = self.bots[media_mogul_player_id]
         bot_context = self.legal_actions.build_context(context.state, media_mogul_player_id)
-        options = self.legal_actions.media_mogul_card_options(bot_context)
+        options, drawn_cards = self._media_mogul_options(context, bot_context)
         if not options:
             context.event_bus.emit(
                 EventType.WARNING,
@@ -249,7 +238,12 @@ class GameEngine:
             return
 
         chosen_card_id = decision.choice
-        context.state.players[media_mogul_player_id].hand.remove(chosen_card_id)
+        source = "deck_draw" if chosen_card_id in drawn_cards else "hand"
+        if source == "hand":
+            context.state.players[media_mogul_player_id].hand.remove(chosen_card_id)
+        for card_id in drawn_cards:
+            if card_id != chosen_card_id:
+                context.state.deck.discard_pile.append(card_id)
         removed_card_id = context.state.propaganda_track.place_card(chosen_card_id)
         if removed_card_id is not None:
             context.state.deck.discard_pile.append(removed_card_id)
@@ -268,10 +262,155 @@ class GameEngine:
                 "player_id": media_mogul_player_id,
                 "card_id": chosen_card_id,
                 "reason": decision.reason,
-                "source": "hand",
+                "source": source,
                 "slots": context.state.propaganda_track.get_slots(),
             },
         )
+        context.event_bus.emit(
+            EventType.MEDIA_MOGUL_ACTION_TAKEN,
+            {
+                "player_id": media_mogul_player_id,
+                "card_id": chosen_card_id,
+                "source": source,
+                "drawn_card_ids": drawn_cards,
+                "options": options,
+                "reason": decision.reason,
+                "slots": context.state.propaganda_track.get_slots(),
+            },
+        )
+        self._emit_prop_combo_if_detected(context, chosen_card_id)
+
+    def _phase_journalist_phase(self, context: PhaseContext) -> None:
+        journalist_player_id = context.state.round.journalist_player_id
+        bot = self.bots[journalist_player_id]
+        bot_context = self.legal_actions.build_context(context.state, journalist_player_id)
+        options = self.legal_actions.journalist_action_options(bot_context)
+        decision = bot.choose_journalist_action(bot_context, options, context.state.rng)
+        if decision.choice not in options:
+            context.event_bus.emit(
+                EventType.WARNING,
+                {
+                    "phase": context.phase_name,
+                    "player_id": journalist_player_id,
+                    "message": "Bot returned illegal journalist action; phase skipped.",
+                    "choice": decision.choice,
+                    "legal_options": options,
+                },
+            )
+            return
+
+        choice = decision.choice
+        if not isinstance(choice, dict) or choice.get("action") == "pass":
+            context.event_bus.emit(
+                EventType.JOURNALIST_ACTION_TAKEN,
+                {"player_id": journalist_player_id, "action": "pass", "reason": decision.reason},
+            )
+            return
+
+        action = choice["action"]
+        card_id = choice["card_id"]
+        removed_card_id = context.state.propaganda_track.remove_card(card_id)
+        if removed_card_id is None:
+            context.event_bus.emit(EventType.WARNING, {"player_id": journalist_player_id, "message": "Journalist target missing.", "choice": choice})
+            return
+
+        destination = "discard_pile"
+        if action == "discard_one":
+            context.state.deck.discard_pile.append(removed_card_id)
+        elif action == "place_one_on_top_of_deck":
+            context.state.deck.draw_pile.insert(0, removed_card_id)
+            destination = "top_of_deck"
+        elif action == "remove_one_propaganda_card_from_game":
+            destination = "removed_from_game"
+        else:
+            context.event_bus.emit(EventType.WARNING, {"player_id": journalist_player_id, "message": f"Unknown journalist action: {action}"})
+            return
+
+        context.event_bus.emit(
+            EventType.PROPAGANDA_REMOVED,
+            {
+                "card_id": removed_card_id,
+                "reason": f"journalist_{action}",
+                "slots": context.state.propaganda_track.get_slots(),
+            },
+        )
+        context.event_bus.emit(
+            EventType.JOURNALIST_ACTION_TAKEN,
+            {
+                "player_id": journalist_player_id,
+                "action": action,
+                "card_id": removed_card_id,
+                "destination": destination,
+                "reason": decision.reason,
+                "slots": context.state.propaganda_track.get_slots(),
+            },
+        )
+
+    def _media_mogul_options(self, context: PhaseContext, bot_context: BotContext) -> tuple[list[str], list[str]]:
+        allowed_types = set(context.config.propaganda.media_mogul_card_types)
+        source_mode = context.config.propaganda.allowed_sources_for_propaganda
+        options: list[str] = []
+        drawn_cards: list[str] = []
+
+        if source_mode in {"hand", "both"}:
+            options.extend(self.legal_actions.media_mogul_card_options(bot_context))
+        if source_mode in {"deck_draw", "both"}:
+            drawn_cards = self._draw_media_mogul_candidates(context, allowed_types)
+            options.extend(drawn_cards)
+
+        unique_options = list(dict.fromkeys(options))
+        return unique_options[: context.config.propaganda.media_mogul_choice_count], drawn_cards
+
+    def _draw_media_mogul_candidates(self, context: PhaseContext, allowed_types: set[str]) -> list[str]:
+        drawn_cards: list[str] = []
+        inspected_cards: list[str] = []
+        for _ in range(context.config.propaganda.media_mogul_draw_count):
+            if not context.state.deck.draw_pile:
+                break
+            card_id = context.state.deck.draw_pile.pop(0)
+            inspected_cards.append(card_id)
+            if card_id in self.cards_by_id and self.cards_by_id[card_id].type in allowed_types:
+                drawn_cards.append(card_id)
+            else:
+                context.state.deck.discard_pile.append(card_id)
+        if inspected_cards:
+            context.event_bus.emit(
+                EventType.CARD_DRAWN,
+                {
+                    "player_id": context.state.round.media_mogul_player_id,
+                    "card_ids": inspected_cards,
+                    "destination": "media_mogul_choices",
+                    "reason": "media_mogul_draw",
+                },
+            )
+        return drawn_cards
+
+    def _emit_prop_combo_if_detected(self, context: PhaseContext, chosen_card_id: str) -> None:
+        chosen = self.cards_by_id[chosen_card_id]
+        slots = context.state.propaganda_track.get_slots()
+        matching_faction_count = sum(
+            1
+            for card_id in slots
+            if card_id is not None
+            and card_id in self.cards_by_id
+            and self.cards_by_id[card_id].faction == chosen.faction
+            and chosen.faction is not None
+        )
+        matching_tag_count = sum(
+            1
+            for card_id in slots
+            if card_id is not None and card_id in self.cards_by_id and set(self.cards_by_id[card_id].tags).intersection(chosen.tags)
+        )
+        if matching_faction_count >= 2 or matching_tag_count >= 2:
+            context.event_bus.emit(
+                EventType.PROPAGANDA_COMBO_DETECTED,
+                {
+                    "card_id": chosen_card_id,
+                    "matching_faction_count": matching_faction_count,
+                    "matching_tag_count": matching_tag_count,
+                    "slots": slots,
+                },
+            )
 
     def _phase_planning(self, context: PhaseContext) -> None:
         context.state.planned_actions.clear()

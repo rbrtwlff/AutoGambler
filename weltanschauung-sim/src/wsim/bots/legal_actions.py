@@ -27,8 +27,14 @@ class LegalActionProvider:
     def draft_pass_options(self, context: BotContext) -> list[bool]:
         return [True, False]
 
-    def journalist_action_options(self, context: BotContext) -> list[str]:
-        return ["observe", "publish_stub_warning"]
+    def journalist_action_options(self, context: BotContext) -> list[Any]:
+        options: list[dict[str, Any]] = []
+        for position, card_id in enumerate(context.public_view["propaganda_track"]["slots"], start=1):
+            if card_id is None:
+                continue
+            for action in context.rules.propaganda.journalist_options:
+                options.append({"action": action, "card_id": card_id, "slot": position})
+        return options or [{"action": "pass"}]
 
     def media_mogul_card_options(self, context: BotContext) -> list[str]:
         allowed_types = set(context.rules.propaganda.media_mogul_card_types)

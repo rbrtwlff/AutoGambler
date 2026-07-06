@@ -38,6 +38,12 @@ class SaboteurConfig(BaseModel):
 class PropagandaConfig(BaseModel):
     slots: int = Field(gt=0)
     overflow: Literal["remove_oldest"] | str = "remove_oldest"
+    journalist_options: list[
+        Literal["discard_one", "place_one_on_top_of_deck", "remove_one_propaganda_card_from_game"]
+    ] = Field(default_factory=lambda: ["discard_one", "place_one_on_top_of_deck", "remove_one_propaganda_card_from_game"])
+    media_mogul_draw_count: int = Field(default=2, ge=0)
+    media_mogul_choice_count: int = Field(default=1, ge=1)
+    allowed_sources_for_propaganda: Literal["hand", "deck_draw", "both"] = "hand"
     media_mogul_card_source: Literal["hand"] = "hand"
     media_mogul_card_types: list[Literal["propaganda", "hybrid"]] = Field(default_factory=lambda: ["propaganda", "hybrid"])
 

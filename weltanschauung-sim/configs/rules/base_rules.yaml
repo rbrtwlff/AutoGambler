@@ -48,6 +48,13 @@ roles:
 propaganda:
   slots: 3
   overflow: remove_oldest
+  journalist_options:
+    - discard_one
+    - place_one_on_top_of_deck
+    - remove_one_propaganda_card_from_game
+  media_mogul_draw_count: 2
+  media_mogul_choice_count: 2
+  allowed_sources_for_propaganda: both
   media_mogul_card_source: hand
   media_mogul_card_types:
     - propaganda

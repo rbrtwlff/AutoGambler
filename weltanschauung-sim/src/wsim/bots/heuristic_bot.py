@@ -20,13 +20,7 @@ class HeuristicBot(BaseBot):
         return self._choose_scored("draft pass", context, options, rng, lambda _context, option: 0.1 if option else 0.0)
 
     def choose_journalist_action(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
-        return self._choose_scored(
-            "journalist action",
-            context,
-            options,
-            rng,
-            lambda _context, option: 1.0 if option == "observe" else 0.4,
-        )
+        return self._choose_scored("journalist action", context, options, rng, self._score_journalist_action)
 
     def choose_media_mogul_card(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
         return self._choose_scored("media mogul card", context, options, rng, self._score_media_card)
@@ -93,6 +87,42 @@ class HeuristicBot(BaseBot):
         score = self._score_card(context, card_id)
         if card.type in {"propaganda", "hybrid"}:
             score += 1.0 + self.config.propaganda_awareness
+        secret = self._secret_faction(context)
+        leader = self._leader_faction(context)
+        slot = self._next_propaganda_slot(context)
+        if self._card_matches_secret(card, secret):
+            score += 1.3 + self.directness
+        if leader and self._card_matches_secret(card, leader):
+            score -= 0.8 + self.config.aggression
+        if slot == 2:
+            score += self._slot_two_bonus(card)
+        score += self._propaganda_combo_score(context, card)
+        score -= self._saboteur_help_risk(card)
+        score += self.deception * 0.25
+        return score
+
+    def _score_journalist_action(self, context: BotContext, option: Any) -> float:
+        if not isinstance(option, dict) or option.get("action") == "pass":
+            return 0.0
+        card = context.cards_by_id.get(str(option.get("card_id")))
+        if card is None:
+            return 0.0
+        action = option["action"]
+        score = 0.2
+        secret = self._secret_faction(context)
+        leader = self._leader_faction(context)
+        if self._card_matches_secret(card, secret):
+            score -= 1.4 + self.directness
+        if leader and self._card_matches_secret(card, leader):
+            score += 2.2 + self.config.aggression
+        score += self._saboteur_help_risk(card)
+        score -= self._propaganda_combo_score(context, card) if self._card_matches_secret(card, secret) else 0
+        if action == "remove_one_propaganda_card_from_game":
+            score += 0.6
+        elif action == "discard_one":
+            score += 0.35
+        elif action == "place_one_on_top_of_deck":
+            score += 0.15 + self.deception * 0.2
         return score
 
     def _score_commit_option(self, context: BotContext, option: Any) -> float:
@@ -183,6 +213,45 @@ class HeuristicBot(BaseBot):
                 tags.update(card.tags)
         return tags
 
+    def _next_propaganda_slot(self, context: BotContext) -> int:
+        slots = context.public_view["propaganda_track"]["slots"]
+        if None in slots:
+            return slots.index(None) + 1
+        return len(slots)
+
+    def _slot_two_bonus(self, card: CardConfig) -> float:
+        for effect in card.propaganda_effects:
+            for condition in effect.get("conditions", []):
+                if condition.get("type") == "this_card_slot_is" and int(condition.get("position", 0)) == 2:
+                    return 1.25 * self.config.propaganda_awareness
+        return 0.0
+
+    def _propaganda_combo_score(self, context: BotContext, card: CardConfig) -> float:
+        score = 0.0
+        existing = [
+            context.cards_by_id[card_id]
+            for card_id in context.public_view["propaganda_track"]["slots"]
+            if card_id in context.cards_by_id
+        ]
+        if card.faction and any(other.faction == card.faction for other in existing):
+            score += 0.8 * self.config.propaganda_awareness
+        if any(set(card.tags).intersection(other.tags) for other in existing):
+            score += 0.4 * self.config.propaganda_awareness
+        for effect in card.propaganda_effects:
+            for condition in effect.get("conditions", []):
+                if condition.get("type") in {"propaganda_contains_faction_count", "propaganda_contains_tag_count"}:
+                    score += 0.8 * self.config.propaganda_awareness
+        return score
+
+    def _saboteur_help_risk(self, card: CardConfig) -> float:
+        harmful_tags = {"chaos", "sabotage", "attack"}
+        risk = 0.0
+        if harmful_tags.intersection(card.tags):
+            risk += 0.5
+        if card.strength >= 3 and card.type in {"propaganda", "hybrid"}:
+            risk += 0.25
+        return risk
+
     def _is_endgame(self, context: BotContext) -> bool:
         round_number = int(context.public_view["round"]["round_number"])
         max_rounds = context.rules.round_flow.max_rounds
@@ -268,3 +337,9 @@ class SaboteurBot(HeuristicBot):
         if option == "support":
             return 0.6 + self.config.secrecy * 0.35
         return 0.0
+
+    def _score_media_card(self, context: BotContext, card_id: Any) -> float:
+        card = context.cards_by_id.get(str(card_id))
+        if card is None:
+            return 0.0
+        return float(card.strength) + self._saboteur_help_risk(card) + self._propaganda_combo_score(context, card)
