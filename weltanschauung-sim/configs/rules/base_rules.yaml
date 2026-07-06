@@ -102,6 +102,18 @@ analytics:
   save_all_events: false
   save_last_n_games_events: 1000
   save_interesting_games: true
+  faction_winrate_min: 0.18
+  faction_winrate_max: 0.35
+  saboteur_winrate_max: 0.20
+  player_position_advantage_max: 0.35
+  average_rounds_min: 6
+  average_rounds_max: 12
+  early_decision_rate_max: 0.25
+  useless_card_rate_max: 0.60
+  overpowered_card_delta_max: 20
+  propaganda_slot_dominance_max: 0.55
+  research_order_completion_min: 0.10
+  fallback_decision_rate_max: 0.15
 
 cards: []
 bots: []

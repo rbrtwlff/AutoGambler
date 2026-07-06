@@ -4,8 +4,10 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from wsim.analytics import generate_charts, generate_report
+from wsim.analytics.report import build_balancing_warnings
 from wsim.cli import app
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
+from wsim.core.models import AnalyticsConfig
 from wsim.engine import SimulationBatchRunner
 
 
@@ -159,3 +161,124 @@ def test_missing_eventlogs_are_handled_cleanly(tmp_path):
     assert (run_dir / "metrics_cards.json").exists()
     assert (run_dir / "metrics_propaganda.json").exists()
     assert (run_dir / "metrics_bots.json").exists()
+
+
+def test_balancing_warnings_appear_for_artificial_outliers():
+    metrics = _warning_metrics(
+        faction_rates={"red": 0.42, "black": 0.08, "yellow": 0.25, "green": 0.25},
+        saboteur_rate=0.31,
+        player_rates={"P1": 0.38},
+        average_rounds=4,
+        rounds=[3, 4, 5, 9],
+        card_overrides={
+            "red_attack": {"play_count": 3, "propaganda_count": 0, "ineffectiveness_rate": 0.75, "swing_value": 25}
+        },
+        dominant_slot_share=0.72,
+        bot_fallback_rate=0.28,
+        research_draw_count=4,
+        research_completion_rate=0.0,
+    )
+
+    warnings = build_balancing_warnings(metrics, AnalyticsConfig())
+    messages = "\n".join(warning["message"] for warning in warnings)
+
+    assert "Red win rate" in messages
+    assert "Black wins only" in messages
+    assert "Saboteur win rate" in messages
+    assert "Player P1 wins" in messages
+    assert "Average game length" in messages
+    assert "Card red_attack" in messages
+    assert "Propaganda slot" in messages
+    assert "Research Orders completion rate" in messages
+    assert "fallback decision rate" in messages
+
+
+def test_no_balancing_warnings_for_plausible_metrics():
+    metrics = _warning_metrics(
+        faction_rates={"red": 0.25, "black": 0.24, "yellow": 0.26, "green": 0.25},
+        saboteur_rate=0.05,
+        player_rates={"P1": 0.24, "P2": 0.25, "P3": 0.26, "P4": 0.25},
+        average_rounds=8,
+        rounds=[7, 8, 8, 9],
+        card_overrides={
+            "steady_card": {"play_count": 4, "propaganda_count": 0, "ineffectiveness_rate": 0.25, "swing_value": 6}
+        },
+        dominant_slot_share=0.34,
+        bot_fallback_rate=0.02,
+        research_draw_count=4,
+        research_completion_rate=0.25,
+    )
+
+    assert build_balancing_warnings(metrics, AnalyticsConfig()) == []
+
+
+def test_balancing_warning_thresholds_come_from_config():
+    metrics = _warning_metrics(
+        faction_rates={"red": 0.25, "black": 0.25, "yellow": 0.25, "green": 0.25},
+        saboteur_rate=0.0,
+        player_rates={"P1": 0.25},
+        average_rounds=8,
+        rounds=[8, 8, 8, 8],
+    )
+
+    loose = AnalyticsConfig(faction_winrate_max=0.30, faction_winrate_min=0.10)
+    strict = AnalyticsConfig(faction_winrate_max=0.20, faction_winrate_min=0.10)
+
+    assert build_balancing_warnings(metrics, loose) == []
+    assert any(warning["code"] == "faction_winrate_high" for warning in build_balancing_warnings(metrics, strict))
+
+
+def test_report_contains_warning_section(tmp_path):
+    run_dir = tmp_path / "warning_report_run"
+    create_run(run_dir, games=2)
+
+    generate_report(run_dir)
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+
+    assert "## WARNINGS" in report
+
+
+def _warning_metrics(
+    *,
+    faction_rates: dict[str, float],
+    saboteur_rate: float,
+    player_rates: dict[str, float],
+    average_rounds: float,
+    rounds: list[int],
+    card_overrides: dict[str, dict[str, float]] | None = None,
+    dominant_slot_share: float = 0.0,
+    bot_fallback_rate: float = 0.0,
+    research_draw_count: int = 0,
+    research_completion_rate: float = 1.0,
+) -> dict:
+    return {
+        "overview": {
+            "faction_win_rates": faction_rates,
+            "saboteur_win_rate": saboteur_rate,
+            "player_position_win_rates": player_rates,
+            "rounds": {
+                "average": average_rounds,
+                "median": average_rounds,
+                "min": min(rounds),
+                "max": max(rounds),
+                "values": rounds,
+                "early_decision_rate": 0.0,
+            },
+        },
+        "cards": {
+            "cards": card_overrides or {},
+            "research_order_draw_count": research_draw_count,
+            "research_order_completion_rate": research_completion_rate,
+        },
+        "propaganda_advanced": {
+            "dominant_slot": 2,
+            "dominant_slot_share": dominant_slot_share,
+        },
+        "bots": {
+            "by_bot_type": {
+                "heuristic": {
+                    "fallback_random_decision_rate": bot_fallback_rate,
+                }
+            }
+        },
+    }

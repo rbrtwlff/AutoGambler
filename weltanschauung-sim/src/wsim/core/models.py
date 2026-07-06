@@ -90,6 +90,18 @@ class AnalyticsConfig(BaseModel):
     save_all_events: bool = False
     save_last_n_games_events: int = Field(default=1000, ge=0)
     save_interesting_games: bool = True
+    faction_winrate_min: float = Field(default=0.18, ge=0, le=1)
+    faction_winrate_max: float = Field(default=0.35, ge=0, le=1)
+    saboteur_winrate_max: float = Field(default=0.20, ge=0, le=1)
+    player_position_advantage_max: float = Field(default=0.35, ge=0, le=1)
+    average_rounds_min: float = Field(default=6.0, ge=0)
+    average_rounds_max: float = Field(default=12.0, ge=0)
+    early_decision_rate_max: float = Field(default=0.25, ge=0, le=1)
+    useless_card_rate_max: float = Field(default=0.60, ge=0, le=1)
+    overpowered_card_delta_max: float = Field(default=20.0, ge=0)
+    propaganda_slot_dominance_max: float = Field(default=0.55, ge=0, le=1)
+    research_order_completion_min: float = Field(default=0.10, ge=0, le=1)
+    fallback_decision_rate_max: float = Field(default=0.15, ge=0, le=1)
 
 
 class CardConfig(BaseModel):

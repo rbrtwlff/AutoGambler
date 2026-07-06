@@ -10,6 +10,8 @@ import polars as pl
 import plotly.graph_objects as go
 from pydantic import BaseModel
 
+from wsim.core.models import AnalyticsConfig
+
 
 class AnalyticsReportResult(BaseModel):
     run_id: str
@@ -35,6 +37,7 @@ def generate_report(run_dir: str | Path) -> dict[str, Any]:
     metrics["cards"] = card_metrics
     metrics["propaganda_advanced"] = propaganda_metrics
     metrics["bots"] = bot_metrics
+    metrics["warnings"] = build_balancing_warnings(metrics, metadata.get("analytics"))
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
 
@@ -65,6 +68,7 @@ def generate_charts(run_dir: str | Path) -> list[str]:
     metrics["cards"] = build_card_metrics(event_rows, game_summaries)
     metrics["propaganda_advanced"] = build_propaganda_metrics(event_rows)
     metrics["bots"] = build_bot_metrics(event_rows, game_summaries, bot_metrics_frame)
+    metrics["warnings"] = build_balancing_warnings(metrics, metadata.get("analytics"))
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
 
@@ -118,6 +122,9 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         f"- Erzeugt am: `{metrics['generated_at']}`",
         f"- Spiele: {overview['game_count']}",
         "",
+        "## WARNINGS",
+        _markdown_warnings(metrics.get("warnings", [])),
+        "",
         "## Overview",
         f"- Durchschnittliche Rundenzahl: {_fmt(overview['rounds']['average'])}",
         f"- Median Rundenzahl: {_fmt(overview['rounds']['median'])}",
@@ -166,6 +173,141 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def build_balancing_warnings(
+    metrics: dict[str, Any],
+    analytics_config: AnalyticsConfig | dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    thresholds = _analytics_config(analytics_config)
+    overview = metrics.get("overview", {})
+    cards = metrics.get("cards", {}).get("cards", {})
+    propaganda = metrics.get("propaganda_advanced", {})
+    bots = metrics.get("bots", {}).get("by_bot_type", {})
+    warnings: list[dict[str, Any]] = []
+
+    def add(code: str, message: str, value: Any, threshold: Any) -> None:
+        warnings.append(
+            {
+                "level": "WARNING",
+                "code": code,
+                "message": f"WARNING: {message}",
+                "value": value,
+                "threshold": threshold,
+            }
+        )
+
+    for faction_id, win_rate in overview.get("faction_win_rates", {}).items():
+        if win_rate > thresholds.faction_winrate_max:
+            add(
+                "faction_winrate_high",
+                f"{str(faction_id).title()} win rate is {_fmt_pct(win_rate)}, threshold is {_fmt_pct(thresholds.faction_winrate_max)}.",
+                win_rate,
+                thresholds.faction_winrate_max,
+            )
+        if win_rate < thresholds.faction_winrate_min:
+            add(
+                "faction_winrate_low",
+                f"{str(faction_id).title()} wins only {_fmt_pct(win_rate)}, expected minimum is {_fmt_pct(thresholds.faction_winrate_min)}.",
+                win_rate,
+                thresholds.faction_winrate_min,
+            )
+
+    saboteur_rate = overview.get("saboteur_win_rate", 0.0)
+    if saboteur_rate > thresholds.saboteur_winrate_max:
+        add(
+            "saboteur_winrate_high",
+            f"Saboteur win rate is {_fmt_pct(saboteur_rate)}, threshold is {_fmt_pct(thresholds.saboteur_winrate_max)}.",
+            saboteur_rate,
+            thresholds.saboteur_winrate_max,
+        )
+
+    for player_id, win_rate in overview.get("player_position_win_rates", {}).items():
+        if win_rate > thresholds.player_position_advantage_max:
+            add(
+                "player_position_advantage",
+                f"Player {player_id} wins {_fmt_pct(win_rate)}, possible start-player advantage.",
+                win_rate,
+                thresholds.player_position_advantage_max,
+            )
+
+    average_rounds = _to_float(overview.get("rounds", {}).get("average"))
+    if average_rounds is not None and average_rounds < thresholds.average_rounds_min:
+        add(
+            "game_ends_too_early",
+            f"Average game length is {_fmt(average_rounds)} rounds, minimum target is {_fmt(thresholds.average_rounds_min)}.",
+            average_rounds,
+            thresholds.average_rounds_min,
+        )
+    if average_rounds is not None and average_rounds > thresholds.average_rounds_max:
+        add(
+            "game_takes_too_long",
+            f"Average game length is {_fmt(average_rounds)} rounds, maximum target is {_fmt(thresholds.average_rounds_max)}.",
+            average_rounds,
+            thresholds.average_rounds_max,
+        )
+
+    round_values = overview.get("rounds", {}).get("values", [])
+    early_rate = (
+        _rate(sum(1 for value in round_values if value < thresholds.average_rounds_min), len(round_values))
+        if round_values
+        else _to_float(overview.get("rounds", {}).get("early_decision_rate"))
+    )
+    if early_rate is not None and early_rate > thresholds.early_decision_rate_max:
+        add(
+            "early_decision_rate_high",
+            f"Early decision rate is {_fmt_pct(early_rate)}, threshold is {_fmt_pct(thresholds.early_decision_rate_max)}.",
+            early_rate,
+            thresholds.early_decision_rate_max,
+        )
+
+    for card_id, card in cards.items():
+        exposures = int(card.get("play_count") or 0) + int(card.get("propaganda_count") or 0)
+        if exposures and card.get("ineffectiveness_rate", 0.0) > thresholds.useless_card_rate_max:
+            add(
+                "card_useless",
+                f"Card {card_id} is ineffective in {_fmt_pct(card.get('ineffectiveness_rate'))} of uses, threshold is {_fmt_pct(thresholds.useless_card_rate_max)}.",
+                card.get("ineffectiveness_rate"),
+                thresholds.useless_card_rate_max,
+            )
+        if card.get("swing_value", 0.0) > thresholds.overpowered_card_delta_max:
+            add(
+                "card_overpowered",
+                f"Card {card_id} has swing value {_fmt(card.get('swing_value'))}, threshold is {_fmt(thresholds.overpowered_card_delta_max)}.",
+                card.get("swing_value"),
+                thresholds.overpowered_card_delta_max,
+            )
+
+    slot_dominance = _to_float(propaganda.get("dominant_slot_share"))
+    if slot_dominance is not None and slot_dominance > thresholds.propaganda_slot_dominance_max:
+        add(
+            "propaganda_slot_dominance",
+            f"Propaganda slot {propaganda.get('dominant_slot')} carries {_fmt_pct(slot_dominance)} of occupied-slot samples, threshold is {_fmt_pct(thresholds.propaganda_slot_dominance_max)}.",
+            slot_dominance,
+            thresholds.propaganda_slot_dominance_max,
+        )
+
+    research_completion_rate = _to_float(metrics.get("cards", {}).get("research_order_completion_rate"))
+    research_draw_count = int(metrics.get("cards", {}).get("research_order_draw_count") or 0)
+    if research_draw_count and research_completion_rate is not None and research_completion_rate < thresholds.research_order_completion_min:
+        add(
+            "research_orders_rarely_completed",
+            f"Research Orders completion rate is {_fmt_pct(research_completion_rate)}, expected minimum is {_fmt_pct(thresholds.research_order_completion_min)}.",
+            research_completion_rate,
+            thresholds.research_order_completion_min,
+        )
+
+    for bot_type, bot_metric in bots.items():
+        fallback_rate = bot_metric.get("fallback_random_decision_rate", 0.0)
+        if fallback_rate > thresholds.fallback_decision_rate_max:
+            add(
+                "bot_fallback_rate_high",
+                f"Bot type {bot_type} fallback decision rate is {_fmt_pct(fallback_rate)}, threshold is {_fmt_pct(thresholds.fallback_decision_rate_max)}.",
+                fallback_rate,
+                thresholds.fallback_decision_rate_max,
+            )
+
+    return warnings
+
+
 def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFrame) -> dict[str, Any]:
     game_rows = game_summaries.to_dicts()
     game_count = len(game_rows)
@@ -177,6 +319,8 @@ def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFram
     cards: dict[str, dict[str, Any]] = defaultdict(_empty_card_metric)
     played_by_game: dict[str, set[Any]] = defaultdict(set)
     prop_by_game: dict[str, set[Any]] = defaultdict(set)
+    research_order_draw_count = 0
+    research_order_completion_count = 0
 
     for event in events:
         payload = event.get("payload", {})
@@ -185,6 +329,8 @@ def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFram
         if event_type == "card_drawn":
             for card_id in _payload_card_ids(payload):
                 cards[card_id]["draw_count"] += 1
+                if card_id.startswith("research_order"):
+                    research_order_draw_count += 1
         elif event_type == "action_revealed":
             for card_id in payload.get("committed_card_ids", []):
                 cards[card_id]["play_count"] += 1
@@ -208,6 +354,8 @@ def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFram
             delta = abs(int(payload.get("applied_delta") or 0))
             for card_id in _cards_revealed_in_round(events, event):
                 cards[card_id]["population_swing_total"] += delta
+        elif event_type == "research_order_completed":
+            research_order_completion_count += 1
 
     for card_id, row in cards.items():
         exposures = row["play_count"] + row["propaganda_count"]
@@ -226,6 +374,9 @@ def build_card_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFram
         "event_log_available": bool(events),
         "card_count": len(cards),
         "cards": dict(sorted(cards.items())),
+        "research_order_draw_count": research_order_draw_count,
+        "research_order_completion_count": research_order_completion_count,
+        "research_order_completion_rate": _rate(research_order_completion_count, research_order_draw_count),
     }
 
 
@@ -236,6 +387,7 @@ def build_propaganda_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     constellation_counts: dict[str, int] = defaultdict(int)
     constellation_effects: dict[str, int] = defaultdict(int)
     current_constellation_by_game: dict[Any, str] = {}
+    slot_counts: dict[int, int] = defaultdict(int)
     slot_triggers = 0
     prop_placements = 0
 
@@ -252,6 +404,7 @@ def build_propaganda_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
             constellation = _constellation(payload.get("slots", []))
             current_constellation_by_game[game_index] = constellation
             constellation_counts[constellation] += 1
+            _count_occupied_slots(payload.get("slots", []), slot_counts)
         elif event_type == "propaganda_removed":
             card_id = payload.get("card_id")
             if card_id and placements[(game_index, card_id)]:
@@ -261,6 +414,7 @@ def build_propaganda_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
             constellation = _constellation(payload.get("slots", []))
             current_constellation_by_game[game_index] = constellation
             constellation_counts[constellation] += 1
+            _count_occupied_slots(payload.get("slots", []), slot_counts)
         elif event_type == "effect_triggered":
             if payload.get("trigger") == "when_in_propaganda_before_action_resolution":
                 slot_triggers += 1
@@ -274,10 +428,15 @@ def build_propaganda_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
         for constellation, count in sorted_constellations
         if constellation_effects.get(constellation, 0) == 0
     ][:10]
+    slot_total = sum(slot_counts.values())
+    dominant_slot = max(slot_counts, key=slot_counts.get) if slot_counts else None
     return {
         "event_log_available": bool(events),
         "average_lifetime_by_card": average_lifetime,
         "slot_trigger_rate": _rate(slot_triggers, prop_placements),
+        "slot_occupancy_counts": dict(sorted(slot_counts.items())),
+        "dominant_slot": dominant_slot,
+        "dominant_slot_share": _rate(slot_counts.get(dominant_slot, 0), slot_total) if dominant_slot is not None else 0.0,
         "most_common_constellations": [{"constellation": key, "count": value} for key, value in sorted_constellations[:10]],
         "strongest_constellations": [{"constellation": key, "effect_total": value} for key, value in strongest[:10]],
         "least_effective_constellations": ineffective,
@@ -542,6 +701,8 @@ def _overview_metrics(game_rows: list[dict[str, Any]], faction_ids: list[str], g
             "median": _median(rounds),
             "min": min(rounds) if rounds else None,
             "max": max(rounds) if rounds else None,
+            "values": rounds,
+            "early_decision_rate": _rate(sum(1 for value in rounds if value < AnalyticsConfig().average_rounds_min), len(rounds)),
         },
         "average_final_population_by_faction": average_final_population,
         "average_final_neutral_population": _average([row.get("neutral_population") for row in game_rows]),
@@ -704,6 +865,14 @@ def _read_event_logs(run_path: Path) -> list[dict[str, Any]]:
     return events
 
 
+def _analytics_config(value: AnalyticsConfig | dict[str, Any] | None) -> AnalyticsConfig:
+    if isinstance(value, AnalyticsConfig):
+        return value
+    if isinstance(value, dict):
+        return AnalyticsConfig.model_validate(value)
+    return AnalyticsConfig()
+
+
 def _empty_card_metric() -> dict[str, Any]:
     return {
         "draw_count": 0,
@@ -748,6 +917,16 @@ def _cards_revealed_in_round(events: list[dict[str, Any]], event: dict[str, Any]
         if candidate.get("game_index") == game_index and candidate.get("round") == round_number and payload.get("player_id") == player_id:
             cards.update(payload.get("committed_card_ids", []))
     return cards
+
+
+def _count_occupied_slots(slots: Any, slot_counts: dict[int, int]) -> None:
+    if not isinstance(slots, list):
+        return
+    for slot in slots:
+        card_id = slot.get("card_id") if isinstance(slot, dict) else None
+        position = slot.get("position") if isinstance(slot, dict) else None
+        if card_id and position is not None:
+            slot_counts[int(position)] += 1
 
 
 def _constellation(slots: list[Any]) -> str:
@@ -854,6 +1033,12 @@ def _markdown_chart_links(chart_files: list[str]) -> str:
     if not chart_files:
         return "- Keine Grafiken erzeugt"
     return "\n".join(f"- [{Path(chart_file).name}]({chart_file})" for chart_file in chart_files)
+
+
+def _markdown_warnings(warnings: list[dict[str, Any]]) -> str:
+    if not warnings:
+        return "- Keine automatischen Balancing-Warnungen."
+    return "\n".join(f"- {warning.get('message', 'WARNING')}" for warning in warnings)
 
 
 def _markdown_top_metric(items: dict[str, dict[str, Any]], metric_name: str) -> str:
