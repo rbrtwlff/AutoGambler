@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import random
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +8,7 @@ from typing import Any
 import polars as pl
 from pydantic import BaseModel
 
-from wsim.analytics import GameInspectError, export_game, generate_report, inspect_game, render_game_markdown
+from wsim.analytics import GameInspectError, export_analysis_package, export_game, generate_report, inspect_game, render_game_markdown
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import SimulationBatchRunner
 
@@ -167,25 +166,4 @@ def export_single_game(run_dir: str | Path, selected_game: str, export_format: s
 
 
 def export_chatgpt_package(run_dir: str | Path) -> Path:
-    run_path = Path(run_dir)
-    metrics = ensure_run_report(run_path)
-    report_text = read_report(run_path)
-    output_path = run_path / "chatgpt_analysis_package.md"
-    payload = [
-        f"# ChatGPT Analysepaket: {run_path.name}",
-        "",
-        "## Automatischer Report",
-        report_text,
-        "",
-        "## Wichtigste Dateien",
-        f"- Metriken: `{run_path / 'metrics.json'}`",
-        f"- Spielzusammenfassungen: `{run_path / 'game_summaries.csv'}`",
-        f"- Rundenzusammenfassungen: `{run_path / 'round_summaries.csv'}`",
-        f"- Event-Sample: `{run_path / 'event_logs_sample.jsonl'}`",
-        "",
-        "## Strukturierte Warnungen",
-        json.dumps(metrics.get("warnings", []), ensure_ascii=True, indent=2, sort_keys=True),
-        "",
-    ]
-    output_path.write_text("\n".join(payload), encoding="utf-8")
-    return output_path
+    return export_analysis_package(run_dir).zip_path

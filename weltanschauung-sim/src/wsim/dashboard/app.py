@@ -216,8 +216,8 @@ def _export_tab(run_dir: Path | None) -> None:
     if not _require_run(run_dir):
         return
     st.subheader("Export fuer ChatGPT")
-    st.write("Erzeugt ein Markdown-Paket mit Report, wichtigsten Dateipfaden und strukturierten Warnungen.")
-    if st.button("Analysepaket erzeugen", type="primary"):
+    st.write("Erzeugt einen Ordner `analysis_package/` und die Datei `analysis_package.zip` fuer ChatGPT.")
+    if st.button("Analysepaket fuer ChatGPT exportieren", type="primary"):
         try:
             st.success(f"Analysepaket erstellt: {export_chatgpt_package(run_dir)}")
         except Exception as exc:

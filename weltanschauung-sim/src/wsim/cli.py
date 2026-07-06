@@ -8,7 +8,15 @@ import typer
 from rich.console import Console
 
 from wsim import __version__
-from wsim.analytics import GameInspectError, export_game, generate_charts, generate_report, inspect_game, render_game_markdown
+from wsim.analytics import (
+    GameInspectError,
+    export_analysis_package,
+    export_game,
+    generate_charts,
+    generate_report,
+    inspect_game,
+    render_game_markdown,
+)
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import ExperimentRunner, GameEngine, SimulationBatchRunner
 
@@ -244,6 +252,23 @@ def export_game_command(
 
     console.print("[green]Game export complete[/green]")
     console.print(f"output: {output_path}")
+
+
+@app.command("export-analysis-package")
+def export_analysis_package_command(
+    run: Path = typer.Option(..., "--run", help="Ausgabeordner eines Simulationslaufs."),
+) -> None:
+    """Exportiert einen kompakten Ordner plus ZIP fuer eine ChatGPT-Analyse."""
+    try:
+        result = export_analysis_package(run)
+    except ValueError as exc:
+        console.print(f"[red]Analysis package failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Analysis package complete[/green]")
+    console.print(f"package: {result.package_dir}")
+    console.print(f"zip: {result.zip_path}")
+    console.print(f"interesting_games: {len(result.interesting_games)}")
 
 
 if __name__ == "__main__":
