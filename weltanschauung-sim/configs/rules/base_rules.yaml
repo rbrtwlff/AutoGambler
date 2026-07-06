@@ -24,16 +24,16 @@ population:
   neutral_start: 80
 
 players:
-  - id: player_1
+  - id: P1
     seat: 0
     faction_id: red
-  - id: player_2
+  - id: P2
     seat: 1
     faction_id: black
-  - id: player_3
+  - id: P3
     seat: 2
     faction_id: yellow
-  - id: player_4
+  - id: P4
     seat: 3
     faction_id: green
 
@@ -41,6 +41,9 @@ roles:
   start_player: random
   first_journalist: left_of_start_player
   first_media_mogul: normal_rules
+  saboteur:
+    enabled: false
+    count: 0
 
 propaganda:
   slots: 3
@@ -73,4 +76,3 @@ analytics:
 
 cards: []
 bots: []
-

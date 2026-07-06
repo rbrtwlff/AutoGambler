@@ -27,6 +27,12 @@ class RoleConfig(BaseModel):
     start_player: Literal["random"] | str = "random"
     first_journalist: Literal["left_of_start_player"] | str = "left_of_start_player"
     first_media_mogul: Literal["normal_rules"] | str = "normal_rules"
+    saboteur: "SaboteurConfig" = Field(default_factory=lambda: SaboteurConfig())
+
+
+class SaboteurConfig(BaseModel):
+    enabled: bool = False
+    count: int = Field(default=0, ge=0)
 
 
 class PropagandaConfig(BaseModel):
