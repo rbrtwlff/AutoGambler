@@ -81,6 +81,9 @@ class VictoryConfig(BaseModel):
 class AnalyticsConfig(BaseModel):
     outputs_dir: str = "outputs/runs"
     event_log_format: Literal["jsonl"] | str = "jsonl"
+    save_all_events: bool = False
+    save_last_n_games_events: int = Field(default=1000, ge=0)
+    save_interesting_games: bool = True
 
 
 class CardConfig(BaseModel):

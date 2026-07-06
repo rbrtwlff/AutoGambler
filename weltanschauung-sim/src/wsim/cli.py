@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 from rich.console import Console
 
 from wsim import __version__
-from wsim.config import ConfigError, load_cards_config, load_rules_config
-from wsim.engine import GameEngine
+from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
+from wsim.engine import GameEngine, SimulationBatchRunner
 
 app = typer.Typer(no_args_is_help=True, help="weltanschauung-sim Kommandozeile.")
 console = Console()
@@ -87,6 +89,42 @@ def run_one(
     console.print(f"winning_condition: {result.winning_condition}")
     console.print(f"events: {result.event_count}")
     console.print(f"final_populations: {result.final_populations}")
+
+
+@app.command("run")
+def run_batch(
+    rules: str = typer.Option(..., "--rules", help="Pfad zur Regeln-YAML-Datei."),
+    cards: str = typer.Option(..., "--cards", help="Pfad zur Karten-YAML-Datei."),
+    bots: str = typer.Option(..., "--bots", help="Pfad zur Bots-YAML-Datei."),
+    games: int = typer.Option(..., "--games", min=1, help="Anzahl der zu simulierenden Spiele."),
+    seed: int = typer.Option(123, "--seed", help="Master-Seed fuer reproduzierbare Batch-Laeufe."),
+    output: Path = typer.Option(..., "--output", help="Ausgabeordner fuer diesen Lauf."),
+) -> None:
+    """Fuehrt viele Spiele aus und speichert Analyse-Dateien."""
+    try:
+        rules_config = load_rules_config(rules)
+        card_configs = load_cards_config(cards, rules_config=rules_config)
+        bot_configs = load_bots_config(bots, rules_config=rules_config)
+        result = SimulationBatchRunner(
+            rules=rules_config,
+            cards=card_configs,
+            bots=bot_configs,
+            games=games,
+            master_seed=seed,
+            output_dir=output,
+        ).run()
+    except ConfigError as exc:
+        console.print(f"[red]Batch run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Batch run complete[/green]")
+    console.print(f"run_id: {result.run_id}")
+    console.print(f"games: {result.games}")
+    console.print(f"master_seed: {result.master_seed}")
+    console.print(f"game_summaries: {result.game_summary_count}")
+    console.print(f"round_summaries: {result.round_summary_count}")
+    console.print(f"event_sample_rows: {result.event_sample_count}")
+    console.print(f"output: {result.output_dir}")
 
 
 if __name__ == "__main__":

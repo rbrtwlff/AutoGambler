@@ -92,6 +92,9 @@ victory:
 analytics:
   outputs_dir: outputs/runs
   event_log_format: jsonl
+  save_all_events: false
+  save_last_n_games_events: 1000
+  save_interesting_games: true
 
 cards: []
 bots: []
