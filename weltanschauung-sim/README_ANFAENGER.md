@@ -20,11 +20,21 @@ Wenn eine Versionsnummer erscheint, ist die Installation gelungen.
 
 ## Dashboard
 
-Das Dashboard ist noch ein Platzhalter.
+Das Dashboard ist die einfache Bedienoberflaeche im Browser.
 
-Spaeter wird es mit Doppelklick auf diese Datei gestartet:
+Start:
 
 ```text
 start_dashboard.bat
 ```
 
+Danach oeffnet sich der Browser automatisch. Dort kannst du:
+
+- Regeln, Karten und Bots auswaehlen
+- Anzahl Spiele und Seed einstellen
+- Simulationen starten
+- vorhandene Runs laden
+- Reports, Grafiken und einzelne Spiele ansehen
+- ein Analysepaket fuer ChatGPT erzeugen
+
+Alle Ergebnisse werden automatisch unter `outputs/runs/` gespeichert.

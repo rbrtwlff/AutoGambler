@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import typer
@@ -127,6 +129,17 @@ def run_batch(
     console.print(f"round_summaries: {result.round_summary_count}")
     console.print(f"event_sample_rows: {result.event_sample_count}")
     console.print(f"output: {result.output_dir}")
+
+
+@app.command("dashboard")
+def dashboard() -> None:
+    """Startet das lokale Streamlit Dashboard im Browser."""
+    dashboard_app = Path(__file__).resolve().parent / "dashboard" / "app.py"
+    try:
+        raise typer.Exit(code=subprocess.run([sys.executable, "-m", "streamlit", "run", str(dashboard_app)]).returncode)
+    except OSError as exc:
+        console.print(f"[red]Dashboard failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
 
 
 @app.command("experiment")
