@@ -31,6 +31,14 @@ Tests ausfuehren:
 python -m pytest
 ```
 
+Experiment mit Regelvarianten ausfuehren:
+
+```powershell
+wsim experiment --base-rules configs/rules/base_rules.yaml --variants configs/experiments --cards configs/cards/base_cards.yaml --bots configs/bots/bot_profiles.yaml --games-per-variant 10000 --seed 123 --output outputs/runs/experiment_001
+```
+
+Der Experiment-Runner erzeugt pro Variante einen eigenen Run-Ordner sowie `comparison_metrics.json` und `comparison_report.md` im Experiment-Ordner.
+
 ## Struktur
 
 - `configs/`: Regeln, Karten, Bot-Profile und Experimente

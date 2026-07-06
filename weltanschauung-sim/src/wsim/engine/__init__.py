@@ -1,5 +1,6 @@
 from wsim.engine.effects import EffectContext, EffectEngine, EffectExecutor, EffectResult, ConditionEvaluator
 from wsim.engine.batch import BatchRunResult, SimulationBatchRunner
+from wsim.engine.experiment import ExperimentResult, ExperimentRunner, ExperimentVariant
 from wsim.engine.game_engine import GameEngine, GameResult, PhaseContext
 from wsim.engine.setup import create_initial_state
 from wsim.engine.victory import VictoryChecker, VictoryResult
@@ -11,6 +12,9 @@ __all__ = [
     "EffectEngine",
     "EffectExecutor",
     "EffectResult",
+    "ExperimentResult",
+    "ExperimentRunner",
+    "ExperimentVariant",
     "GameEngine",
     "GameResult",
     "PhaseContext",

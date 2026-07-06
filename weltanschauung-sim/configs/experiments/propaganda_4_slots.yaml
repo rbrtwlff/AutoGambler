@@ -1,0 +1,5 @@
+name: propaganda_4_slots
+description: Tests a wider propaganda track with four slots.
+rules:
+  propaganda:
+    slots: 4

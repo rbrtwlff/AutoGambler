@@ -1,0 +1,12 @@
+name: saboteur_destroyed_population_60
+description: Enables one saboteur with a lower destroyed-population target.
+rules:
+  roles:
+    saboteur:
+      enabled: true
+      count: 1
+  victory:
+    saboteur_win_conditions:
+      - type: destroyed_population_at_least
+        threshold: 60
+      - type: all_factions_zero

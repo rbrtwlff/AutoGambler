@@ -1,0 +1,7 @@
+name: saboteur_disabled
+description: Runs without a saboteur role.
+rules:
+  roles:
+    saboteur:
+      enabled: false
+      count: 0

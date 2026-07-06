@@ -1,0 +1,5 @@
+name: propaganda_3_slots
+description: Baseline variant with three propaganda slots.
+rules:
+  propaganda:
+    slots: 3

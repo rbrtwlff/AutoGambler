@@ -1,0 +1,7 @@
+name: aggressive_bots
+description: Keeps rules stable and increases bot aggression and risk tolerance.
+bots:
+  defaults:
+    aggression: 0.88
+    risk_tolerance: 0.72
+    randomness: 0.16

@@ -8,7 +8,7 @@ from rich.console import Console
 from wsim import __version__
 from wsim.analytics import GameInspectError, export_game, generate_charts, generate_report, inspect_game, render_game_markdown
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
-from wsim.engine import GameEngine, SimulationBatchRunner
+from wsim.engine import ExperimentRunner, GameEngine, SimulationBatchRunner
 
 app = typer.Typer(no_args_is_help=True, help="weltanschauung-sim Kommandozeile.")
 console = Console()
@@ -127,6 +127,39 @@ def run_batch(
     console.print(f"round_summaries: {result.round_summary_count}")
     console.print(f"event_sample_rows: {result.event_sample_count}")
     console.print(f"output: {result.output_dir}")
+
+
+@app.command("experiment")
+def experiment(
+    base_rules: Path = typer.Option(..., "--base-rules", help="Pfad zur Basis-Regeln-YAML-Datei."),
+    variants: Path = typer.Option(..., "--variants", help="Ordner oder Datei mit YAML-Overrides."),
+    cards: Path = typer.Option(..., "--cards", help="Pfad zur Karten-YAML-Datei."),
+    bots: Path = typer.Option(..., "--bots", help="Pfad zur Bots-YAML-Datei."),
+    games_per_variant: int = typer.Option(..., "--games-per-variant", min=1, help="Spiele je Regelvariante."),
+    seed: int = typer.Option(123, "--seed", help="Master-Seed fuer reproduzierbare Experimente."),
+    output: Path = typer.Option(..., "--output", help="Ausgabeordner fuer das Experiment."),
+) -> None:
+    """Fuehrt mehrere Regelvarianten aus und erzeugt einen Vergleichsreport."""
+    try:
+        result = ExperimentRunner(
+            base_rules_path=base_rules,
+            variants_path=variants,
+            cards_path=cards,
+            bots_path=bots,
+            games_per_variant=games_per_variant,
+            master_seed=seed,
+            output_dir=output,
+        ).run()
+    except ConfigError as exc:
+        console.print(f"[red]Experiment failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Experiment complete[/green]")
+    console.print(f"experiment_id: {result.experiment_id}")
+    console.print(f"variants: {', '.join(result.variants)}")
+    console.print(f"games_per_variant: {result.games_per_variant}")
+    console.print(f"metrics: {result.comparison_metrics_path}")
+    console.print(f"report: {result.comparison_report_path}")
 
 
 @app.command("report")
