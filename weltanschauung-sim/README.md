@@ -38,3 +38,7 @@ python -m pytest
 - `outputs/runs/`: spaetere Simulationsergebnisse
 - `tests/`: automatisierte Tests
 
+## MVP-Annahmen
+
+- Die Medienmogul-Phase waehlt aktuell eine geeignete `propaganda`- oder `hybrid`-Karte aus der Hand des Medienmoguls und legt sie auf die Propagandaleiste.
+- Die Propagandaleiste ist von links nach rechts geordnet: links liegt die aelteste Karte, rechts die neueste. Bei voller Leiste entfernt `remove_oldest` die linke Karte.

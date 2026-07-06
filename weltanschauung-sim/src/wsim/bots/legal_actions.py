@@ -31,7 +31,13 @@ class LegalActionProvider:
         return ["observe", "publish_stub_warning"]
 
     def media_mogul_card_options(self, context: BotContext) -> list[str]:
-        return list(context.public_view["players"][context.player_id]["hand"])
+        allowed_types = set(context.rules.propaganda.media_mogul_card_types)
+        hand = context.public_view["players"][context.player_id]["hand"]
+        return [
+            card_id
+            for card_id in hand
+            if card_id in self.cards_by_id and self.cards_by_id[card_id].type in allowed_types
+        ]
 
     def cards_to_commit_options(self, context: BotContext) -> list[list[str]]:
         hand = list(context.public_view["players"][context.player_id]["hand"])
@@ -79,4 +85,3 @@ class LegalActionProvider:
             "choose_source_use": self.source_use_options(context),
             "choose_research_order_priority": self.research_order_priority_options(context),
         }
-

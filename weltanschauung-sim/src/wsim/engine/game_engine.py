@@ -181,6 +181,73 @@ class GameEngine:
             },
         )
 
+    def _phase_media_mogul_phase(self, context: PhaseContext) -> None:
+        media_mogul_player_id = context.state.round.media_mogul_player_id
+        if context.config.propaganda.media_mogul_card_source != "hand":
+            context.event_bus.emit(
+                EventType.WARNING,
+                {
+                    "phase": context.phase_name,
+                    "message": "Only media_mogul_card_source=hand is implemented for MVP.",
+                    "configured_source": context.config.propaganda.media_mogul_card_source,
+                },
+            )
+            return
+
+        bot = self.bots[media_mogul_player_id]
+        bot_context = self.legal_actions.build_context(context.state, media_mogul_player_id)
+        options = self.legal_actions.media_mogul_card_options(bot_context)
+        if not options:
+            context.event_bus.emit(
+                EventType.WARNING,
+                {
+                    "phase": context.phase_name,
+                    "player_id": media_mogul_player_id,
+                    "message": "Media mogul has no suitable propaganda or hybrid card in hand.",
+                    "allowed_card_types": context.config.propaganda.media_mogul_card_types,
+                },
+            )
+            return
+
+        decision = bot.choose_media_mogul_card(bot_context, options, context.state.rng)
+        if decision.choice not in options:
+            context.event_bus.emit(
+                EventType.WARNING,
+                {
+                    "phase": context.phase_name,
+                    "player_id": media_mogul_player_id,
+                    "message": "Bot returned illegal media mogul card choice; phase skipped.",
+                    "choice": decision.choice,
+                    "legal_options": options,
+                },
+            )
+            return
+
+        chosen_card_id = decision.choice
+        context.state.players[media_mogul_player_id].hand.remove(chosen_card_id)
+        removed_card_id = context.state.propaganda_track.place_card(chosen_card_id)
+        if removed_card_id is not None:
+            context.state.deck.discard_pile.append(removed_card_id)
+            context.event_bus.emit(
+                EventType.PROPAGANDA_REMOVED,
+                {
+                    "card_id": removed_card_id,
+                    "reason": "overflow_remove_oldest",
+                    "overflow": context.state.propaganda_track.overflow,
+                    "slots": context.state.propaganda_track.get_slots(),
+                },
+            )
+        context.event_bus.emit(
+            EventType.PROPAGANDA_PLACED,
+            {
+                "player_id": media_mogul_player_id,
+                "card_id": chosen_card_id,
+                "reason": decision.reason,
+                "source": "hand",
+                "slots": context.state.propaganda_track.get_slots(),
+            },
+        )
+
     def _phase_victory_check(self, context: PhaseContext) -> None:
         context.event_bus.emit(
             EventType.VICTORY_CHECKED,

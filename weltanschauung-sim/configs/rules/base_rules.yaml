@@ -48,6 +48,10 @@ roles:
 propaganda:
   slots: 3
   overflow: remove_oldest
+  media_mogul_card_source: hand
+  media_mogul_card_types:
+    - propaganda
+    - hybrid
 
 round_flow:
   max_rounds: 12

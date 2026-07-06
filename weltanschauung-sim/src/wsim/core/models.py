@@ -38,6 +38,8 @@ class SaboteurConfig(BaseModel):
 class PropagandaConfig(BaseModel):
     slots: int = Field(gt=0)
     overflow: Literal["remove_oldest"] | str = "remove_oldest"
+    media_mogul_card_source: Literal["hand"] = "hand"
+    media_mogul_card_types: list[Literal["propaganda", "hybrid"]] = Field(default_factory=lambda: ["propaganda", "hybrid"])
 
 
 class RoundFlowConfig(BaseModel):

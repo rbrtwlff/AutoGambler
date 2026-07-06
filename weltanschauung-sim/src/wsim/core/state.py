@@ -60,6 +60,32 @@ class PropagandaTrackState(BaseModel):
     slots: list[str | None]
     overflow: str
 
+    def place_card(self, card: str) -> str | None:
+        if None in self.slots:
+            self.slots[self.slots.index(None)] = card
+            return None
+        if self.overflow != "remove_oldest":
+            raise ValueError(f"Unsupported propaganda overflow mode: {self.overflow}")
+        removed_card = self.slots.pop(0)
+        self.slots.append(card)
+        return removed_card
+
+    def remove_card(self, card_id: str) -> str | None:
+        if card_id not in self.slots:
+            return None
+        self.slots.remove(card_id)
+        self.slots.append(None)
+        return card_id
+
+    def get_slots(self) -> list[str | None]:
+        return list(self.slots)
+
+    def get_card_at_slot(self, position: int) -> str | None:
+        return self.slots[position]
+
+    def serialize(self) -> dict[str, Any]:
+        return {"slots": self.get_slots(), "overflow": self.overflow}
+
 
 class RoundState(BaseModel):
     round_number: int = 0
@@ -118,7 +144,7 @@ class GameState(BaseModel):
                 "research_order_pool_count": len(self.deck.research_order_pool),
                 "disabled_card_count": len(self.deck.disabled_cards),
             },
-            "propaganda_track": self.propaganda_track.model_dump(),
+            "propaganda_track": self.propaganda_track.serialize(),
             "round": self.round.model_dump(),
             "event_count": len(self.event_log.events),
         }
