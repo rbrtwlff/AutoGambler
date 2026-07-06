@@ -102,7 +102,7 @@ class CardConfig(BaseModel):
 class BotConfig(BaseModel):
     id: str
     player_id: str | None = None
-    type: Literal["random", "heuristic"] = "random"
+    type: Literal["random", "heuristic", "loyalist", "deceptive", "saboteur"] = "random"
     name: str | None = None
     skill: float = Field(default=0.7, ge=0, le=1)
     randomness: float = Field(default=0.2, ge=0, le=1)

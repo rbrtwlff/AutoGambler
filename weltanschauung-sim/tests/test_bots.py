@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from wsim.bots import BotFactory, HeuristicBot, LegalActionProvider
+from wsim.bots import BotFactory, DeceptiveBot, LegalActionProvider, LoyalistBot, SaboteurBot
+from wsim.core.models import BotConfig
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import create_initial_state
 
@@ -26,7 +27,10 @@ def test_bot_factory_loads_heuristic_bots() -> None:
     bots = BotFactory().create_all(bot_configs)
 
     assert set(bots) == {player.id for player in rules.players}
-    assert all(isinstance(bot, HeuristicBot) for bot in bots.values())
+    assert isinstance(bots["P1"], LoyalistBot)
+    assert isinstance(bots["P2"], DeceptiveBot)
+    assert isinstance(bots["P3"], LoyalistBot)
+    assert isinstance(bots["P4"], SaboteurBot)
 
 
 def test_heuristic_bot_creates_legal_decisions() -> None:
@@ -124,3 +128,73 @@ def test_heuristic_reason_is_logged_on_action_commit() -> None:
     assert committed
     assert committed[0]["payload"]["action_type_reason"]
     assert committed[0]["payload"]["target_faction_reason"]
+
+
+def test_saboteur_bot_causes_more_average_population_damage_than_loyalist() -> None:
+    rules, cards, _bot_configs, _state, provider = _fixture()
+    saboteur = BotFactory().create(
+        BotConfig(id="sab", player_id="P1", type="saboteur", aggression=0.9, randomness=0.05)
+    )
+    loyalist = BotFactory().create(
+        BotConfig(id="loy", player_id="P1", type="loyalist", aggression=0.45, randomness=0.05)
+    )
+
+    saboteur_attacks = 0
+    loyalist_attacks = 0
+    for seed in range(20):
+        state = create_initial_state(rules, cards, seed=seed)
+        state.players["P1"].secret_faction_id = "red"
+        state.factions["red"].population = 5
+        state.factions["black"].population = 14
+        context = provider.build_context(state, "P1")
+        saboteur_attacks += saboteur.choose_action_type(context, ["support", "attack"], state.rng).choice == "attack"
+
+        state = create_initial_state(rules, cards, seed=seed)
+        state.players["P1"].secret_faction_id = "red"
+        state.factions["red"].population = 5
+        state.factions["black"].population = 14
+        context = provider.build_context(state, "P1")
+        loyalist_attacks += loyalist.choose_action_type(context, ["support", "attack"], state.rng).choice == "attack"
+
+    assert saboteur_attacks > loyalist_attacks
+
+
+def test_deceptive_bot_supports_own_faction_less_obviously_than_loyalist() -> None:
+    rules, cards, _bot_configs, _state, provider = _fixture()
+    deceptive = BotFactory().create(BotConfig(id="dec", player_id="P1", type="deceptive", randomness=0))
+    loyalist = BotFactory().create(BotConfig(id="loy", player_id="P1", type="loyalist", randomness=0))
+    state = create_initial_state(rules, cards, seed=123)
+    state.players["P1"].secret_faction_id = "red"
+    context = provider.build_context(state, "P1")
+
+    deceptive_decision = deceptive.choose_target_faction(context, provider.target_faction_options(context), state.rng)
+    loyalist_decision = loyalist.choose_target_faction(context, provider.target_faction_options(context), state.rng)
+
+    assert loyalist_decision.choice == "red"
+    assert deceptive_decision.score < loyalist_decision.score
+
+
+def test_loyalist_bot_has_higher_directness_values() -> None:
+    loyalist = BotFactory().create(BotConfig(id="loy", player_id="P1", type="loyalist"))
+    deceptive = BotFactory().create(BotConfig(id="dec", player_id="P1", type="deceptive"))
+    saboteur = BotFactory().create(BotConfig(id="sab", player_id="P1", type="saboteur"))
+
+    assert loyalist.directness > deceptive.directness
+    assert loyalist.directness > saboteur.directness
+
+
+def test_specialized_bots_produce_only_legal_actions() -> None:
+    _rules, _cards, _bot_configs, state, provider = _fixture()
+    configs = [
+        BotConfig(id="loy", player_id="P1", type="loyalist"),
+        BotConfig(id="dec", player_id="P1", type="deceptive"),
+        BotConfig(id="sab", player_id="P1", type="saboteur"),
+    ]
+    context = provider.build_context(state, "P1")
+    all_options = provider.all_options(context)
+
+    for config in configs:
+        bot = BotFactory().create(config)
+        for method_name, options in all_options.items():
+            decision = getattr(bot, method_name)(context, options, state.rng)
+            assert decision.choice in options

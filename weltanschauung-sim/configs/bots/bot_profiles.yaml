@@ -1,41 +1,41 @@
 bots:
   - id: P1_heuristic
     player_id: P1
-    type: heuristic
-    name: Heuristic Bot P1
-    skill: 0.72
-    randomness: 0.18
-    aggression: 0.55
-    secrecy: 0.75
+    type: loyalist
+    name: Loyalist Bot P1
+    skill: 0.78
+    randomness: 0.12
+    aggression: 0.58
+    secrecy: 0.35
     propaganda_awareness: 0.65
     risk_tolerance: 0.45
   - id: P2_heuristic
     player_id: P2
-    type: heuristic
-    name: Heuristic Bot P2
+    type: deceptive
+    name: Deceptive Bot P2
     skill: 0.68
     randomness: 0.22
     aggression: 0.62
-    secrecy: 0.7
+    secrecy: 0.88
     propaganda_awareness: 0.55
     risk_tolerance: 0.5
   - id: P3_heuristic
     player_id: P3
-    type: heuristic
-    name: Heuristic Bot P3
-    skill: 0.7
-    randomness: 0.2
-    aggression: 0.58
-    secrecy: 0.72
+    type: loyalist
+    name: Loyalist Bot P3
+    skill: 0.76
+    randomness: 0.14
+    aggression: 0.56
+    secrecy: 0.38
     propaganda_awareness: 0.6
     risk_tolerance: 0.48
   - id: P4_heuristic
     player_id: P4
-    type: heuristic
-    name: Heuristic Bot P4
+    type: saboteur
+    name: Saboteur Bot P4
     skill: 0.74
-    randomness: 0.16
-    aggression: 0.52
-    secrecy: 0.78
-    propaganda_awareness: 0.7
-    risk_tolerance: 0.42
+    randomness: 0.24
+    aggression: 0.82
+    secrecy: 0.72
+    propaganda_awareness: 0.75
+    risk_tolerance: 0.68

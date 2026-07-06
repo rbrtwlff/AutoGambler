@@ -50,6 +50,7 @@ class SimulationBatchRunner:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         game_summaries: list[dict[str, Any]] = []
         round_summaries: list[dict[str, Any]] = []
+        bot_metrics: list[dict[str, Any]] = []
         event_samples: list[dict[str, Any]] = []
         iterable = range(self.games)
         if self.show_progress:
@@ -61,10 +62,11 @@ class SimulationBatchRunner:
             result = engine.run_game()
             game_summaries.append(self._game_summary(game_index, seed, result))
             round_summaries.extend(self._round_summaries(game_index, seed, engine))
+            bot_metrics.extend(self._bot_metrics(game_index, seed, engine))
             if self._should_sample_events(game_index):
                 event_samples.extend(self._event_sample_rows(game_index, seed, engine))
 
-        self._write_outputs(game_summaries, round_summaries, event_samples)
+        self._write_outputs(game_summaries, round_summaries, bot_metrics, event_samples)
         return BatchRunResult(
             run_id=self.run_id,
             output_dir=self.output_dir,
@@ -176,6 +178,46 @@ class SimulationBatchRunner:
                 slots = event["payload"]["slots"]
         return slots
 
+    def _bot_metrics(self, game_index: int, seed: int, engine: GameEngine) -> list[dict[str, Any]]:
+        events = engine.state.export_events_as_dicts()
+        bot_by_player = {bot.player_id: bot for bot in self.bots}
+        rows: dict[str, dict[str, Any]] = {}
+        for player in self.rules.players:
+            bot = bot_by_player.get(player.id)
+            rows[player.id] = {
+                "run_id": self.run_id,
+                "game_index": game_index,
+                "game_id": self.rules.game_id,
+                "seed": seed,
+                "player_id": player.id,
+                "bot_id": bot.id if bot else None,
+                "bot_type": bot.type if bot else None,
+                "attacks": 0,
+                "supports": 0,
+                "population_damage": 0,
+                "population_benefit": 0,
+            }
+
+        for event in events:
+            if event["event_type"] != "population_changed":
+                continue
+            payload = event["payload"]
+            player_id = payload["player_id"]
+            row = rows[player_id]
+            if payload["action_type"] == "attack":
+                row["attacks"] += 1
+                row["population_damage"] += max(0, -int(payload["applied_delta"]))
+            elif payload["action_type"] == "support":
+                row["supports"] += 1
+                row["population_benefit"] += max(0, int(payload["applied_delta"]))
+
+        for row in rows.values():
+            total_actions = row["attacks"] + row["supports"]
+            row["attack_support_ratio"] = row["attacks"] / row["supports"] if row["supports"] else float(row["attacks"])
+            row["attack_rate"] = row["attacks"] / total_actions if total_actions else 0.0
+            row["support_rate"] = row["supports"] / total_actions if total_actions else 0.0
+        return list(rows.values())
+
     def _should_sample_events(self, game_index: int) -> bool:
         if self.rules.analytics.save_all_events:
             return True
@@ -191,14 +233,18 @@ class SimulationBatchRunner:
         self,
         game_summaries: list[dict[str, Any]],
         round_summaries: list[dict[str, Any]],
+        bot_metrics: list[dict[str, Any]],
         event_samples: list[dict[str, Any]],
     ) -> None:
         game_frame = pl.DataFrame(game_summaries)
         round_frame = pl.DataFrame(round_summaries)
+        bot_frame = pl.DataFrame(bot_metrics)
         game_frame.write_parquet(self.output_dir / "game_summaries.parquet")
         game_frame.write_csv(self.output_dir / "game_summaries.csv")
         round_frame.write_parquet(self.output_dir / "round_summaries.parquet")
         round_frame.write_csv(self.output_dir / "round_summaries.csv")
+        bot_frame.write_parquet(self.output_dir / "bot_metrics.parquet")
+        bot_frame.write_csv(self.output_dir / "bot_metrics.csv")
         with (self.output_dir / "event_logs_sample.jsonl").open("w", encoding="utf-8") as file:
             for event in event_samples:
                 file.write(json.dumps(event, ensure_ascii=True, sort_keys=True) + "\n")
@@ -216,6 +262,8 @@ class SimulationBatchRunner:
                 "game_summaries.csv",
                 "round_summaries.parquet",
                 "round_summaries.csv",
+                "bot_metrics.parquet",
+                "bot_metrics.csv",
                 "event_logs_sample.jsonl",
             ],
         }
