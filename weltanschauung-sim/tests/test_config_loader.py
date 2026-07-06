@@ -39,6 +39,8 @@ def test_valid_config_loads() -> None:
     assert config.draft.max_sources == 3
     assert config.propaganda.slots == 3
     assert config.propaganda.overflow == "remove_oldest"
+    assert config.quality.strict_mode is True
+    assert config.quality.debug_export_on_error is True
 
 
 def test_invalid_population_raises_config_error(tmp_path: Path) -> None:
@@ -75,4 +77,3 @@ def test_cli_validate_config_works() -> None:
     assert result.exit_code == 0
     assert "Config OK" in result.stdout
     assert "weltanschauung_base" in result.stdout
-

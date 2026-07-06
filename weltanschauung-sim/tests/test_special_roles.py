@@ -17,6 +17,33 @@ def _fixture():
     return rules, cards, provider
 
 
+def _remove_card_from_locations(engine: GameEngine, card_id: str) -> None:
+    for pile in [
+        engine.state.deck.draw_pile,
+        engine.state.deck.discard_pile,
+        engine.state.deck.research_order_pool,
+        engine.state.deck.disabled_cards,
+    ]:
+        while card_id in pile:
+            pile.remove(card_id)
+    for player in engine.state.players.values():
+        for zone in [player.hand, player.hidden_research_orders, player.sources]:
+            while card_id in zone:
+                zone.remove(card_id)
+    engine.state.propaganda_track.slots = [
+        None if current_id == card_id else current_id for current_id in engine.state.propaganda_track.slots
+    ]
+
+
+def _set_hand(engine: GameEngine, player_id: str, card_ids: list[str]) -> None:
+    player = engine.state.players[player_id]
+    for card_id in player.hand:
+        engine.state.deck.discard_pile.append(card_id)
+    for card_id in card_ids:
+        _remove_card_from_locations(engine, card_id)
+    player.hand = list(card_ids)
+
+
 def test_journalist_removes_harmful_propaganda_more_often_than_random() -> None:
     rules, cards, provider = _fixture()
     state = create_initial_state(rules, cards, seed=123)
@@ -74,8 +101,9 @@ def test_special_role_events_contain_reason() -> None:
     engine.state.round.journalist_player_id = "P1"
     engine.state.round.media_mogul_player_id = "P1"
     engine.state.players["P1"].secret_faction_id = "red"
-    engine.state.players["P1"].hand = ["propaganda_01", "black_hybrid_02"]
-    engine.state.propaganda_track.slots = ["propaganda_01", "black_hybrid_02", None]
+    _remove_card_from_locations(engine, "black_hybrid_02")
+    _set_hand(engine, "P1", ["propaganda_01"])
+    engine.state.propaganda_track.slots = ["black_hybrid_02", None, None]
 
     engine.run_phase("journalist_phase")
     engine.run_phase("media_mogul_phase")

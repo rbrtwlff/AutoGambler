@@ -104,6 +104,11 @@ class AnalyticsConfig(BaseModel):
     fallback_decision_rate_max: float = Field(default=0.15, ge=0, le=1)
 
 
+class QualityConfig(BaseModel):
+    strict_mode: bool = True
+    debug_export_on_error: bool = True
+
+
 class CardConfig(BaseModel):
     id: str
     name: str
@@ -143,6 +148,7 @@ class GameConfig(BaseModel):
     draft: DraftConfig
     victory: VictoryConfig
     analytics: AnalyticsConfig
+    quality: QualityConfig = Field(default_factory=QualityConfig)
     cards: list[CardConfig] = Field(default_factory=list)
     bots: list[BotConfig] = Field(default_factory=list)
 

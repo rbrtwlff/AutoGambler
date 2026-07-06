@@ -10,6 +10,7 @@ from wsim.core.events import EventBus, EventType
 from wsim.core.models import BotConfig, CardConfig, GameConfig
 from wsim.core.state import GameState, PlannedAction, ResolvedAction, RevealedAction
 from wsim.engine.effects import EffectEngine
+from wsim.engine.invariants import validate_game_result_matches_events, validate_game_state
 from wsim.engine.setup import create_initial_state
 from wsim.engine.victory import VictoryChecker, VictoryResult
 
@@ -65,6 +66,7 @@ class GameEngine:
         self.cards_by_id = {card.id: card for card in cards}
         self.victory_checker = VictoryChecker(config)
         self.effect_engine = EffectEngine(config, cards, self.event_bus)
+        self._validate_state_if_strict()
 
     def run_game(self) -> GameResult:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
@@ -89,7 +91,10 @@ class GameEngine:
                 },
             )
 
-        return self._build_result()
+        result = self._build_result()
+        if self.config.quality.strict_mode:
+            validate_game_result_matches_events(result, self.state)
+        return result
 
     def run_round(self) -> None:
         if self.ended_by is not None:
@@ -131,6 +136,7 @@ class GameEngine:
         )
         handler = getattr(self, f"_phase_{phase_name}", self._phase_stub)
         handler(context)
+        self._validate_state_if_strict()
 
     def _phase_start_round(self, context: PhaseContext) -> None:
         self.effect_engine.trigger("on_round_start", state=context.state)
@@ -699,3 +705,7 @@ class GameEngine:
             final_populations={key: faction.population for key, faction in self.state.factions.items()},
             event_count=len(self.state.event_log.events),
         )
+
+    def _validate_state_if_strict(self) -> None:
+        if self.config.quality.strict_mode:
+            validate_game_state(self.config, self.state, self.cards)

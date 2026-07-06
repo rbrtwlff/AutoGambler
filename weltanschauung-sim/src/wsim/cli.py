@@ -18,7 +18,7 @@ from wsim.analytics import (
     render_game_markdown,
 )
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
-from wsim.engine import ExperimentRunner, GameEngine, SimulationBatchRunner
+from wsim.engine import ExperimentRunner, GameEngine, SimulationBatchRunner, SmokeTestError, run_smoke_test
 
 app = typer.Typer(no_args_is_help=True, help="weltanschauung-sim Kommandozeile.")
 console = Console()
@@ -148,6 +148,45 @@ def dashboard() -> None:
     except OSError as exc:
         console.print(f"[red]Dashboard failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
+
+
+@app.command("smoke-test")
+def smoke_test(
+    rules: Path = typer.Option(..., "--rules", help="Pfad zur Regeln-YAML-Datei."),
+    cards: Path = typer.Option(..., "--cards", help="Pfad zur Karten-YAML-Datei."),
+    bots: Path = typer.Option(..., "--bots", help="Pfad zur Bots-YAML-Datei."),
+    games: int = typer.Option(..., "--games", min=1, help="Anzahl Smoke-Test-Spiele."),
+    seed: int = typer.Option(123, "--seed", help="Master-Seed fuer reproduzierbare Smoke-Tests."),
+    debug_output: Path = typer.Option(Path("outputs/runs/smoke_debug"), "--debug-output", help="Ordner fuer Debug-Exports bei Fehlern."),
+) -> None:
+    """Fuehrt reproduzierbare Qualitaetschecks ueber viele Spiele aus."""
+    try:
+        rules_config = load_rules_config(rules)
+        card_configs = load_cards_config(cards, rules_config=rules_config)
+        bot_configs = load_bots_config(bots, rules_config=rules_config)
+        result = run_smoke_test(
+            rules=rules_config,
+            cards=card_configs,
+            bots=bot_configs,
+            games=games,
+            master_seed=seed,
+            debug_dir=debug_output,
+        )
+    except ConfigError as exc:
+        console.print(f"[red]Smoke test failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except SmokeTestError as exc:
+        console.print("[red]Smoke test failed[/red]")
+        console.print(f"game_index: {exc.game_index}")
+        console.print(f"seed: {exc.seed}")
+        console.print(f"debug_output: {exc.debug_dir}")
+        console.print(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Smoke test complete[/green]")
+    console.print(f"games: {result.games}")
+    console.print(f"master_seed: {result.master_seed}")
+    console.print(f"debug_output: {result.debug_dir}")
 
 
 @app.command("experiment")

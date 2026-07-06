@@ -39,12 +39,39 @@ def _engine(seed: int = 123) -> GameEngine:
     return GameEngine(rules, cards, seed=seed)
 
 
+def _remove_card_from_locations(engine: GameEngine, card_id: str) -> None:
+    for pile in [
+        engine.state.deck.draw_pile,
+        engine.state.deck.discard_pile,
+        engine.state.deck.research_order_pool,
+        engine.state.deck.disabled_cards,
+    ]:
+        while card_id in pile:
+            pile.remove(card_id)
+    for player in engine.state.players.values():
+        for zone in [player.hand, player.hidden_research_orders, player.sources]:
+            while card_id in zone:
+                zone.remove(card_id)
+    engine.state.propaganda_track.slots = [
+        None if current_id == card_id else current_id for current_id in engine.state.propaganda_track.slots
+    ]
+
+
+def _set_hand(engine: GameEngine, player_id: str, card_ids: list[str]) -> None:
+    player = engine.state.players[player_id]
+    for card_id in player.hand:
+        engine.state.deck.discard_pile.append(card_id)
+    for card_id in card_ids:
+        _remove_card_from_locations(engine, card_id)
+    player.hand = list(card_ids)
+
+
 def test_planning_commits_cards_from_hand() -> None:
     engine = _engine()
-    engine.state.players["P1"].hand = ["red_action_03"]
+    _set_hand(engine, "P1", ["red_action_03"])
     engine.bots["P1"] = FixedActionBot("red_action_03", "support", "red", "red")
     for player_id in ["P2", "P3", "P4"]:
-        engine.state.players[player_id].hand = []
+        _set_hand(engine, player_id, [])
 
     engine.run_phase("planning")
 
@@ -87,6 +114,7 @@ def test_initiative_tiebreaker_clockwise_from_start_player() -> None:
 
 def test_support_increases_population_and_reduces_neutral_pool() -> None:
     engine = _engine()
+    _remove_card_from_locations(engine, "red_action_03")
     engine.state.revealed_actions = [
         RevealedAction(
             player_id="P1",
@@ -152,6 +180,7 @@ def test_attack_reduces_population_without_going_negative() -> None:
 
 def test_action_resolution_events_are_logged() -> None:
     engine = _engine()
+    _remove_card_from_locations(engine, "red_action_03")
     engine.state.revealed_actions = [
         RevealedAction(
             player_id="P1",
@@ -171,4 +200,3 @@ def test_action_resolution_events_are_logged() -> None:
     assert "population_changed" in event_types
     assert "action_resolved" in event_types
     assert "card_discarded" in event_types
-

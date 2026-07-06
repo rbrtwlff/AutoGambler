@@ -115,5 +115,9 @@ analytics:
   research_order_completion_min: 0.10
   fallback_decision_rate_max: 0.15
 
+quality:
+  strict_mode: true
+  debug_export_on_error: true
+
 cards: []
 bots: []

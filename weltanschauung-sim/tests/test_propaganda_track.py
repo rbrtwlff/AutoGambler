@@ -28,6 +28,33 @@ def _engine(tmp_path: Path, slots: int = 3) -> GameEngine:
     return GameEngine(rules, cards, seed=123)
 
 
+def _remove_card_from_locations(engine: GameEngine, card_id: str) -> None:
+    for pile in [
+        engine.state.deck.draw_pile,
+        engine.state.deck.discard_pile,
+        engine.state.deck.research_order_pool,
+        engine.state.deck.disabled_cards,
+    ]:
+        while card_id in pile:
+            pile.remove(card_id)
+    for player in engine.state.players.values():
+        for zone in [player.hand, player.hidden_research_orders, player.sources]:
+            while card_id in zone:
+                zone.remove(card_id)
+    engine.state.propaganda_track.slots = [
+        None if current_id == card_id else current_id for current_id in engine.state.propaganda_track.slots
+    ]
+
+
+def _set_hand(engine: GameEngine, player_id: str, card_ids: list[str]) -> None:
+    player = engine.state.players[player_id]
+    for card_id in player.hand:
+        engine.state.deck.discard_pile.append(card_id)
+    for card_id in card_ids:
+        _remove_card_from_locations(engine, card_id)
+    player.hand = list(card_ids)
+
+
 def test_card_is_placed_in_slot() -> None:
     track = PropagandaTrackState(slots=[None, None, None], overflow="remove_oldest")
 
@@ -73,7 +100,7 @@ def test_slot_positions_are_stable() -> None:
 def test_media_mogul_phase_logs_placement_event(tmp_path: Path) -> None:
     engine = _engine(tmp_path, slots=3)
     media_mogul_id = engine.state.round.media_mogul_player_id
-    engine.state.players[media_mogul_id].hand = ["propaganda_01"]
+    _set_hand(engine, media_mogul_id, ["propaganda_01"])
 
     engine.run_phase("media_mogul_phase")
     events = engine.state.export_events_as_dicts()
@@ -86,7 +113,7 @@ def test_media_mogul_phase_logs_removed_event_on_overflow(tmp_path: Path) -> Non
     engine = _engine(tmp_path, slots=3)
     media_mogul_id = engine.state.round.media_mogul_player_id
     engine.state.propaganda_track.slots = ["oldest", "middle", "newest"]
-    engine.state.players[media_mogul_id].hand = ["propaganda_01"]
+    _set_hand(engine, media_mogul_id, ["propaganda_01"])
 
     engine.run_phase("media_mogul_phase")
     events = engine.state.export_events_as_dicts()
@@ -100,7 +127,7 @@ def test_media_mogul_phase_logs_removed_event_on_overflow(tmp_path: Path) -> Non
 def test_media_mogul_phase_warns_without_suitable_card(tmp_path: Path) -> None:
     engine = _engine(tmp_path, slots=3)
     media_mogul_id = engine.state.round.media_mogul_player_id
-    engine.state.players[media_mogul_id].hand = ["source_01"]
+    _set_hand(engine, media_mogul_id, ["source_01"])
 
     engine.run_phase("media_mogul_phase")
     events = engine.state.export_events_as_dicts()
@@ -110,4 +137,3 @@ def test_media_mogul_phase_warns_without_suitable_card(tmp_path: Path) -> None:
         and "no suitable propaganda or hybrid card" in event["payload"]["message"]
         for event in events
     )
-
