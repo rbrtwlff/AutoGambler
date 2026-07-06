@@ -102,8 +102,14 @@ class CardConfig(BaseModel):
 class BotConfig(BaseModel):
     id: str
     player_id: str | None = None
-    type: Literal["random"] = "random"
+    type: Literal["random", "heuristic"] = "random"
     name: str | None = None
+    skill: float = Field(default=0.7, ge=0, le=1)
+    randomness: float = Field(default=0.2, ge=0, le=1)
+    aggression: float = Field(default=0.55, ge=0, le=1)
+    secrecy: float = Field(default=0.7, ge=0, le=1)
+    propaganda_awareness: float = Field(default=0.6, ge=0, le=1)
+    risk_tolerance: float = Field(default=0.45, ge=0, le=1)
     weights: dict[str, float] = Field(default_factory=dict)
 
 

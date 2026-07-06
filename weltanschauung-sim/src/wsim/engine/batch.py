@@ -57,7 +57,7 @@ class SimulationBatchRunner:
 
         for game_index in iterable:
             seed = self._subseed(game_index)
-            engine = GameEngine(self.rules, self.cards, seed=seed)
+            engine = GameEngine(self.rules, self.cards, seed=seed, bots=self.bots)
             result = engine.run_game()
             game_summaries.append(self._game_summary(game_index, seed, result))
             round_summaries.extend(self._round_summaries(game_index, seed, engine))

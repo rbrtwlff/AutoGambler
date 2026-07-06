@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from wsim.bots import BotContext, LegalActionProvider, RandomBot
+from wsim.bots import BotContext, BotFactory, LegalActionProvider
 from wsim.core.events import EventBus, EventType
 from wsim.core.models import BotConfig, CardConfig, GameConfig
 from wsim.core.state import GameState, PlannedAction, ResolvedAction, RevealedAction
@@ -38,7 +38,7 @@ class PhaseContext:
 
 
 class GameEngine:
-    def __init__(self, config: GameConfig, cards: list[CardConfig], seed: int) -> None:
+    def __init__(self, config: GameConfig, cards: list[CardConfig], seed: int, bots: list[BotConfig] | None = None) -> None:
         self.config = config
         self.cards = cards
         self.seed = seed
@@ -57,10 +57,11 @@ class GameEngine:
         self.winning_condition: str | None = None
         self.tie_info: dict | None = None
         self.legal_actions = LegalActionProvider(config, cards)
-        self.bots = {
-            player.id: RandomBot(BotConfig(id=f"{player.id}_random", player_id=player.id, type="random"))
+        bot_configs = bots or config.bots or [
+            BotConfig(id=f"{player.id}_random", player_id=player.id, type="random")
             for player in config.players
-        }
+        ]
+        self.bots = BotFactory().create_all(bot_configs)
         self.cards_by_id = {card.id: card for card in cards}
         self.victory_checker = VictoryChecker(config)
         self.effect_engine = EffectEngine(config, cards, self.event_bus)
@@ -318,6 +319,9 @@ class GameEngine:
                     "acting_faction_id": acting_faction_id,
                     "target_faction_id": target_faction_id,
                     "commit_reason": commit_decision.reason,
+                    "action_type_reason": action_type_decision.reason,
+                    "acting_faction_reason": acting_decision.reason,
+                    "target_faction_reason": target_decision.reason,
                 },
             )
 

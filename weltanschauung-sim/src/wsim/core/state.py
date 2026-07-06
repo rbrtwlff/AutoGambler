@@ -29,6 +29,9 @@ class GameRng:
     def sample(self, items: list[str], count: int) -> list[str]:
         return self._random.sample(items, count)
 
+    def random_float(self) -> float:
+        return self._random.random()
+
 
 class FactionState(BaseModel):
     id: str

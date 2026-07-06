@@ -3,6 +3,7 @@ from __future__ import annotations
 from wsim.config import ConfigError
 from wsim.core.models import BotConfig
 from wsim.bots.base import BaseBot
+from wsim.bots.heuristic_bot import HeuristicBot
 from wsim.bots.random_bot import RandomBot
 
 
@@ -10,6 +11,8 @@ class BotFactory:
     def create(self, config: BotConfig) -> BaseBot:
         if config.type == "random":
             return RandomBot(config)
+        if config.type == "heuristic":
+            return HeuristicBot(config)
         raise ConfigError(f"Unknown bot type: {config.type}")
 
     def create_all(self, configs: list[BotConfig]) -> dict[str, BaseBot]:
@@ -19,4 +22,3 @@ class BotFactory:
                 raise ConfigError(f"Bot {config.id} must define player_id.")
             bots[config.player_id] = self.create(config)
         return bots
-

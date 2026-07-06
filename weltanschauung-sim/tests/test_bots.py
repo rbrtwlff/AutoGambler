@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from wsim.bots import BotFactory, LegalActionProvider, RandomBot
+from wsim.bots import BotFactory, HeuristicBot, LegalActionProvider
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import create_initial_state
 
@@ -21,15 +21,15 @@ def _fixture():
     return rules, cards, bots, state, provider
 
 
-def test_bot_factory_loads_random_bots() -> None:
+def test_bot_factory_loads_heuristic_bots() -> None:
     rules, _cards, bot_configs, _state, _provider = _fixture()
     bots = BotFactory().create_all(bot_configs)
 
     assert set(bots) == {player.id for player in rules.players}
-    assert all(isinstance(bot, RandomBot) for bot in bots.values())
+    assert all(isinstance(bot, HeuristicBot) for bot in bots.values())
 
 
-def test_random_bot_creates_legal_decisions() -> None:
+def test_heuristic_bot_creates_legal_decisions() -> None:
     _rules, _cards, bot_configs, state, provider = _fixture()
     bot = BotFactory().create(bot_configs[0])
     context = provider.build_context(state, "P1")
@@ -52,7 +52,7 @@ def test_bot_context_contains_no_other_players_secret_information() -> None:
         assert "hand" not in context.public_view["players"][player_id]
 
 
-def test_random_bot_decisions_include_reason() -> None:
+def test_heuristic_bot_decisions_include_reason() -> None:
     _rules, _cards, bot_configs, state, provider = _fixture()
     bot = BotFactory().create(bot_configs[0])
     context = provider.build_context(state, "P1")
@@ -61,5 +61,66 @@ def test_random_bot_decisions_include_reason() -> None:
     decision = bot.choose_target_faction(context, options, state.rng)
 
     assert decision.reason
-    assert decision.considered_options == options
+    assert [item["option"] for item in decision.considered_options] == options
 
+
+def test_heuristic_bot_supports_own_secret_faction() -> None:
+    _rules, _cards, bot_configs, state, provider = _fixture()
+    bot_configs[0].randomness = 0
+    bot = BotFactory().create(bot_configs[0])
+    context = provider.build_context(state, "P1")
+    secret = context.public_view["players"]["P1"]["secret_faction_id"]
+
+    decision = bot.choose_target_faction(context, provider.target_faction_options(context), state.rng)
+
+    assert decision.choice == secret
+    assert "secret faction" in decision.reason
+
+
+def test_heuristic_bot_often_attacks_leading_opponent() -> None:
+    _rules, _cards, bot_configs, state, provider = _fixture()
+    bot_configs[0].randomness = 0
+    state.players["P1"].secret_faction_id = "red"
+    state.factions["red"].population = 4
+    state.factions["black"].population = 20
+    state.factions["yellow"].population = 8
+    state.factions["green"].population = 7
+    bot = BotFactory().create(bot_configs[0])
+    context = provider.build_context(state, "P1")
+
+    attack_decision = bot.choose_action_type(context, provider.action_type_options(context), state.rng)
+    target_decision = bot.choose_target_faction(context, provider.target_faction_options(context), state.rng)
+
+    assert attack_decision.choice == "attack"
+    assert target_decision.choice == "black"
+
+
+def test_heuristic_randomness_changes_decisions_with_different_seed() -> None:
+    _rules, _cards, bot_configs, state, provider = _fixture()
+    bot_configs[0].randomness = 1.0
+    bot = BotFactory().create(bot_configs[0])
+    context = provider.build_context(state, "P1")
+    options = provider.cards_to_commit_options(context)
+
+    choices = {
+        str(bot.choose_cards_to_commit(context, options, state.rng).choice)
+        for state in [create_initial_state(_rules, _cards, seed=seed) for seed in range(10, 30)]
+        for context in [provider.build_context(state, "P1")]
+    }
+
+    assert len(choices) > 1
+
+
+def test_heuristic_reason_is_logged_on_action_commit() -> None:
+    rules, cards, bot_configs, _state, _provider = _fixture()
+    from wsim.engine import GameEngine
+
+    engine = GameEngine(rules, cards, seed=123, bots=bot_configs)
+    engine.run_round()
+
+    committed = [
+        event for event in engine.state.export_events_as_dicts() if event["event_type"] == "action_committed"
+    ]
+    assert committed
+    assert committed[0]["payload"]["action_type_reason"]
+    assert committed[0]["payload"]["target_faction_reason"]
