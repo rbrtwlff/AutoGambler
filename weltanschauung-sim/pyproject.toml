@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weltanschauung-sim"
+version = "0.1.0"
+description = "Lokale Simulationsumgebung fuer ein konfigurierbares asymmetrisches Brettspiel."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.7",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "polars>=1.0",
+    "plotly>=5.22",
+    "streamlit>=1.36",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+]
+
+[project.scripts]
+wsim = "wsim.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
