@@ -1,0 +1,8 @@
+profiles:
+  - id: balanced
+    weights:
+      prefer_own_faction: 3.0
+      prefer_high_population_target: 1.0
+      attack_leader: 2.0
+      random_noise: 0.25
+

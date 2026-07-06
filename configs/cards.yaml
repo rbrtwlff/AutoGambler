@@ -1,0 +1,18 @@
+cards:
+  - id: campaign_leaflets
+    name: Campaign Leaflets
+    tags: [campaign, public]
+    action_type_id: campaign
+  - id: whisper_network
+    name: Whisper Network
+    tags: [support, covert]
+    action_type_id: support
+  - id: smear_story
+    name: Smear Story
+    tags: [attack, media]
+    action_type_id: attack
+  - id: town_hall
+    name: Town Hall
+    tags: [campaign, public]
+    action_type_id: campaign
+

@@ -1,0 +1,8 @@
+outputs_dir: outputs
+event_log_format: jsonl
+summary_format: csv
+chatgpt_package:
+  include_events: true
+  include_config_snapshot: true
+  include_summary: true
+

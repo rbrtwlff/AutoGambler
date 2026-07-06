@@ -1,0 +1,72 @@
+game_id: prototype
+population:
+  total: 100
+  neutral: 80
+factions:
+  - id: red
+    start_population: 5
+  - id: black
+    start_population: 5
+  - id: yellow
+    start_population: 5
+  - id: green
+    start_population: 5
+players:
+  - id: p1
+    faction_id: red
+    bot_profile_id: balanced
+  - id: p2
+    faction_id: black
+    bot_profile_id: balanced
+  - id: p3
+    faction_id: yellow
+    bot_profile_id: balanced
+  - id: p4
+    faction_id: green
+    bot_profile_id: balanced
+special_roles:
+  saboteur:
+    enabled: false
+  journalist:
+    enabled: true
+  media_mogul:
+    enabled: true
+propaganda_track:
+  slots:
+    - id: local
+      label: Local Media
+    - id: national
+      label: National Media
+    - id: underground
+      label: Underground Media
+limits:
+  max_sources_per_player: 3
+  starting_hand_size: 2
+  draft_pick_count: 1
+rounds:
+  max_rounds: 8
+  phases:
+    - draft
+    - planning
+    - resolution
+    - upkeep
+action_types:
+  - id: campaign
+    label: Campaign
+    population_delta: 1
+    requires_target_faction: true
+  - id: attack
+    label: Attack
+    population_delta: -1
+    requires_target_faction: true
+  - id: support
+    label: Support
+    population_delta: 1
+    requires_target_faction: true
+victory_conditions:
+  - id: population_threshold
+    type: faction_population_at_least
+    threshold: 12
+  - id: round_limit_highest_population
+    type: highest_population_at_round_limit
+

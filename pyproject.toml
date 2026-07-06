@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autogambler"
+version = "0.1.0"
+description = "Local simulation engine for a configurable asymmetric board game."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "polars>=1.0",
+    "plotly>=5.22",
+    "streamlit>=1.36",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+]
+
+[project.scripts]
+autogambler = "autogambler.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
