@@ -78,9 +78,16 @@ draft:
   direction: clockwise
 
 victory:
-  conditions:
-    - TODO_configure_secret_faction_goals
-    - TODO_configure_public_end_conditions
+  check_timing:
+    - after_population_change
+    - end_of_round
+    - game_end
+  faction_win_mode: highest_population_at_game_end
+  tie_breakers: shared_win
+  saboteur_win_conditions:
+    - type: destroyed_population_at_least
+      threshold: 100
+    - type: all_factions_zero
 
 analytics:
   outputs_dir: outputs/runs

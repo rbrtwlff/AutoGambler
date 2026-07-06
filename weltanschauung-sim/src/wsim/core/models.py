@@ -59,8 +59,23 @@ class DraftConfig(BaseModel):
     direction: Literal["clockwise", "counterclockwise"] = "clockwise"
 
 
+class SaboteurWinConditionConfig(BaseModel):
+    type: Literal[
+        "total_population_zero",
+        "all_factions_zero",
+        "destroyed_population_at_least",
+        "factions_eliminated_at_least",
+    ]
+    threshold: int | None = None
+
+
 class VictoryConfig(BaseModel):
-    conditions: list[str] = Field(default_factory=list)
+    check_timing: list[Literal["after_population_change", "end_of_round", "game_end"]] = Field(
+        default_factory=lambda: ["game_end"]
+    )
+    faction_win_mode: Literal["highest_population_at_game_end"] = "highest_population_at_game_end"
+    tie_breakers: Literal["shared_win", "no_winner", "configured_order"] = "shared_win"
+    saboteur_win_conditions: list[SaboteurWinConditionConfig] = Field(default_factory=list)
 
 
 class AnalyticsConfig(BaseModel):

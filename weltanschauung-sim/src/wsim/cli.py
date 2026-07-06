@@ -81,6 +81,10 @@ def run_one(
     console.print(f"seed: {result.seed}")
     console.print(f"rounds_played: {result.rounds_played}")
     console.print(f"ended_by: {result.ended_by}")
+    console.print(f"winner_type: {result.winner_type}")
+    console.print(f"winner_player: {result.winner_player}")
+    console.print(f"winner_faction: {result.winner_faction}")
+    console.print(f"winning_condition: {result.winning_condition}")
     console.print(f"events: {result.event_count}")
     console.print(f"final_populations: {result.final_populations}")
 

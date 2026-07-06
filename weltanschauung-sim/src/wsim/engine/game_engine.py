@@ -10,6 +10,7 @@ from wsim.core.events import EventBus, EventType
 from wsim.core.models import BotConfig, CardConfig, GameConfig
 from wsim.core.state import GameState, PlannedAction, ResolvedAction, RevealedAction
 from wsim.engine.setup import create_initial_state
+from wsim.engine.victory import VictoryChecker, VictoryResult
 
 
 class GameResult(BaseModel):
@@ -17,9 +18,11 @@ class GameResult(BaseModel):
     seed: int
     rounds_played: int
     ended_by: Literal["victory", "max_rounds"]
-    winner_type: str | None = None
+    winner_type: Literal["faction", "saboteur", "draw", "none"] = "none"
     winner_player: str | None = None
     winner_faction: str | None = None
+    winning_condition: str | None = None
+    tie_info: dict | None = None
     final_populations: dict[str, int]
     event_count: int
 
@@ -47,19 +50,25 @@ class GameEngine:
             event_log=self.state.event_log,
         )
         self.ended_by: Literal["victory", "max_rounds"] | None = None
-        self.winner_type: str | None = None
+        self.winner_type: Literal["faction", "saboteur", "draw", "none"] = "none"
         self.winner_player: str | None = None
         self.winner_faction: str | None = None
+        self.winning_condition: str | None = None
+        self.tie_info: dict | None = None
         self.legal_actions = LegalActionProvider(config, cards)
         self.bots = {
             player.id: RandomBot(BotConfig(id=f"{player.id}_random", player_id=player.id, type="random"))
             for player in config.players
         }
         self.cards_by_id = {card.id: card for card in cards}
+        self.victory_checker = VictoryChecker(config)
 
     def run_game(self) -> GameResult:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
             self.run_round()
+
+        if self.ended_by is None:
+            self._check_victory("game_end")
 
         if self.ended_by is None:
             self.ended_by = "max_rounds"
@@ -69,6 +78,11 @@ class GameEngine:
                 {
                     "ended_by": self.ended_by,
                     "max_rounds": self.config.round_flow.max_rounds,
+                    "winner_type": self.winner_type,
+                    "winner_player": self.winner_player,
+                    "winner_faction": self.winner_faction,
+                    "winning_condition": self.winning_condition,
+                    "tie_info": self.tie_info,
                 },
             )
 
@@ -93,6 +107,12 @@ class GameEngine:
             if self.ended_by is not None:
                 break
             self.run_phase(phase_name)
+        if (
+            self.ended_by is None
+            and "end_of_round" in self.config.victory.check_timing
+            and "victory_check" not in self.config.round_flow.phases
+        ):
+            self._check_victory("end_of_round")
 
     def run_phase(self, phase_name: str) -> None:
         self.state.round.phase = phase_name
@@ -320,6 +340,8 @@ class GameEngine:
 
     def _phase_action_resolution(self, context: PhaseContext) -> None:
         for revealed_action in context.state.revealed_actions:
+            if self.ended_by is not None:
+                break
             resolved_action = self._resolve_action(context, revealed_action)
             context.state.resolved_actions.append(resolved_action)
             for card_id in revealed_action.committed_card_ids:
@@ -329,17 +351,11 @@ class GameEngine:
                     {"player_id": revealed_action.player_id, "card_id": card_id, "reason": "action_resolved"},
                 )
             context.event_bus.emit(EventType.ACTION_RESOLVED, resolved_action.model_dump())
+            if "after_population_change" in self.config.victory.check_timing:
+                self._check_victory("after_population_change")
 
     def _phase_victory_check(self, context: PhaseContext) -> None:
-        context.event_bus.emit(
-            EventType.VICTORY_CHECKED,
-            {
-                "winner_type": None,
-                "winner_player": None,
-                "winner_faction": None,
-                "message": "Stub victory check: no victory conditions are implemented yet.",
-            },
-        )
+        self._check_victory("end_of_round")
 
     def _ordered_player_ids(self, direction: str) -> list[str]:
         ordered = [player.id for player in sorted(self.config.players, key=lambda player: player.seat)]
@@ -392,6 +408,31 @@ class GameEngine:
             },
         )
         return resolved_action
+
+    def _check_victory(self, timing: str) -> VictoryResult:
+        result = self.victory_checker.check(self.state, timing)
+        self.event_bus.set_context(round_number=self.state.round.round_number, phase=self.state.round.phase)
+        self.event_bus.emit(EventType.VICTORY_CHECKED, result.model_dump())
+        if result.is_win and result.winner_type != "none":
+            self.ended_by = "max_rounds" if timing == "game_end" else "victory"
+            self.winner_type = result.winner_type
+            self.winner_player = result.winner_player
+            self.winner_faction = result.winner_faction
+            self.winning_condition = result.winning_condition
+            self.tie_info = result.tie_info
+            self.event_bus.emit(
+                EventType.GAME_ENDED,
+                {
+                    "ended_by": self.ended_by,
+                    "winner_type": self.winner_type,
+                    "winner_player": self.winner_player,
+                    "winner_faction": self.winner_faction,
+                    "winning_condition": self.winning_condition,
+                    "tie_info": self.tie_info,
+                    "checked_timing": timing,
+                },
+            )
+        return result
 
     def _draw_draft_pack(self, player_id: str, draw_count: int, context: PhaseContext) -> list[str]:
         draft_pack: list[str] = []
@@ -471,6 +512,8 @@ class GameEngine:
             winner_type=self.winner_type,
             winner_player=self.winner_player,
             winner_faction=self.winner_faction,
+            winning_condition=self.winning_condition,
+            tie_info=self.tie_info,
             final_populations={key: faction.population for key, faction in self.state.factions.items()},
             event_count=len(self.state.event_log.events),
         )
