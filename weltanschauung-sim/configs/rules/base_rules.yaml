@@ -1,0 +1,76 @@
+game_id: weltanschauung_base
+player_count: 4
+
+factions:
+  - id: red
+    name: Red
+    start_population: 5
+    eliminated_at_start: false
+  - id: black
+    name: Black
+    start_population: 5
+    eliminated_at_start: false
+  - id: yellow
+    name: Yellow
+    start_population: 5
+    eliminated_at_start: false
+  - id: green
+    name: Green
+    start_population: 5
+    eliminated_at_start: false
+
+population:
+  total_population: 100
+  neutral_start: 80
+
+players:
+  - id: player_1
+    seat: 0
+    faction_id: red
+  - id: player_2
+    seat: 1
+    faction_id: black
+  - id: player_3
+    seat: 2
+    faction_id: yellow
+  - id: player_4
+    seat: 3
+    faction_id: green
+
+roles:
+  start_player: random
+  first_journalist: left_of_start_player
+  first_media_mogul: normal_rules
+
+propaganda:
+  slots: 3
+  overflow: remove_oldest
+
+round_flow:
+  max_rounds: 12
+  phases:
+    - setup
+    - draft
+    - planning
+    - reveal
+    - resolution
+    - cleanup
+
+draft:
+  enabled: true
+  starting_hand_size: 5
+  hidden_research_orders: 2
+  max_sources: 3
+
+victory:
+  conditions:
+    - TODO_configure_secret_faction_goals
+    - TODO_configure_public_end_conditions
+
+analytics:
+  outputs_dir: outputs/runs
+  event_log_format: jsonl
+
+cards: []
+bots: []
+
