@@ -19,7 +19,10 @@ from wsim.core.state import (
     GameRng,
     GameState,
     PlayerState,
+    PlannedAction,
     PropagandaTrackState,
+    ResolvedAction,
+    RevealedAction,
     RoundState,
 )
 
@@ -41,7 +44,10 @@ __all__ = [
     "GameRng",
     "GameState",
     "PlayerState",
+    "PlannedAction",
     "PropagandaTrackState",
+    "ResolvedAction",
+    "RevealedAction",
     "RoundState",
     "EventBus",
     "EventLog",

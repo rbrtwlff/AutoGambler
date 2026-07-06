@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from wsim.bots import BotContext, LegalActionProvider, RandomBot
 from wsim.core.events import EventBus, EventType
 from wsim.core.models import BotConfig, CardConfig, GameConfig
-from wsim.core.state import GameState
+from wsim.core.state import GameState, PlannedAction, ResolvedAction, RevealedAction
 from wsim.engine.setup import create_initial_state
 
 
@@ -55,6 +55,7 @@ class GameEngine:
             player.id: RandomBot(BotConfig(id=f"{player.id}_random", player_id=player.id, type="random"))
             for player in config.players
         }
+        self.cards_by_id = {card.id: card for card in cards}
 
     def run_game(self) -> GameResult:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
@@ -248,6 +249,87 @@ class GameEngine:
             },
         )
 
+    def _phase_planning(self, context: PhaseContext) -> None:
+        context.state.planned_actions.clear()
+        context.state.revealed_actions.clear()
+        context.state.resolved_actions.clear()
+
+        for player_id in self._ordered_player_ids("clockwise"):
+            bot = self.bots[player_id]
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+
+            commit_options = self.legal_actions.cards_to_commit_options(bot_context)
+            commit_decision = bot.choose_cards_to_commit(bot_context, commit_options, context.state.rng)
+            committed_card_ids = list(commit_decision.choice if commit_decision.choice in commit_options else [])
+            legal_hand = set(context.state.players[player_id].hand)
+            committed_card_ids = [card_id for card_id in committed_card_ids if card_id in legal_hand]
+            for card_id in committed_card_ids:
+                context.state.players[player_id].hand.remove(card_id)
+
+            action_type_options = self.legal_actions.action_type_options(bot_context)
+            action_type_decision = bot.choose_action_type(bot_context, action_type_options, context.state.rng)
+            action_type = action_type_decision.choice if action_type_decision.choice in action_type_options else "support"
+
+            acting_options = self.legal_actions.acting_faction_options(bot_context)
+            acting_decision = bot.choose_acting_faction(bot_context, acting_options, context.state.rng)
+            acting_faction_id = acting_decision.choice if acting_decision.choice in acting_options else acting_options[0]
+
+            target_options = self.legal_actions.target_faction_options(bot_context)
+            target_decision = bot.choose_target_faction(bot_context, target_options, context.state.rng)
+            target_faction_id = target_decision.choice if target_decision.choice in target_options else target_options[0]
+
+            planned_action = PlannedAction(
+                player_id=player_id,
+                committed_card_ids=committed_card_ids,
+                action_type=action_type,
+                acting_faction_id=acting_faction_id,
+                target_faction_id=target_faction_id,
+            )
+            context.state.planned_actions[player_id] = planned_action
+            context.event_bus.emit(
+                EventType.ACTION_COMMITTED,
+                {
+                    "player_id": player_id,
+                    "committed_count": len(committed_card_ids),
+                    "action_type": action_type,
+                    "acting_faction_id": acting_faction_id,
+                    "target_faction_id": target_faction_id,
+                    "commit_reason": commit_decision.reason,
+                },
+            )
+
+    def _phase_reveal(self, context: PhaseContext) -> None:
+        context.state.revealed_actions.clear()
+        ordered_actions = sorted(
+            context.state.planned_actions.values(),
+            key=lambda action: (action.initiative_count, self._initiative_tiebreaker_index(action.player_id)),
+        )
+        for reveal_order, action in enumerate(ordered_actions):
+            revealed_action = RevealedAction(
+                player_id=action.player_id,
+                committed_card_ids=list(action.committed_card_ids),
+                action_type=action.action_type,
+                acting_faction_id=action.acting_faction_id,
+                target_faction_id=action.target_faction_id,
+                strength=self._action_strength(action.committed_card_ids),
+                initiative_count=action.initiative_count,
+                reveal_order=reveal_order,
+            )
+            context.state.revealed_actions.append(revealed_action)
+            context.event_bus.emit(EventType.ACTION_REVEALED, revealed_action.model_dump())
+
+    def _phase_action_resolution(self, context: PhaseContext) -> None:
+        for revealed_action in context.state.revealed_actions:
+            resolved_action = self._resolve_action(context, revealed_action)
+            context.state.resolved_actions.append(resolved_action)
+            for card_id in revealed_action.committed_card_ids:
+                context.state.deck.discard_pile.append(card_id)
+                context.event_bus.emit(
+                    EventType.CARD_DISCARDED,
+                    {"player_id": revealed_action.player_id, "card_id": card_id, "reason": "action_resolved"},
+                )
+            context.event_bus.emit(EventType.ACTION_RESOLVED, resolved_action.model_dump())
+
     def _phase_victory_check(self, context: PhaseContext) -> None:
         context.event_bus.emit(
             EventType.VICTORY_CHECKED,
@@ -264,6 +346,52 @@ class GameEngine:
         if direction == "counterclockwise":
             return list(reversed(ordered))
         return ordered
+
+    def _initiative_tiebreaker_index(self, player_id: str) -> int:
+        ordered = self._ordered_player_ids("clockwise")
+        start_index = ordered.index(self.state.round.start_player_id)
+        return ordered[start_index:].index(player_id) if player_id in ordered[start_index:] else len(ordered[start_index:]) + ordered[:start_index].index(player_id)
+
+    def _action_strength(self, committed_card_ids: list[str]) -> int:
+        return sum(self.cards_by_id[card_id].strength for card_id in committed_card_ids if card_id in self.cards_by_id)
+
+    def _resolve_action(self, context: PhaseContext, revealed_action: RevealedAction) -> ResolvedAction:
+        faction = context.state.factions[revealed_action.target_faction_id]
+        population_before = faction.population
+        neutral_before = context.state.neutral_population
+        if revealed_action.action_type == "support":
+            applied_delta = min(revealed_action.strength, context.state.neutral_population)
+            faction.population += applied_delta
+            context.state.neutral_population -= applied_delta
+        else:
+            applied_delta = -min(revealed_action.strength, faction.population)
+            faction.population += applied_delta
+
+        resolved_action = ResolvedAction(
+            player_id=revealed_action.player_id,
+            action_type=revealed_action.action_type,
+            target_faction_id=revealed_action.target_faction_id,
+            strength=revealed_action.strength,
+            population_before=population_before,
+            population_after=faction.population,
+            neutral_before=neutral_before,
+            neutral_after=context.state.neutral_population,
+            applied_delta=applied_delta,
+        )
+        context.event_bus.emit(
+            EventType.POPULATION_CHANGED,
+            {
+                "player_id": revealed_action.player_id,
+                "action_type": revealed_action.action_type,
+                "target_faction_id": revealed_action.target_faction_id,
+                "population_before": population_before,
+                "population_after": faction.population,
+                "neutral_before": neutral_before,
+                "neutral_after": context.state.neutral_population,
+                "applied_delta": applied_delta,
+            },
+        )
+        return resolved_action
 
     def _draw_draft_pack(self, player_id: str, draw_count: int, context: PhaseContext) -> list[str]:
         draft_pack: list[str] = []

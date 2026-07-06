@@ -46,13 +46,7 @@ class LegalActionProvider:
         return options
 
     def action_type_options(self, context: BotContext) -> list[str]:
-        hand = context.public_view["players"][context.player_id]["hand"]
-        card_types = {
-            self.cards_by_id[card_id].type
-            for card_id in hand
-            if card_id in self.cards_by_id and self.cards_by_id[card_id].type in {"action", "propaganda", "hybrid"}
-        }
-        return sorted(card_types) or ["pass"]
+        return ["support", "attack"]
 
     def acting_faction_options(self, context: BotContext) -> list[str]:
         player_view = context.public_view["players"][context.player_id]

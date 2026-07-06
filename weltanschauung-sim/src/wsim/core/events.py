@@ -22,6 +22,7 @@ class EventType(StrEnum):
     PROPAGANDA_REMOVED = "propaganda_removed"
     ACTION_COMMITTED = "action_committed"
     ACTION_REVEALED = "action_revealed"
+    ACTION_RESOLVED = "action_resolved"
     EFFECT_TRIGGERED = "effect_triggered"
     POPULATION_CHANGED = "population_changed"
     VICTORY_CHECKED = "victory_checked"

@@ -74,7 +74,8 @@ def test_run_game_returns_game_result() -> None:
     assert result.game_id == "weltanschauung_base"
     assert result.seed == 777
     assert result.event_count > 0
-    assert result.final_populations == {"red": 5, "black": 5, "yellow": 5, "green": 5}
+    assert set(result.final_populations) == {"red", "black", "yellow", "green"}
+    assert sum(result.final_populations.values()) <= 100
 
 
 def test_cli_run_one_works() -> None:
@@ -95,4 +96,3 @@ def test_cli_run_one_works() -> None:
     assert result.exit_code == 0
     assert "Run complete" in result.stdout
     assert "ended_by: max_rounds" in result.stdout
-

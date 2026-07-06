@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -96,6 +96,41 @@ class RoundState(BaseModel):
     role_assignment_notes: list[str] = Field(default_factory=list)
 
 
+class PlannedAction(BaseModel):
+    player_id: str
+    committed_card_ids: list[str]
+    action_type: Literal["support", "attack"]
+    acting_faction_id: str
+    target_faction_id: str
+
+    @property
+    def initiative_count(self) -> int:
+        return len(self.committed_card_ids)
+
+
+class RevealedAction(BaseModel):
+    player_id: str
+    committed_card_ids: list[str]
+    action_type: Literal["support", "attack"]
+    acting_faction_id: str
+    target_faction_id: str
+    strength: int
+    initiative_count: int
+    reveal_order: int
+
+
+class ResolvedAction(BaseModel):
+    player_id: str
+    action_type: Literal["support", "attack"]
+    target_faction_id: str
+    strength: int
+    population_before: int
+    population_after: int
+    neutral_before: int
+    neutral_after: int
+    applied_delta: int
+
+
 class GameState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -107,6 +142,9 @@ class GameState(BaseModel):
     deck: DeckState
     propaganda_track: PropagandaTrackState
     round: RoundState
+    planned_actions: dict[str, PlannedAction] = Field(default_factory=dict)
+    revealed_actions: list[RevealedAction] = Field(default_factory=list)
+    resolved_actions: list[ResolvedAction] = Field(default_factory=list)
     event_log: EventLog = Field(default_factory=EventLog)
 
     def total_population(self) -> int:
