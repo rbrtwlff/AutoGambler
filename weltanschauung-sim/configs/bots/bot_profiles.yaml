@@ -1,0 +1,18 @@
+bots:
+  - id: P1_random
+    player_id: P1
+    type: random
+    name: Random Bot P1
+  - id: P2_random
+    player_id: P2
+    type: random
+    name: Random Bot P2
+  - id: P3_random
+    player_id: P3
+    type: random
+    name: Random Bot P3
+  - id: P4_random
+    player_id: P4
+    type: random
+    name: Random Bot P4
+

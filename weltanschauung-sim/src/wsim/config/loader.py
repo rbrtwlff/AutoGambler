@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from wsim.core.models import CardConfig, GameConfig
+from wsim.core.models import BotConfig, CardConfig, GameConfig
 
 
 class ConfigError(ValueError):
@@ -74,3 +74,31 @@ def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) 
                 raise ConfigError(f"Card {card.id} references unknown faction {card.faction}.")
 
     return cards
+
+
+def load_bots_config(path: str | Path, rules_config: GameConfig | None = None) -> list[BotConfig]:
+    data = load_yaml(path)
+    raw_bots = data.get("bots")
+    if not isinstance(raw_bots, list):
+        raise ConfigError(f"Bots config {Path(path)} must contain a 'bots' list.")
+
+    try:
+        bots = [BotConfig.model_validate(item) for item in raw_bots]
+    except ValidationError as exc:
+        details = "; ".join(
+            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
+        )
+        raise ConfigError(f"Invalid bots config {Path(path)}: {details}") from exc
+
+    bot_ids = [bot.id for bot in bots]
+    duplicates = sorted({bot_id for bot_id in bot_ids if bot_ids.count(bot_id) > 1})
+    if duplicates:
+        raise ConfigError(f"Bot ids must be unique. Duplicates: {', '.join(duplicates)}")
+
+    if rules_config is not None:
+        player_ids = {player.id for player in rules_config.players}
+        for bot in bots:
+            if bot.player_id is not None and bot.player_id not in player_ids:
+                raise ConfigError(f"Bot {bot.id} references unknown player {bot.player_id}.")
+
+    return bots

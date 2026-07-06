@@ -76,6 +76,8 @@ class CardConfig(BaseModel):
 
 class BotConfig(BaseModel):
     id: str
+    player_id: str | None = None
+    type: Literal["random"] = "random"
     name: str | None = None
     weights: dict[str, float] = Field(default_factory=dict)
 

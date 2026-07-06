@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import random
-from typing import Any
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from wsim.core.events import EventLog
+
+T = TypeVar("T")
 
 
 class GameRng:
@@ -16,6 +18,9 @@ class GameRng:
         self._random = random.Random(seed)
 
     def choice(self, items: list[str]) -> str:
+        return self._random.choice(items)
+
+    def choose(self, items: list[T]) -> T:
         return self._random.choice(items)
 
     def shuffle(self, items: list[str]) -> None:
