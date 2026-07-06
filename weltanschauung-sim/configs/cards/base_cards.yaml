@@ -5,7 +5,14 @@ cards:
     faction: red
     strength: 1
     tags: [red, action, placeholder]
-    action_effects: [{kind: TODO}]
+    action_effects:
+      - trigger: on_reveal
+        type: add_population
+        amount: 2
+        target: target
+        conditions:
+          - type: action_type_is
+            value: support
   - id: red_action_02
     name: Red Action 02
     type: action
@@ -30,8 +37,20 @@ cards:
     faction: red
     strength: 1
     tags: [red, hybrid, placeholder]
-    action_effects: [{kind: TODO}]
-    propaganda_effects: [{kind: TODO}]
+    action_effects:
+      - trigger: on_reveal
+        type: add_strength
+        amount: 1
+        conditions:
+          - type: action_type_is
+            value: attack
+    propaganda_effects:
+      - trigger: when_in_propaganda_before_action_resolution
+        type: add_strength
+        amount: 1
+        conditions:
+          - type: this_card_slot_is
+            position: 2
   - id: red_hybrid_02
     name: Red Hybrid 02
     type: hybrid
@@ -245,13 +264,29 @@ cards:
     name: Propaganda 01
     type: propaganda
     strength: 1
-    tags: [propaganda, placeholder]
-    propaganda_effects: [{kind: TODO}]
+    faction: red
+    tags: [propaganda, red, placeholder]
+    propaganda_effects:
+      - trigger: when_in_propaganda_before_action_resolution
+        type: add_strength
+        amount: 1
+        conditions:
+          - type: this_card_slot_is
+            position: 2
   - id: propaganda_02
     name: Propaganda 02
     type: propaganda
+    faction: red
     strength: 1
-    tags: [propaganda, placeholder]
+    tags: [propaganda, red, placeholder]
+    propaganda_effects:
+      - trigger: when_in_propaganda_before_action_resolution
+        type: add_strength
+        amount: 1
+        conditions:
+          - type: propaganda_contains_faction_count
+            faction: this_card
+            min_count: 2
   - id: propaganda_03
     name: Propaganda 03
     type: propaganda

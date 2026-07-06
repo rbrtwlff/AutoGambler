@@ -73,6 +73,9 @@ def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) 
             if card.faction not in known_factions:
                 raise ConfigError(f"Card {card.id} references unknown faction {card.faction}.")
 
+    from wsim.engine.effects import validate_card_effects
+
+    validate_card_effects(cards)
     return cards
 
 

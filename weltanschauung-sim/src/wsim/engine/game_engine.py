@@ -9,6 +9,7 @@ from wsim.bots import BotContext, LegalActionProvider, RandomBot
 from wsim.core.events import EventBus, EventType
 from wsim.core.models import BotConfig, CardConfig, GameConfig
 from wsim.core.state import GameState, PlannedAction, ResolvedAction, RevealedAction
+from wsim.engine.effects import EffectEngine
 from wsim.engine.setup import create_initial_state
 from wsim.engine.victory import VictoryChecker, VictoryResult
 
@@ -62,6 +63,7 @@ class GameEngine:
         }
         self.cards_by_id = {card.id: card for card in cards}
         self.victory_checker = VictoryChecker(config)
+        self.effect_engine = EffectEngine(config, cards, self.event_bus)
 
     def run_game(self) -> GameResult:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
@@ -130,6 +132,7 @@ class GameEngine:
         handler(context)
 
     def _phase_start_round(self, context: PhaseContext) -> None:
+        self.effect_engine.trigger("on_round_start", state=context.state)
         context.event_bus.emit(
             EventType.WARNING,
             {
@@ -335,6 +338,7 @@ class GameEngine:
                 initiative_count=action.initiative_count,
                 reveal_order=reveal_order,
             )
+            self.effect_engine.trigger("on_reveal", state=context.state, revealed_action=revealed_action)
             context.state.revealed_actions.append(revealed_action)
             context.event_bus.emit(EventType.ACTION_REVEALED, revealed_action.model_dump())
 
@@ -342,6 +346,19 @@ class GameEngine:
         for revealed_action in context.state.revealed_actions:
             if self.ended_by is not None:
                 break
+            self.effect_engine.counters["prevent_population_loss"] = 0
+            self.effect_engine.trigger(
+                "before_action_resolution",
+                state=context.state,
+                revealed_action=revealed_action,
+                target_faction_id=revealed_action.target_faction_id,
+            )
+            self.effect_engine.trigger(
+                "when_in_propaganda_before_action_resolution",
+                state=context.state,
+                revealed_action=revealed_action,
+                target_faction_id=revealed_action.target_faction_id,
+            )
             resolved_action = self._resolve_action(context, revealed_action)
             context.state.resolved_actions.append(resolved_action)
             for card_id in revealed_action.committed_card_ids:
@@ -351,11 +368,18 @@ class GameEngine:
                     {"player_id": revealed_action.player_id, "card_id": card_id, "reason": "action_resolved"},
                 )
             context.event_bus.emit(EventType.ACTION_RESOLVED, resolved_action.model_dump())
+            self.effect_engine.trigger(
+                "after_action_resolution",
+                state=context.state,
+                revealed_action=revealed_action,
+                target_faction_id=revealed_action.target_faction_id,
+            )
             if "after_population_change" in self.config.victory.check_timing:
                 self._check_victory("after_population_change")
 
     def _phase_victory_check(self, context: PhaseContext) -> None:
         self._check_victory("end_of_round")
+        self.effect_engine.trigger("on_round_end", state=context.state)
 
     def _ordered_player_ids(self, direction: str) -> list[str]:
         ordered = [player.id for player in sorted(self.config.players, key=lambda player: player.seat)]
@@ -375,12 +399,19 @@ class GameEngine:
         faction = context.state.factions[revealed_action.target_faction_id]
         population_before = faction.population
         neutral_before = context.state.neutral_population
+        self.effect_engine.trigger(
+            "before_population_change",
+            state=context.state,
+            revealed_action=revealed_action,
+            target_faction_id=revealed_action.target_faction_id,
+        )
         if revealed_action.action_type == "support":
             applied_delta = min(revealed_action.strength, context.state.neutral_population)
             faction.population += applied_delta
             context.state.neutral_population -= applied_delta
         else:
-            applied_delta = -min(revealed_action.strength, faction.population)
+            loss = max(0, revealed_action.strength - self.effect_engine.counters.get("prevent_population_loss", 0))
+            applied_delta = -min(loss, faction.population)
             faction.population += applied_delta
 
         resolved_action = ResolvedAction(
@@ -407,9 +438,17 @@ class GameEngine:
                 "applied_delta": applied_delta,
             },
         )
+        self.effect_engine.trigger(
+            "after_population_change",
+            state=context.state,
+            revealed_action=revealed_action,
+            target_faction_id=revealed_action.target_faction_id,
+            population_delta=applied_delta,
+        )
         return resolved_action
 
     def _check_victory(self, timing: str) -> VictoryResult:
+        self.effect_engine.trigger("on_victory_check", state=self.state)
         result = self.victory_checker.check(self.state, timing)
         self.event_bus.set_context(round_number=self.state.round.round_number, phase=self.state.round.phase)
         self.event_bus.emit(EventType.VICTORY_CHECKED, result.model_dump())
