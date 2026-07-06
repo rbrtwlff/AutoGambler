@@ -6,6 +6,7 @@ import typer
 from rich.console import Console
 
 from wsim import __version__
+from wsim.analytics import generate_report
 from wsim.config import ConfigError, load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import GameEngine, SimulationBatchRunner
 
@@ -125,6 +126,24 @@ def run_batch(
     console.print(f"round_summaries: {result.round_summary_count}")
     console.print(f"event_sample_rows: {result.event_sample_count}")
     console.print(f"output: {result.output_dir}")
+
+
+@app.command("report")
+def report(
+    run: Path = typer.Option(..., "--run", help="Ausgabeordner eines Simulationslaufs."),
+) -> None:
+    """Erzeugt metrics.json und report.md fuer einen Simulationslauf."""
+    try:
+        metrics = generate_report(run)
+    except ValueError as exc:
+        console.print(f"[red]Report failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print("[green]Report complete[/green]")
+    console.print(f"run_id: {metrics['run_id']}")
+    console.print(f"games: {metrics['overview']['game_count']}")
+    console.print(f"metrics: {run / 'metrics.json'}")
+    console.print(f"report: {run / 'report.md'}")
 
 
 if __name__ == "__main__":
