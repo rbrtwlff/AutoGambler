@@ -52,12 +52,15 @@ propaganda:
 round_flow:
   max_rounds: 12
   phases:
-    - setup
+    - start_round
     - draft
+    - journalist_phase
+    - media_mogul_phase
     - planning
     - reveal
-    - resolution
+    - action_resolution
     - cleanup
+    - victory_check
 
 draft:
   enabled: true
