@@ -13,6 +13,8 @@ class EventType(StrEnum):
     INITIAL_STATE_CREATED = "initial_state_created"
     ROUND_STARTED = "round_started"
     PHASE_STARTED = "phase_started"
+    DRAFT_STARTED = "draft_started"
+    DRAFT_FINISHED = "draft_finished"
     CARD_DRAWN = "card_drawn"
     CARD_DRAFTED = "card_drafted"
     CARD_DISCARDED = "card_discarded"
@@ -101,4 +103,3 @@ class EventBus:
 
     def export_jsonl(self, path: str | Path) -> Path:
         return self.event_log.export_jsonl(path)
-

@@ -50,6 +50,11 @@ class DraftConfig(BaseModel):
     starting_hand_size: int = Field(ge=0)
     hidden_research_orders: int = Field(ge=0)
     max_sources: int = Field(ge=0)
+    draw_count: int = Field(default=0, ge=0)
+    pick_count: int = Field(default=0, ge=0)
+    pass_count: int = Field(default=0, ge=0)
+    last_player_discard_count: int = Field(default=0, ge=0)
+    direction: Literal["clockwise", "counterclockwise"] = "clockwise"
 
 
 class VictoryConfig(BaseModel):

@@ -67,6 +67,11 @@ draft:
   starting_hand_size: 5
   hidden_research_orders: 2
   max_sources: 3
+  draw_count: 1
+  pick_count: 1
+  pass_count: 0
+  last_player_discard_count: 0
+  direction: clockwise
 
 victory:
   conditions:

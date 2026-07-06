@@ -5,8 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from wsim.bots import BotContext, LegalActionProvider, RandomBot
 from wsim.core.events import EventBus, EventType
-from wsim.core.models import CardConfig, GameConfig
+from wsim.core.models import BotConfig, CardConfig, GameConfig
 from wsim.core.state import GameState
 from wsim.engine.setup import create_initial_state
 
@@ -49,6 +50,11 @@ class GameEngine:
         self.winner_type: str | None = None
         self.winner_player: str | None = None
         self.winner_faction: str | None = None
+        self.legal_actions = LegalActionProvider(config, cards)
+        self.bots = {
+            player.id: RandomBot(BotConfig(id=f"{player.id}_random", player_id=player.id, type="random"))
+            for player in config.players
+        }
 
     def run_game(self) -> GameResult:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
@@ -111,6 +117,70 @@ class GameEngine:
             },
         )
 
+    def _phase_draft(self, context: PhaseContext) -> None:
+        draft = context.config.draft
+        if not draft.enabled:
+            context.event_bus.emit(EventType.WARNING, {"phase": context.phase_name, "message": "Draft is disabled."})
+            return
+
+        ordered_player_ids = self._ordered_player_ids(draft.direction)
+        context.event_bus.emit(
+            EventType.DRAFT_STARTED,
+            {
+                "draw_count": draft.draw_count,
+                "pick_count": draft.pick_count,
+                "pass_count": draft.pass_count,
+                "last_player_discard_count": draft.last_player_discard_count,
+                "direction": draft.direction,
+                "player_order": ordered_player_ids,
+            },
+        )
+
+        drafted_count = 0
+        discarded_count = 0
+        for player_id in ordered_player_ids:
+            draft_pack = self._draw_draft_pack(player_id, draft.draw_count, context)
+            if not draft_pack:
+                continue
+
+            picked_cards = self._choose_draft_picks(player_id, draft_pack, draft.pick_count, context)
+            for card_id in picked_cards:
+                context.state.players[player_id].hand.append(card_id)
+                drafted_count += 1
+                context.event_bus.emit(
+                    EventType.CARD_DRAFTED,
+                    {
+                        "player_id": player_id,
+                        "card_id": card_id,
+                        "reason": "bot_pick",
+                    },
+                )
+
+            remaining_cards = [card_id for card_id in draft_pack if card_id not in picked_cards]
+            for card_id in remaining_cards:
+                context.state.deck.discard_pile.append(card_id)
+                discarded_count += 1
+                context.event_bus.emit(
+                    EventType.CARD_DISCARDED,
+                    {
+                        "player_id": player_id,
+                        "card_id": card_id,
+                        "reason": "mvp_draft_remainder_discarded",
+                        "future_pass_count": draft.pass_count,
+                    },
+                )
+
+        context.event_bus.emit(
+            EventType.DRAFT_FINISHED,
+            {
+                "drafted_count": drafted_count,
+                "discarded_count": discarded_count,
+                "remaining_deck_count": len(context.state.deck.draw_pile),
+                "discard_pile_count": len(context.state.deck.discard_pile),
+                "note": "MVP draft discards unpicked cards; pass structure is represented in config and events.",
+            },
+        )
+
     def _phase_victory_check(self, context: PhaseContext) -> None:
         context.event_bus.emit(
             EventType.VICTORY_CHECKED,
@@ -121,6 +191,72 @@ class GameEngine:
                 "message": "Stub victory check: no victory conditions are implemented yet.",
             },
         )
+
+    def _ordered_player_ids(self, direction: str) -> list[str]:
+        ordered = [player.id for player in sorted(self.config.players, key=lambda player: player.seat)]
+        if direction == "counterclockwise":
+            return list(reversed(ordered))
+        return ordered
+
+    def _draw_draft_pack(self, player_id: str, draw_count: int, context: PhaseContext) -> list[str]:
+        draft_pack: list[str] = []
+        for _ in range(draw_count):
+            if not context.state.deck.draw_pile:
+                context.event_bus.emit(
+                    EventType.WARNING,
+                    {
+                        "player_id": player_id,
+                        "message": "Draft deck is empty before configured draw_count was reached.",
+                    },
+                )
+                break
+            card_id = context.state.deck.draw_pile.pop(0)
+            draft_pack.append(card_id)
+            context.event_bus.emit(
+                EventType.CARD_DRAWN,
+                {
+                    "player_id": player_id,
+                    "card_id": card_id,
+                    "destination": "draft_pack",
+                    "reason": "draft",
+                },
+            )
+        return draft_pack
+
+    def _choose_draft_picks(
+        self,
+        player_id: str,
+        draft_pack: list[str],
+        pick_count: int,
+        context: PhaseContext,
+    ) -> list[str]:
+        picked_cards: list[str] = []
+        bot = self.bots[player_id]
+        for _ in range(min(pick_count, len(draft_pack))):
+            options = [card_id for card_id in draft_pack if card_id not in picked_cards]
+            if not options:
+                break
+            base_context = self.legal_actions.build_context(context.state, player_id)
+            bot_context = BotContext(
+                player_id=base_context.player_id,
+                public_view=base_context.public_view,
+                rules=base_context.rules,
+                cards_by_id=base_context.cards_by_id,
+            )
+            decision = bot.choose_draft_pick(bot_context, options, context.state.rng)
+            if decision.choice not in options:
+                context.event_bus.emit(
+                    EventType.WARNING,
+                    {
+                        "player_id": player_id,
+                        "message": "Bot returned illegal draft pick; ignored.",
+                        "choice": decision.choice,
+                        "legal_options": options,
+                    },
+                )
+                continue
+            picked_cards.append(decision.choice)
+        return picked_cards
 
     def _phase_stub(self, context: PhaseContext) -> None:
         context.event_bus.emit(
@@ -143,4 +279,3 @@ class GameEngine:
             final_populations={key: faction.population for key, faction in self.state.factions.items()},
             event_count=len(self.state.event_log.events),
         )
-
