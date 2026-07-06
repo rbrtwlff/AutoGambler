@@ -1,0 +1,361 @@
+cards:
+  - id: red_action_01
+    name: Red Action 01
+    type: action
+    faction: red
+    strength: 1
+    tags: [red, action, placeholder]
+    action_effects: [{kind: TODO}]
+  - id: red_action_02
+    name: Red Action 02
+    type: action
+    faction: red
+    strength: 1
+    tags: [red, action, placeholder]
+  - id: red_action_03
+    name: Red Action 03
+    type: action
+    faction: red
+    strength: 2
+    tags: [red, action, placeholder]
+  - id: red_action_04
+    name: Red Action 04
+    type: action
+    faction: red
+    strength: 2
+    tags: [red, action, placeholder]
+  - id: red_hybrid_01
+    name: Red Hybrid 01
+    type: hybrid
+    faction: red
+    strength: 1
+    tags: [red, hybrid, placeholder]
+    action_effects: [{kind: TODO}]
+    propaganda_effects: [{kind: TODO}]
+  - id: red_hybrid_02
+    name: Red Hybrid 02
+    type: hybrid
+    faction: red
+    strength: 2
+    tags: [red, hybrid, placeholder]
+  - id: red_hybrid_03
+    name: Red Hybrid 03
+    type: hybrid
+    faction: red
+    strength: 3
+    tags: [red, hybrid, placeholder]
+  - id: red_hybrid_04
+    name: Red Hybrid 04
+    type: hybrid
+    faction: red
+    strength: 3
+    tags: [red, hybrid, placeholder]
+
+  - id: black_action_01
+    name: Black Action 01
+    type: action
+    faction: black
+    strength: 1
+    tags: [black, action, placeholder]
+  - id: black_action_02
+    name: Black Action 02
+    type: action
+    faction: black
+    strength: 1
+    tags: [black, action, placeholder]
+  - id: black_action_03
+    name: Black Action 03
+    type: action
+    faction: black
+    strength: 2
+    tags: [black, action, placeholder]
+  - id: black_action_04
+    name: Black Action 04
+    type: action
+    faction: black
+    strength: 2
+    tags: [black, action, placeholder]
+  - id: black_hybrid_01
+    name: Black Hybrid 01
+    type: hybrid
+    faction: black
+    strength: 1
+    tags: [black, hybrid, placeholder]
+  - id: black_hybrid_02
+    name: Black Hybrid 02
+    type: hybrid
+    faction: black
+    strength: 2
+    tags: [black, hybrid, placeholder]
+  - id: black_hybrid_03
+    name: Black Hybrid 03
+    type: hybrid
+    faction: black
+    strength: 3
+    tags: [black, hybrid, placeholder]
+  - id: black_hybrid_04
+    name: Black Hybrid 04
+    type: hybrid
+    faction: black
+    strength: 3
+    tags: [black, hybrid, placeholder]
+
+  - id: yellow_action_01
+    name: Yellow Action 01
+    type: action
+    faction: yellow
+    strength: 1
+    tags: [yellow, action, placeholder]
+  - id: yellow_action_02
+    name: Yellow Action 02
+    type: action
+    faction: yellow
+    strength: 1
+    tags: [yellow, action, placeholder]
+  - id: yellow_action_03
+    name: Yellow Action 03
+    type: action
+    faction: yellow
+    strength: 2
+    tags: [yellow, action, placeholder]
+  - id: yellow_action_04
+    name: Yellow Action 04
+    type: action
+    faction: yellow
+    strength: 2
+    tags: [yellow, action, placeholder]
+  - id: yellow_hybrid_01
+    name: Yellow Hybrid 01
+    type: hybrid
+    faction: yellow
+    strength: 1
+    tags: [yellow, hybrid, placeholder]
+  - id: yellow_hybrid_02
+    name: Yellow Hybrid 02
+    type: hybrid
+    faction: yellow
+    strength: 2
+    tags: [yellow, hybrid, placeholder]
+  - id: yellow_hybrid_03
+    name: Yellow Hybrid 03
+    type: hybrid
+    faction: yellow
+    strength: 3
+    tags: [yellow, hybrid, placeholder]
+  - id: yellow_hybrid_04
+    name: Yellow Hybrid 04
+    type: hybrid
+    faction: yellow
+    strength: 3
+    tags: [yellow, hybrid, placeholder]
+
+  - id: green_action_01
+    name: Green Action 01
+    type: action
+    faction: green
+    strength: 1
+    tags: [green, action, placeholder]
+  - id: green_action_02
+    name: Green Action 02
+    type: action
+    faction: green
+    strength: 1
+    tags: [green, action, placeholder]
+  - id: green_action_03
+    name: Green Action 03
+    type: action
+    faction: green
+    strength: 2
+    tags: [green, action, placeholder]
+  - id: green_action_04
+    name: Green Action 04
+    type: action
+    faction: green
+    strength: 2
+    tags: [green, action, placeholder]
+  - id: green_hybrid_01
+    name: Green Hybrid 01
+    type: hybrid
+    faction: green
+    strength: 1
+    tags: [green, hybrid, placeholder]
+  - id: green_hybrid_02
+    name: Green Hybrid 02
+    type: hybrid
+    faction: green
+    strength: 2
+    tags: [green, hybrid, placeholder]
+  - id: green_hybrid_03
+    name: Green Hybrid 03
+    type: hybrid
+    faction: green
+    strength: 3
+    tags: [green, hybrid, placeholder]
+  - id: green_hybrid_04
+    name: Green Hybrid 04
+    type: hybrid
+    faction: green
+    strength: 3
+    tags: [green, hybrid, placeholder]
+
+  - id: neutral_action_01
+    name: Neutral Action 01
+    type: action
+    faction: neutral
+    strength: 1
+    tags: [neutral, action, placeholder]
+  - id: neutral_action_02
+    name: Neutral Action 02
+    type: action
+    faction: neutral
+    strength: 1
+    tags: [neutral, action, placeholder]
+  - id: neutral_action_03
+    name: Neutral Action 03
+    type: action
+    strength: 2
+    tags: [neutral, action, placeholder]
+  - id: neutral_action_04
+    name: Neutral Action 04
+    type: action
+    strength: 2
+    tags: [neutral, action, placeholder]
+  - id: neutral_hybrid_01
+    name: Neutral Hybrid 01
+    type: hybrid
+    strength: 1
+    tags: [neutral, hybrid, placeholder]
+  - id: neutral_hybrid_02
+    name: Neutral Hybrid 02
+    type: hybrid
+    strength: 2
+    tags: [neutral, hybrid, placeholder]
+  - id: neutral_hybrid_03
+    name: Neutral Hybrid 03
+    type: hybrid
+    strength: 3
+    tags: [neutral, hybrid, placeholder]
+  - id: neutral_hybrid_04
+    name: Neutral Hybrid 04
+    type: hybrid
+    strength: 3
+    tags: [neutral, hybrid, placeholder]
+
+  - id: propaganda_01
+    name: Propaganda 01
+    type: propaganda
+    strength: 1
+    tags: [propaganda, placeholder]
+    propaganda_effects: [{kind: TODO}]
+  - id: propaganda_02
+    name: Propaganda 02
+    type: propaganda
+    strength: 1
+    tags: [propaganda, placeholder]
+  - id: propaganda_03
+    name: Propaganda 03
+    type: propaganda
+    strength: 2
+    tags: [propaganda, placeholder]
+  - id: propaganda_04
+    name: Propaganda 04
+    type: propaganda
+    strength: 2
+    tags: [propaganda, placeholder]
+  - id: propaganda_hybrid_01
+    name: Propaganda Hybrid 01
+    type: hybrid
+    strength: 1
+    tags: [propaganda, hybrid, placeholder]
+  - id: propaganda_hybrid_02
+    name: Propaganda Hybrid 02
+    type: hybrid
+    strength: 2
+    tags: [propaganda, hybrid, placeholder]
+  - id: propaganda_hybrid_03
+    name: Propaganda Hybrid 03
+    type: hybrid
+    strength: 3
+    tags: [propaganda, hybrid, placeholder]
+  - id: propaganda_hybrid_04
+    name: Propaganda Hybrid 04
+    type: hybrid
+    strength: 3
+    tags: [propaganda, hybrid, placeholder]
+
+  - id: research_order_01
+    name: Research Order 01
+    type: research_order
+    tags: [research_order, placeholder]
+    notes: Dummy research order.
+  - id: research_order_02
+    name: Research Order 02
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_03
+    name: Research Order 03
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_04
+    name: Research Order 04
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_05
+    name: Research Order 05
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_06
+    name: Research Order 06
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_07
+    name: Research Order 07
+    type: research_order
+    tags: [research_order, placeholder]
+  - id: research_order_08
+    name: Research Order 08
+    type: research_order
+    tags: [research_order, placeholder]
+
+  - id: source_01
+    name: Source 01
+    type: source
+    strength: 1
+    tags: [source, placeholder]
+  - id: source_02
+    name: Source 02
+    type: source
+    strength: 1
+    tags: [source, placeholder]
+  - id: source_03
+    name: Source 03
+    type: source
+    strength: 2
+    tags: [source, placeholder]
+  - id: source_04
+    name: Source 04
+    type: source
+    strength: 2
+    tags: [source, placeholder]
+  - id: source_05
+    name: Source 05
+    type: source
+    strength: 3
+    tags: [source, placeholder]
+  - id: source_06
+    name: Source 06
+    type: source
+    strength: 3
+    tags: [source, placeholder]
+  - id: source_07
+    name: Source 07
+    type: source
+    strength: 4
+    tags: [source, placeholder]
+  - id: source_08
+    name: Source 08
+    type: source
+    strength: 4
+    tags: [source, placeholder]
+    enabled: false
+    notes: Disabled placeholder used by loader tests.

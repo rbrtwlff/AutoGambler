@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -58,8 +58,14 @@ class AnalyticsConfig(BaseModel):
 class CardConfig(BaseModel):
     id: str
     name: str
-    type: str
+    type: Literal["action", "propaganda", "hybrid", "source", "research_order"]
+    faction: str | None = None
+    strength: int = 0
     tags: list[str] = Field(default_factory=list)
+    enabled: bool = True
+    action_effects: list[dict[str, Any]] = Field(default_factory=list)
+    propaganda_effects: list[dict[str, Any]] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class BotConfig(BaseModel):
@@ -110,4 +116,3 @@ class GameConfig(BaseModel):
                 raise ValueError(f"Player {player.id} references unknown faction {player.faction_id}.")
 
         return self
-

@@ -4,7 +4,7 @@ import typer
 from rich.console import Console
 
 from wsim import __version__
-from wsim.config import ConfigError, load_rules_config
+from wsim.config import ConfigError, load_cards_config, load_rules_config
 
 app = typer.Typer(no_args_is_help=True, help="weltanschauung-sim Kommandozeile.")
 console = Console()
@@ -36,6 +36,27 @@ def validate_config(
         "[green]Config OK:[/green] "
         f"{config.game_id} | players={config.player_count} | "
         f"factions={len(config.factions)} | propaganda_slots={config.propaganda.slots}"
+    )
+
+
+@app.command("validate-cards")
+def validate_cards(
+    rules: str = typer.Option(..., "--rules", help="Pfad zur Regeln-YAML-Datei."),
+    cards: str = typer.Option(..., "--cards", help="Pfad zur Karten-YAML-Datei."),
+) -> None:
+    """Validiert eine Karten-Config gegen eine Regeln-Config."""
+    try:
+        rules_config = load_rules_config(rules)
+        card_configs = load_cards_config(cards, rules_config=rules_config)
+    except ConfigError as exc:
+        console.print(f"[red]Cards invalid:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    enabled_count = sum(1 for card in card_configs if card.enabled)
+    disabled_count = len(card_configs) - enabled_count
+    console.print(
+        "[green]Cards OK:[/green] "
+        f"cards={len(card_configs)} | enabled={enabled_count} | disabled={disabled_count}"
     )
 
 

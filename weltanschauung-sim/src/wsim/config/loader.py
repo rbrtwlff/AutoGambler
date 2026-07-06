@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from wsim.core.models import GameConfig
+from wsim.core.models import CardConfig, GameConfig
 
 
 class ConfigError(ValueError):
@@ -45,3 +45,32 @@ def load_rules_config(path: str | Path) -> GameConfig:
         )
         raise ConfigError(f"Invalid rules config {Path(path)}: {details}") from exc
 
+
+def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) -> list[CardConfig]:
+    data = load_yaml(path)
+    raw_cards = data.get("cards")
+    if not isinstance(raw_cards, list):
+        raise ConfigError(f"Cards config {Path(path)} must contain a 'cards' list.")
+
+    try:
+        cards = [CardConfig.model_validate(item) for item in raw_cards]
+    except ValidationError as exc:
+        details = "; ".join(
+            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
+        )
+        raise ConfigError(f"Invalid cards config {Path(path)}: {details}") from exc
+
+    card_ids = [card.id for card in cards]
+    duplicates = sorted({card_id for card_id in card_ids if card_ids.count(card_id) > 1})
+    if duplicates:
+        raise ConfigError(f"Card ids must be unique. Duplicates: {', '.join(duplicates)}")
+
+    if rules_config is not None:
+        known_factions = {faction.id for faction in rules_config.factions}
+        for card in cards:
+            if card.faction in (None, "", "neutral"):
+                continue
+            if card.faction not in known_factions:
+                raise ConfigError(f"Card {card.id} references unknown faction {card.faction}.")
+
+    return cards
