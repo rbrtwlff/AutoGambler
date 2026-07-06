@@ -3,7 +3,15 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from wsim.cli import app
-from wsim.dashboard import default_config_paths, export_chatgpt_package, list_yaml_files, read_table, run_dashboard_simulation
+from wsim.dashboard import (
+    DEFAULT_DASHBOARD_GAMES,
+    DEFAULT_DASHBOARD_SEED,
+    default_config_paths,
+    export_chatgpt_package,
+    list_yaml_files,
+    read_table,
+    run_dashboard_simulation,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +30,8 @@ def test_dashboard_lists_default_configs():
     assert defaults["cards"].exists()
     assert defaults["bots"].exists()
     assert defaults["rules"] in list_yaml_files(defaults["rules"].parent)
+    assert DEFAULT_DASHBOARD_GAMES == 10
+    assert DEFAULT_DASHBOARD_SEED == 123
 
 
 def test_dashboard_core_run_and_export_work(tmp_path):

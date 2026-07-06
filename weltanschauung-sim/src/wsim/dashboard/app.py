@@ -6,6 +6,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from wsim.dashboard.services import (
+    DEFAULT_DASHBOARD_GAMES,
+    DEFAULT_DASHBOARD_SEED,
     OUTPUTS_DIR,
     chart_files,
     default_config_paths,
@@ -92,9 +94,10 @@ def _start_tab() -> None:
 
     col_games, col_seed = st.columns(2)
     with col_games:
-        games = st.number_input("Anzahl Spiele", min_value=1, max_value=1_000_000, value=100, step=100)
+        games = st.number_input("Anzahl Spiele", min_value=1, max_value=1_000_000, value=DEFAULT_DASHBOARD_GAMES, step=10)
+        st.caption("Fuer den ersten Test ist eine kleine Spielzahl vorausgewaehlt.")
     with col_seed:
-        seed = st.number_input("Seed", min_value=1, max_value=2_147_483_647, value=123, step=1)
+        seed = st.number_input("Seed", min_value=1, max_value=2_147_483_647, value=DEFAULT_DASHBOARD_SEED, step=1)
         if st.button("Zufaelligen Seed einsetzen"):
             st.session_state["dashboard_seed"] = random_seed()
             st.rerun()

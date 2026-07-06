@@ -15,6 +15,8 @@ from wsim.engine import SimulationBatchRunner
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OUTPUTS_DIR = PROJECT_ROOT / "outputs" / "runs"
+DEFAULT_DASHBOARD_GAMES = 10
+DEFAULT_DASHBOARD_SEED = 123
 
 
 class DashboardRunResult(BaseModel):
