@@ -50,6 +50,48 @@ class HeuristicBot(BaseBot):
     def choose_research_order_priority(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
         return self._choose_scored("research order priority", context, options, rng, self._score_card)
 
+    def how_many_sources_to_bid(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 source bid", context, options, rng, self._score_source_bid)
+
+    def which_player_to_vote_for(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 media mogul vote", context, options, rng, self._score_player_vote)
+
+    def choose_card_to_contribute_to_draft(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 draft contribution", context, options, rng, self._score_draft_contribution)
+
+    def choose_card_to_take_from_three(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 draft pick from three", context, options, rng, self._score_card)
+
+    def choose_future_set_or_remove_propaganda(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 journalist option", context, options, rng, self._score_journalist_v03_option)
+
+    def choose_card_to_put_on_top_of_draw_deck(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 future set card", context, options, rng, self._score_card)
+
+    def choose_propaganda_to_remove(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 propaganda removal", context, options, rng, self._score_propaganda_to_remove)
+
+    def choose_pool_card_to_discard_as_cost(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 journalist cost card", context, options, rng, lambda c, option: -self._score_card(c, option))
+
+    def choose_one_of_two_as_new_propaganda(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 media mogul propaganda", context, options, rng, self._score_media_card)
+
+    def choose_number_of_cards_for_urn(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 urn card count", context, options, rng, self._score_urn_count)
+
+    def choose_cards_for_urn(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 urn cards", context, options, rng, self._score_urn_cards)
+
+    def choose_completed_research_assignment_to_score(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 completed research assignment", context, options, rng, self._score_card)
+
+    def choose_whether_to_discard_research_assignment(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 research redraw choice", context, options, rng, lambda _context, option: 0.2 if option else 0.0)
+
+    def choose_research_assignment_to_discard(self, context: BotContext, options: list[Any], rng: GameRng) -> BotDecision:
+        return self._choose_scored("v0.3 research assignment discard", context, options, rng, lambda c, option: -self._score_card(c, option))
+
     def _choose_scored(self, label: str, context: BotContext, options: list[Any], rng: GameRng, scorer) -> BotDecision:
         if not options:
             return BotDecision(choice=None, reason=f"{self._bot_name()} had no legal options for {label}.", considered_options=[])
@@ -133,6 +175,118 @@ class HeuristicBot(BaseBot):
         score += len(card_ids) * (self.config.risk_tolerance - 0.25)
         if self._is_endgame(context):
             score += len(card_ids) * 0.8
+        return score
+
+    def _score_source_bid(self, context: BotContext, option: Any) -> float:
+        bid = int(option)
+        player = context.public_view["players"][context.player_id]
+        source_count = int(player.get("source_count", len(player.get("sources", []))))
+        if bid < 0 or bid > source_count:
+            return -100.0
+        journalist_id = context.public_view["round"]["journalist_player_id"]
+        is_journalist = context.player_id == journalist_id
+        if bid == 0:
+            return 0.45 + self.deception * 0.15
+        if is_journalist:
+            return 0.55 + bid * (0.25 + self.directness * 0.2) - bid * bid * 0.08
+        leader = self._leader_faction(context)
+        secret = self._secret_faction(context)
+        pressure = 0.35 + self.config.aggression * 0.25
+        if leader and leader != secret:
+            pressure += 0.15
+        if self.sabotage:
+            pressure += 0.25
+        return pressure * bid - bid * bid * 0.12
+
+    def _score_player_vote(self, context: BotContext, option: Any) -> float:
+        player_id = str(option)
+        if player_id == context.player_id:
+            own_hand = context.public_view["players"][context.player_id].get("hand", [])
+            prop_score = sum(
+                self._score_media_card(context, card_id)
+                for card_id in own_hand
+                if card_id in context.cards_by_id and context.cards_by_id[card_id].type in {"propaganda", "hybrid"}
+            )
+            return 1.0 + self.directness + prop_score * 0.15
+        public_player = context.public_view["players"].get(player_id, {})
+        public_faction = public_player.get("public_faction_id")
+        secret = self._secret_faction(context)
+        score = 0.3
+        if public_faction == secret:
+            score += 0.7
+        if self.sabotage:
+            score += 0.25
+        return score
+
+    def _score_draft_contribution(self, context: BotContext, option: Any) -> float:
+        return -self._score_card(context, option) + self.deception * 0.2
+
+    def _score_journalist_v03_option(self, context: BotContext, option: Any) -> float:
+        action = str(option)
+        if action == "remove_propaganda":
+            harmful = max([self._score_propaganda_to_remove(context, card_id) for card_id in context.public_view["propaganda_track"]["slots"] if card_id], default=0.0)
+            return 0.4 + harmful
+        if action == "future_set":
+            return 0.5 + self.deception * 0.2
+        return 0.0
+
+    def _score_propaganda_to_remove(self, context: BotContext, option: Any) -> float:
+        card = context.cards_by_id.get(str(option))
+        if card is None:
+            return 0.0
+        secret = self._secret_faction(context)
+        leader = self._leader_faction(context)
+        score = 0.2
+        if self._card_matches_secret(card, secret):
+            score -= 2.0 + self.directness
+        if leader and self._card_matches_secret(card, leader):
+            score += 2.0 + self.config.aggression
+        if self.sabotage:
+            score += 0.4 if card.strength > 0 else 0.0
+        return score
+
+    def _score_urn_count(self, context: BotContext, option: Any) -> float:
+        count = int(option)
+        if count <= 0:
+            return -1.0
+        score = 0.6 + min(count, 2) * 0.25
+        if self._is_endgame(context):
+            score += count * 0.15
+        return score - max(0, count - 2) * (0.25 - self.config.risk_tolerance * 0.2)
+
+    def _score_urn_cards(self, context: BotContext, option: Any) -> float:
+        card_ids = list(option)
+        score = sum(self._score_card(context, card_id) for card_id in card_ids)
+        secret = self._secret_faction(context)
+        own_cards = [
+            card_id for card_id in card_ids
+            if card_id in context.cards_by_id and self._card_matches_secret(context.cards_by_id[card_id], secret)
+        ]
+        score += len(own_cards) * (2.0 + self.directness)
+        score += self._pattern_score(context, card_ids)
+        if self.sabotage:
+            score += sum(context.cards_by_id.get(card_id).strength if card_id in context.cards_by_id else 0 for card_id in card_ids) * 0.4
+        return score
+
+    def _pattern_score(self, context: BotContext, card_ids: list[Any]) -> float:
+        strengths = sorted(
+            int(context.cards_by_id[str(card_id)].strength)
+            for card_id in card_ids
+            if str(card_id) in context.cards_by_id
+        )
+        if len(strengths) < 2:
+            return 0.0
+        score = 0.0
+        for strength in set(strengths):
+            count = strengths.count(strength)
+            if count >= 2:
+                score += 0.7
+            if count >= 3:
+                score += 1.2
+        if len(strengths) >= 3:
+            triples = zip(strengths, strengths[1:], strengths[2:])
+            if any(b == a + 1 and c == b + 1 for a, b, c in triples):
+                score += 1.0
         return score
 
     def _score_action_type(self, context: BotContext, option: Any) -> float:

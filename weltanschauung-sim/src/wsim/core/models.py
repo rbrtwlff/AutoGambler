@@ -395,6 +395,7 @@ class GameConfig(BaseModel):
     quality: QualityConfig = Field(default_factory=QualityConfig)
     cards: list[CardConfig] = Field(default_factory=list)
     bots: list[BotConfig] = Field(default_factory=list)
+    v03: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_game_config(self) -> GameConfig:

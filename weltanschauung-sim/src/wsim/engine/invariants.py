@@ -102,6 +102,16 @@ def _validate_card_locations(state: GameState, cards: list[CardConfig], errors: 
         add(card_id, "removed_from_game")
     for card_id in state.deck.research_order_pool:
         add(card_id, "research_order_pool")
+    for card_id in state.draft_pool:
+        add(card_id, "draft_pool")
+    for card_id in state.journalist_pool:
+        add(card_id, "journalist_pool")
+    for card_id in state.media_mogul_pool:
+        add(card_id, "media_mogul_pool")
+    for card_id in state.urn:
+        add(card_id, "urn")
+    for card_id in state.world_history_row:
+        add(card_id, "world_history_row")
     for card_id in state.deck.disabled_cards:
         add(card_id, "disabled_cards")
     for player_id, player in state.players.items():

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import combinations
 from typing import Literal
 
 from pydantic import BaseModel
@@ -73,7 +74,7 @@ class GameEngine:
         while self.ended_by is None and self.state.round.round_number < self.config.round_flow.max_rounds:
             self.run_round()
 
-        if self.ended_by is None:
+        if self.ended_by is None and not self._is_v03_rules():
             self._check_victory("game_end")
 
         if self.ended_by is None:
@@ -149,7 +150,141 @@ class GameEngine:
             },
         )
 
+    def _phase_round_start(self, context: PhaseContext) -> None:
+        self.effect_engine.trigger("on_round_start", state=context.state)
+        context.event_bus.emit(
+            EventType.ROUND_START_SNAPSHOT,
+            {
+                "start_player_id": context.state.round.start_player_id,
+                "journalist_player_id": context.state.round.journalist_player_id,
+                "media_mogul_player_id": context.state.round.media_mogul_player_id,
+                "populations": {key: faction.population for key, faction in context.state.factions.items()},
+                "neutral_population": context.state.neutral_population,
+                "propaganda_slots": context.state.propaganda_track.get_slots(),
+                "players": {
+                    player_id: {
+                        "source_count": len(player.sources),
+                        "hand_size": len(player.hand),
+                        "research_assignment_count": len(player.hidden_research_orders),
+                    }
+                    for player_id, player in context.state.players.items()
+                },
+            },
+        )
+
+    def _phase_journalist_check(self, context: PhaseContext) -> None:
+        journalist_id = context.state.round.journalist_player_id
+        bids: dict[str, int] = {}
+        for player_id in self._ordered_player_ids_from_start():
+            player = context.state.players[player_id]
+            options = list(range(len(player.sources) + 1))
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+            decision = self.bots[player_id].how_many_sources_to_bid(bot_context, options, context.state.rng)
+            bid = int(decision.choice) if decision.choice in options else 0
+            spent = player.sources[:bid]
+            del player.sources[:bid]
+            bids[player_id] = bid
+            for source_id in spent:
+                context.event_bus.emit(
+                    EventType.SOURCE_SPENT,
+                    {
+                        "player_id": player_id,
+                        "source_id": source_id,
+                        "purpose": "journalist_defense" if player_id == journalist_id else "journalist_challenge",
+                        "reason": decision.reason,
+                    },
+                )
+
+        journalist_bid = bids.get(journalist_id, 0)
+        challenger_total = sum(value for player_id, value in bids.items() if player_id != journalist_id)
+        new_journalist_id = journalist_id
+        changed = False
+        if challenger_total > journalist_bid:
+            challenger_bids = {player_id: bid for player_id, bid in bids.items() if player_id != journalist_id}
+            highest_bid = max(challenger_bids.values(), default=0)
+            candidates = [player_id for player_id, bid in challenger_bids.items() if bid == highest_bid]
+            new_journalist_id = self._tiebreak_players(candidates)
+            changed = new_journalist_id != journalist_id
+            if changed:
+                context.state.players[journalist_id].roles = [
+                    role for role in context.state.players[journalist_id].roles if role != "journalist"
+                ]
+                if "journalist" not in context.state.players[new_journalist_id].roles:
+                    context.state.players[new_journalist_id].roles.append("journalist")
+                context.state.round.journalist_player_id = new_journalist_id
+                context.event_bus.emit(
+                    EventType.JOURNALIST_CHANGED,
+                    {
+                        "old_journalist_player_id": journalist_id,
+                        "new_journalist_player_id": new_journalist_id,
+                        "bids": bids,
+                        "journalist_bid": journalist_bid,
+                        "challenger_total": challenger_total,
+                    },
+                )
+
+        context.event_bus.emit(
+            EventType.JOURNALIST_CHECKED,
+            {
+                "journalist_player_id": context.state.round.journalist_player_id,
+                "previous_journalist_player_id": journalist_id,
+                "bids": bids,
+                "journalist_bid": journalist_bid,
+                "challenger_total": challenger_total,
+                "changed": changed,
+            },
+        )
+
+    def _phase_media_mogul_election(self, context: PhaseContext) -> None:
+        player_ids = self._ordered_player_ids_from_start()
+        votes: dict[str, str] = {}
+        context.event_bus.emit(EventType.MEDIA_MOGUL_ELECTION_STARTED, {"candidates": player_ids})
+        for player_id in player_ids:
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+            decision = self.bots[player_id].which_player_to_vote_for(bot_context, player_ids, context.state.rng)
+            vote = str(decision.choice) if decision.choice in player_ids else player_id
+            votes[player_id] = vote
+            context.event_bus.emit(
+                EventType.MEDIA_MOGUL_VOTE_CAST,
+                {"player_id": player_id, "vote_for": vote, "public": True, "reason": decision.reason},
+            )
+
+        counts = {candidate: list(votes.values()).count(candidate) for candidate in player_ids}
+        highest = max(counts.values(), default=0)
+        tied = [player_id for player_id, count in counts.items() if count == highest]
+        if len(tied) == 1:
+            winner = tied[0]
+            tie_breaker = None
+        elif context.state.round.journalist_player_id in tied:
+            winner = context.state.round.start_player_id
+            tie_breaker = "start_player_because_journalist_tied"
+        else:
+            winner = context.state.round.journalist_player_id
+            tie_breaker = "journalist"
+
+        old_media_mogul = context.state.round.media_mogul_player_id
+        context.state.players[old_media_mogul].roles = [
+            role for role in context.state.players[old_media_mogul].roles if role != "media_mogul"
+        ]
+        if "media_mogul" not in context.state.players[winner].roles:
+            context.state.players[winner].roles.append("media_mogul")
+        context.state.round.media_mogul_player_id = winner
+        context.event_bus.emit(
+            EventType.MEDIA_MOGUL_CHANGED,
+            {
+                "old_media_mogul_player_id": old_media_mogul,
+                "new_media_mogul_player_id": winner,
+                "votes": votes,
+                "counts": counts,
+                "tied_candidates": tied,
+                "tie_breaker": tie_breaker,
+            },
+        )
+
     def _phase_draft(self, context: PhaseContext) -> None:
+        if self._is_v03_rules():
+            self._phase_draft_v03(context)
+            return
         draft = context.config.draft
         if not draft.enabled:
             context.event_bus.emit(EventType.WARNING, {"phase": context.phase_name, "message": "Draft is disabled."})
@@ -203,6 +338,336 @@ class GameEngine:
                 "note": "MVP draft discards unpicked cards; pass structure is represented in config and events.",
             },
         )
+
+    def _phase_draft_v03(self, context: PhaseContext) -> None:
+        context.state.draft_pool.clear()
+        context.event_bus.emit(
+            EventType.DRAFT_STARTED,
+            {
+                "mode": "v0_3",
+                "contribution_cards_per_player": 1,
+                "start_player_draws_extra_cards": 2,
+                "cards_seen_each_pick": 3,
+                "cards_taken_each_pick": 1,
+            },
+        )
+        order = self._ordered_player_ids_from_start()
+        contributions: dict[str, str] = {}
+        for player_id in order:
+            player = context.state.players[player_id]
+            if not player.hand:
+                drawn = context.state.deck.draw_cards(
+                    1,
+                    config=context.config.deck,
+                    rng=context.state.rng,
+                    event_bus=context.event_bus,
+                    reason="v03_forced_draft_contribution",
+                    player_id=player_id,
+                    destination="hand",
+                    game_id=context.config.game_id,
+                    round_number=context.state.round.round_number,
+                    phase=context.phase_name,
+                )
+                player.hand.extend(drawn)
+            if not player.hand:
+                context.event_bus.emit(EventType.WARNING, {"player_id": player_id, "message": "No card available for required draft contribution."})
+                continue
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+            decision = self.bots[player_id].choose_card_to_contribute_to_draft(bot_context, list(player.hand), context.state.rng)
+            contribution = str(decision.choice) if decision.choice in player.hand else player.hand[0]
+            player.hand.remove(contribution)
+            contributions[player_id] = contribution
+            context.event_bus.emit(
+                EventType.DRAFT_CONTRIBUTED,
+                {"player_id": player_id, "card_id": contribution, "instance_id": contribution, "face_down": True, "reason": decision.reason},
+            )
+
+        pool: list[str] = []
+        start_player_id = context.state.round.start_player_id
+        if start_player_id in contributions:
+            pool.append(contributions[start_player_id])
+        extra_cards = context.state.deck.draw_cards(
+            2,
+            config=context.config.deck,
+            rng=context.state.rng,
+            event_bus=context.event_bus,
+            reason="v03_start_player_extra_draft_cards",
+            player_id=start_player_id,
+            destination="draft_pool",
+            game_id=context.config.game_id,
+            round_number=context.state.round.round_number,
+            phase=context.phase_name,
+        )
+        pool.extend(extra_cards)
+
+        picked_count = 0
+        for player_id in order:
+            if player_id != start_player_id and player_id in contributions:
+                pool.append(contributions[player_id])
+            while len(pool) < 3:
+                drawn = context.state.deck.draw_cards(
+                    1,
+                    config=context.config.deck,
+                    rng=context.state.rng,
+                    event_bus=context.event_bus,
+                    reason="v03_draft_pool_refill",
+                    player_id=player_id,
+                    destination="draft_pool",
+                    game_id=context.config.game_id,
+                    round_number=context.state.round.round_number,
+                    phase=context.phase_name,
+                )
+                if not drawn:
+                    break
+                pool.extend(drawn)
+            if not pool:
+                continue
+            options = list(pool)
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+            decision = self.bots[player_id].choose_card_to_take_from_three(bot_context, options, context.state.rng)
+            picked = str(decision.choice) if decision.choice in options else options[0]
+            pool.remove(picked)
+            context.state.players[player_id].hand.append(picked)
+            picked_count += 1
+            context.event_bus.emit(
+                EventType.CARD_DRAFTED,
+                {
+                    "player_id": player_id,
+                    "card_id": picked,
+                    "instance_id": picked,
+                    "seen_card_ids": options,
+                    "passed_card_ids": list(pool),
+                    "reason": decision.reason,
+                },
+            )
+            context.event_bus.emit(EventType.DRAFT_PASSED, {"player_id": player_id, "passed_card_ids": list(pool)})
+
+        context.state.journalist_pool.extend(pool)
+        context.event_bus.emit(
+            EventType.DRAFT_FINISHED,
+            {
+                "mode": "v0_3",
+                "drafted_count": picked_count,
+                "journalist_pool_card_ids": list(pool),
+                "contribution_count": len(contributions),
+            },
+        )
+
+    def _phase_journalist_and_media_mogul(self, context: PhaseContext) -> None:
+        journalist_id = context.state.round.journalist_player_id
+        media_mogul_id = context.state.round.media_mogul_player_id
+        extra = context.state.deck.draw_cards(
+            1,
+            config=context.config.deck,
+            rng=context.state.rng,
+            event_bus=context.event_bus,
+            reason="v03_journalist_extra_card",
+            player_id=journalist_id,
+            destination="journalist_pool",
+            game_id=context.config.game_id,
+            round_number=context.state.round.round_number,
+            phase=context.phase_name,
+        )
+        context.state.journalist_pool.extend(extra)
+        context.event_bus.emit(
+            EventType.JOURNALIST_POOL_CREATED,
+            {"player_id": journalist_id, "card_ids": list(context.state.journalist_pool), "pool_size": len(context.state.journalist_pool)},
+        )
+        if not context.state.journalist_pool:
+            context.event_bus.emit(EventType.WARNING, {"phase": context.phase_name, "message": "Journalist pool is empty."})
+            return
+
+        action_options = ["future_set"]
+        prop_cards = [card_id for card_id in context.state.propaganda_track.get_slots() if card_id is not None]
+        if prop_cards and len(context.state.journalist_pool) >= 1:
+            action_options.append("remove_propaganda")
+        bot_context = self.legal_actions.build_context(context.state, journalist_id)
+        action_decision = self.bots[journalist_id].choose_future_set_or_remove_propaganda(
+            bot_context,
+            action_options,
+            context.state.rng,
+        )
+        action = str(action_decision.choice) if action_decision.choice in action_options else "future_set"
+
+        if action == "remove_propaganda" and prop_cards:
+            remove_decision = self.bots[journalist_id].choose_propaganda_to_remove(bot_context, prop_cards, context.state.rng)
+            target_prop = str(remove_decision.choice) if remove_decision.choice in prop_cards else prop_cards[0]
+            removed = context.state.propaganda_track.remove_card(target_prop)
+            if removed is not None:
+                context.state.deck.discard_card(removed, event_bus=context.event_bus, reason="v03_journalist_remove_propaganda", player_id=journalist_id)
+                context.event_bus.emit(EventType.PROPAGANDA_REMOVED, {"card_id": removed, "reason": remove_decision.reason, "slots": context.state.propaganda_track.get_slots()})
+            cost_decision = self.bots[journalist_id].choose_pool_card_to_discard_as_cost(
+                bot_context,
+                list(context.state.journalist_pool),
+                context.state.rng,
+            )
+            cost_card = str(cost_decision.choice) if cost_decision.choice in context.state.journalist_pool else context.state.journalist_pool[0]
+            context.state.journalist_pool.remove(cost_card)
+            context.state.deck.discard_card(cost_card, event_bus=context.event_bus, reason="v03_journalist_pool_cost", player_id=journalist_id)
+            context.event_bus.emit(
+                EventType.JOURNALIST_ACTION_TAKEN,
+                {
+                    "player_id": journalist_id,
+                    "action": action,
+                    "removed_propaganda_card_id": removed,
+                    "discarded_pool_card_id": cost_card,
+                    "action_reason": action_decision.reason,
+                    "remove_reason": remove_decision.reason,
+                    "cost_reason": cost_decision.reason,
+                },
+            )
+        else:
+            top_decision = self.bots[journalist_id].choose_card_to_put_on_top_of_draw_deck(
+                bot_context,
+                list(context.state.journalist_pool),
+                context.state.rng,
+            )
+            top_card = str(top_decision.choice)
+            if top_card not in context.state.journalist_pool:
+                top_card = context.state.journalist_pool[0]
+            context.state.journalist_pool.remove(top_card)
+            context.state.deck.draw_pile.insert(0, top_card)
+            context.event_bus.emit(
+                EventType.CARD_MOVED_TO_TOP_OF_DECK,
+                {"player_id": journalist_id, "card_id": top_card, "instance_id": top_card, "reason": top_decision.reason},
+            )
+            context.event_bus.emit(
+                EventType.JOURNALIST_ACTION_TAKEN,
+                {"player_id": journalist_id, "action": "future_set", "action_reason": action_decision.reason, "top_card_reason": top_decision.reason},
+            )
+
+        context.state.media_mogul_pool.extend(context.state.journalist_pool[:2])
+        context.state.journalist_pool.clear()
+        if not context.state.media_mogul_pool:
+            context.event_bus.emit(EventType.WARNING, {"phase": context.phase_name, "message": "Media mogul received no cards."})
+            return
+        media_context = self.legal_actions.build_context(context.state, media_mogul_id)
+        media_options = list(context.state.media_mogul_pool)
+        media_decision = self.bots[media_mogul_id].choose_one_of_two_as_new_propaganda(media_context, media_options, context.state.rng)
+        chosen = str(media_decision.choice) if media_decision.choice in media_options else media_options[0]
+        context.state.media_mogul_pool.remove(chosen)
+        displaced = context.state.propaganda_track.place_card_newest(chosen)
+        if displaced is not None:
+            context.state.deck.discard_card(displaced, event_bus=context.event_bus, reason="v03_propaganda_displaced")
+            context.event_bus.emit(EventType.PROPAGANDA_REMOVED, {"card_id": displaced, "reason": "v03_slot_4_displaced", "slots": context.state.propaganda_track.get_slots()})
+        for unchosen in list(context.state.media_mogul_pool):
+            context.state.deck.discard_card(unchosen, event_bus=context.event_bus, reason="v03_media_mogul_unchosen", player_id=media_mogul_id)
+        context.state.media_mogul_pool.clear()
+        context.event_bus.emit(EventType.PROPAGANDA_PLACED, {"player_id": media_mogul_id, "card_id": chosen, "reason": media_decision.reason, "slots": context.state.propaganda_track.get_slots()})
+        context.event_bus.emit(EventType.MEDIA_MOGUL_ACTION_TAKEN, {"player_id": media_mogul_id, "card_id": chosen, "reason": media_decision.reason})
+
+    def _phase_discussion(self, context: PhaseContext) -> None:
+        context.event_bus.emit(EventType.DISCUSSION_HELD, {"mode": "noop", "message": "Discussion/Intrigue is a v0.3 no-op placeholder."})
+
+    def _phase_urn(self, context: PhaseContext) -> None:
+        context.state.urn.clear()
+        for player_id in self._ordered_player_ids_from_start():
+            player = context.state.players[player_id]
+            if not player.hand:
+                continue
+            max_count = min(3, len(player.hand))
+            bot_context = self.legal_actions.build_context(context.state, player_id)
+            count_options = list(range(1, max_count + 1))
+            count_decision = self.bots[player_id].choose_number_of_cards_for_urn(bot_context, count_options, context.state.rng)
+            chosen_count = int(count_decision.choice) if count_decision.choice in count_options else 1
+            options = [list(combo) for combo in combinations(player.hand, chosen_count)]
+            decision = self.bots[player_id].choose_cards_for_urn(bot_context, options, context.state.rng)
+            chosen_cards = list(decision.choice) if decision.choice in options else options[0]
+            for card_id in chosen_cards:
+                if card_id in player.hand:
+                    player.hand.remove(card_id)
+                    context.state.urn.append(card_id)
+                    context.event_bus.emit(
+                        EventType.URN_CARD_SUBMITTED,
+                        {
+                            "player_id": player_id,
+                            "card_id": card_id,
+                            "instance_id": card_id,
+                            "anonymous": True,
+                            "count_reason": count_decision.reason,
+                            "reason": decision.reason,
+                        },
+                    )
+        before_shuffle = list(context.state.urn)
+        context.state.rng.shuffle(context.state.urn)
+        context.event_bus.emit(EventType.URN_SHUFFLED, {"card_count": len(context.state.urn), "changed_order": before_shuffle != context.state.urn})
+
+    def _phase_world_history_and_combat(self, context: PhaseContext) -> None:
+        context.state.world_history_row = list(context.state.urn)
+        context.state.urn.clear()
+        row = list(context.state.world_history_row)
+        context.event_bus.emit(EventType.WORLD_HISTORY_REVEALED, {"card_ids": row, "order_relevant": True})
+        base_power = self._world_history_base_power(row)
+        propaganda_power = self._active_propaganda_power(base_power)
+        total_power = {
+            faction_id: base_power.get(faction_id, 0) + propaganda_power.get(faction_id, 0)
+            for faction_id in context.state.factions
+        }
+        context.event_bus.emit(
+            EventType.WORLD_HISTORY_POWER_CALCULATED,
+            {"base_power": base_power, "propaganda_power": propaganda_power, "total_power": total_power},
+        )
+        deltas = {faction_id: 0 for faction_id in context.state.factions}
+        for attacker, defender in self._world_history_transitions(row):
+            if attacker is None:
+                if defender is not None and total_power.get(defender, 0) > 0:
+                    deltas[defender] += 2 if total_power[defender] >= 12 else 1
+                continue
+            if defender is None or attacker == defender:
+                continue
+            margin = total_power.get(attacker, 0) - total_power.get(defender, 0)
+            if margin <= 0:
+                continue
+            impact = self._combat_impact(margin)
+            deltas[defender] -= impact
+            deltas["neutral"] = deltas.get("neutral", 0) + impact
+
+        before = {faction_id: faction.population for faction_id, faction in context.state.factions.items()}
+        neutral_before = context.state.neutral_population
+        applied: dict[str, int] = {}
+        for faction_id, delta in deltas.items():
+            if faction_id == "neutral" or delta == 0:
+                continue
+            faction = context.state.factions[faction_id]
+            if delta < 0:
+                actual = -min(faction.population, abs(delta))
+                faction.population += actual
+                context.state.neutral_population -= actual
+                applied[faction_id] = actual
+            else:
+                actual = min(context.state.neutral_population, delta)
+                faction.population += actual
+                context.state.neutral_population -= actual
+                applied[faction_id] = actual
+        context.event_bus.emit(
+            EventType.COMBAT_RESOLVED,
+            {
+                "base_power": base_power,
+                "propaganda_power": propaganda_power,
+                "total_power": total_power,
+                "requested_deltas": deltas,
+                "applied_deltas": applied,
+                "population_before": before,
+                "population_after": {faction_id: faction.population for faction_id, faction in context.state.factions.items()},
+                "neutral_before": neutral_before,
+                "neutral_after": context.state.neutral_population,
+                "simultaneous": True,
+            },
+        )
+        for faction_id, delta in applied.items():
+            context.event_bus.emit(
+                EventType.POPULATION_CHANGED,
+                {
+                    "player_id": None,
+                    "action_type": "v03_world_history_combat",
+                    "target_faction_id": faction_id,
+                    "population_before": before[faction_id],
+                    "population_after": context.state.factions[faction_id].population,
+                    "neutral_before": neutral_before,
+                    "neutral_after": context.state.neutral_population,
+                    "applied_delta": delta,
+                },
+            )
 
     def _phase_media_mogul_phase(self, context: PhaseContext) -> None:
         media_mogul_player_id = context.state.round.media_mogul_player_id
@@ -520,14 +985,246 @@ class GameEngine:
                 self._check_victory("after_population_change")
 
     def _phase_victory_check(self, context: PhaseContext) -> None:
+        if self._is_v03_rules():
+            self._check_v03_victory(context)
+            return
         self._check_victory("end_of_round")
         self.effect_engine.trigger("on_round_end", state=context.state)
+
+    def _phase_research_assignments(self, context: PhaseContext) -> None:
+        if self.ended_by is not None:
+            return
+        completed_count = 0
+        discarded_count = 0
+        for player_id in self._ordered_player_ids_from_start():
+            player = context.state.players[player_id]
+            if player.hidden_research_orders:
+                bot_context = self.legal_actions.build_context(context.state, player_id)
+                decision = self.bots[player_id].choose_completed_research_assignment_to_score(
+                    bot_context,
+                    list(player.hidden_research_orders),
+                    context.state.rng,
+                )
+                selected = str(decision.choice) if decision.choice in player.hidden_research_orders else player.hidden_research_orders[0]
+                if self._research_order_is_fulfilled(selected, context):
+                    player.hidden_research_orders.remove(selected)
+                    context.state.deck.discard_card(selected, event_bus=context.event_bus, reason="v03_research_order_completed", player_id=player_id)
+                    if len(player.sources) < player.max_sources:
+                        player.sources.append(f"source_token_{context.state.round.round_number}_{player_id}_{len(player.sources) + 1}")
+                    completed_count += 1
+                    context.event_bus.emit(
+                        EventType.RESEARCH_ORDER_COMPLETED,
+                        {"player_id": player_id, "card_id": selected, "source_reward": 1, "reason": decision.reason},
+                    )
+                else:
+                    redraw_decision = self.bots[player_id].choose_whether_to_discard_research_assignment(
+                        bot_context,
+                        [True, False],
+                        context.state.rng,
+                    )
+                    if redraw_decision.choice is not True:
+                        continue
+                    discard_decision = self.bots[player_id].choose_research_assignment_to_discard(
+                        bot_context,
+                        list(player.hidden_research_orders),
+                        context.state.rng,
+                    )
+                    selected = str(discard_decision.choice) if discard_decision.choice in player.hidden_research_orders else selected
+                    player.hidden_research_orders.remove(selected)
+                    context.state.deck.discard_card(selected, event_bus=context.event_bus, reason="v03_research_order_redraw", player_id=player_id)
+                    discarded_count += 1
+                    context.event_bus.emit(
+                        EventType.RESEARCH_ORDER_DISCARDED,
+                        {
+                            "player_id": player_id,
+                            "card_id": selected,
+                            "redraw_reason": redraw_decision.reason,
+                            "discard_reason": discard_decision.reason,
+                            "reason": "v0.3 TODO fulfillment stub allowed redraw.",
+                        },
+                    )
+            while len(player.hidden_research_orders) < 2 and context.state.deck.research_order_pool:
+                drawn = context.state.deck.research_order_pool.pop(0)
+                player.hidden_research_orders.append(drawn)
+                context.event_bus.emit(
+                    EventType.CARD_DRAWN,
+                    {
+                        "player_id": player_id,
+                        "card_id": context.state.deck.logical_card_id(drawn),
+                        "instance_id": drawn,
+                        "destination": "hidden_research_orders",
+                        "reason": "v03_research_assignment_refill",
+                    },
+                )
+        context.event_bus.emit(
+            EventType.RESEARCH_ASSIGNMENTS_CHECKED,
+            {"completed_count": completed_count, "discarded_count": discarded_count, "todo": "Concrete assignment fulfillment logic is not implemented yet."},
+        )
+
+    def _phase_round_end(self, context: PhaseContext) -> None:
+        if self.ended_by is not None:
+            return
+        moved_cards = list(context.state.world_history_row)
+        for card_id in moved_cards:
+            context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="v03_world_history_row_cleanup")
+        context.state.world_history_row.clear()
+        ordered = self._ordered_player_ids("clockwise")
+        current_index = ordered.index(context.state.round.start_player_id)
+        context.state.round.start_player_id = ordered[(current_index + 1) % len(ordered)]
+        self.effect_engine.trigger("on_round_end", state=context.state)
+        context.event_bus.emit(
+            EventType.ROUND_ENDED,
+            {
+                "discarded_world_history_card_ids": moved_cards,
+                "next_start_player_id": context.state.round.start_player_id,
+                "round": context.state.round.round_number,
+            },
+        )
 
     def _ordered_player_ids(self, direction: str) -> list[str]:
         ordered = [player.id for player in sorted(self.config.players, key=lambda player: player.seat)]
         if direction == "counterclockwise":
             return list(reversed(ordered))
         return ordered
+
+    def _is_v03_rules(self) -> bool:
+        return bool(self.config.v03) or "world_history_and_combat" in self.config.round_flow.phases
+
+    def _ordered_player_ids_from_start(self) -> list[str]:
+        ordered = self._ordered_player_ids("clockwise")
+        start_index = ordered.index(self.state.round.start_player_id)
+        return ordered[start_index:] + ordered[:start_index]
+
+    def _tiebreak_players(self, candidates: list[str]) -> str:
+        ordered = self._ordered_player_ids_from_start()
+        for player_id in ordered:
+            if player_id in candidates:
+                return player_id
+        return candidates[0]
+
+    def _world_history_base_power(self, row: list[str]) -> dict[str, int]:
+        power = {faction_id: 0 for faction_id in self.state.factions}
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is None or card.faction not in power:
+                continue
+            power[card.faction] += max(0, int(card.strength))
+        return power
+
+    def _active_propaganda_power(self, base_power: dict[str, int]) -> dict[str, int]:
+        slot_factors = self.config.v03.get("propaganda", {}).get("slot_factors", [1 for _ in self.state.propaganda_track.get_slots()])
+        power = {faction_id: 0 for faction_id in self.state.factions}
+        for index, card_id in enumerate(self.state.propaganda_track.get_slots()):
+            if card_id is None:
+                continue
+            card = self.cards_by_id.get(card_id)
+            if card is None or card.faction not in power:
+                continue
+            if base_power.get(card.faction, 0) <= 0:
+                continue
+            factor = int(slot_factors[index]) if index < len(slot_factors) else 1
+            power[card.faction] += max(0, int(card.strength)) * factor
+        return power
+
+    def _world_history_transitions(self, row: list[str]) -> list[tuple[str | None, str | None]]:
+        transitions: list[tuple[str | None, str | None]] = []
+        factions = [self.cards_by_id[card_id].faction if card_id in self.cards_by_id else None for card_id in row]
+        if len(factions) == 1:
+            transitions.append((None, factions[0]))
+        for left, right in zip(factions, factions[1:]):
+            transitions.append((left, right))
+        return transitions
+
+    def _combat_impact(self, margin: int) -> int:
+        bands = self.config.v03.get("combat", {}).get("impact_by_margin", [])
+        for band in bands:
+            minimum = int(band.get("min", 0))
+            maximum = band.get("max")
+            if margin >= minimum and (maximum is None or margin <= int(maximum)):
+                return int(band.get("impact", 0))
+        if margin >= 12:
+            return 4
+        if margin >= 8:
+            return 3
+        if margin >= 4:
+            return 2
+        return 1 if margin >= 1 else 0
+
+    def _research_order_is_fulfilled(self, card_id: str, context: PhaseContext) -> bool:
+        context.event_bus.emit(
+            EventType.RESEARCH_ASSIGNMENTS_CHECKED,
+            {
+                "card_id": card_id,
+                "fulfilled": False,
+                "todo": "Concrete v0.3 research assignment fulfillment logic is not implemented yet.",
+            },
+        )
+        return False
+
+    def _check_v03_victory(self, context: PhaseContext) -> None:
+        for faction in context.state.factions.values():
+            faction.eliminated = faction.population <= 0
+        populations = {faction_id: faction.population for faction_id, faction in context.state.factions.items()}
+        propaganda_power = self._active_propaganda_power(self._world_history_base_power(context.state.world_history_row))
+        results: list[dict[str, str]] = []
+        living = [faction_id for faction_id, population in populations.items() if population > 0]
+        if not living:
+            results.append({"tier": "collapse", "winner_type": "none", "winner_faction": ""})
+        elif len(living) == 1:
+            results.append({"tier": "hegemony", "winner_type": "faction", "winner_faction": living[0]})
+        for faction_id, population in populations.items():
+            if population >= int(self.config.v03.get("victory", {}).get("dominance", {}).get("population_threshold", 55)):
+                if propaganda_power.get(faction_id, 0) >= int(self.config.v03.get("victory", {}).get("dominance", {}).get("propaganda_power_threshold", 15)):
+                    results.append({"tier": "dominance", "winner_type": "faction", "winner_faction": faction_id})
+            own_prop_count = sum(
+                1
+                for card_id in context.state.propaganda_track.get_slots()
+                if card_id in self.cards_by_id and self.cards_by_id[card_id].faction == faction_id
+            )
+            breakthrough = self.config.v03.get("victory", {}).get("breakthrough", {})
+            if (
+                population >= int(breakthrough.get("population_threshold", 35))
+                and own_prop_count >= int(breakthrough.get("own_propaganda_cards_threshold", 3))
+                and propaganda_power.get(faction_id, 0) >= int(breakthrough.get("final_power_threshold", 12))
+            ):
+                results.append({"tier": "breakthrough", "winner_type": "faction", "winner_faction": faction_id})
+
+        order = list(self.config.v03.get("victory", {}).get("order", ["collapse", "hegemony", "dominance", "breakthrough"]))
+        ordered_results = sorted(results, key=lambda item: order.index(item["tier"]) if item["tier"] in order else len(order))
+        chosen = ordered_results[0] if ordered_results else None
+        same_tier = [item for item in ordered_results if chosen is not None and item["tier"] == chosen["tier"]]
+        is_win = chosen is not None and len(same_tier) == 1 and chosen["winner_type"] != "none"
+        payload = {
+            "is_win": is_win,
+            "winner_type": chosen["winner_type"] if is_win and chosen else "none",
+            "winner_faction": chosen["winner_faction"] if is_win and chosen else None,
+            "winner_player": None,
+            "winning_condition": chosen["tier"] if is_win and chosen else None,
+            "checked_timing": "v0_3_victory_check",
+            "tie_info": {"same_tier_results": same_tier} if chosen is not None and len(same_tier) > 1 else None,
+            "populations": populations,
+            "propaganda_power": propaganda_power,
+            "eliminated_factions": [faction_id for faction_id, faction in context.state.factions.items() if faction.eliminated],
+            "order": order,
+        }
+        context.event_bus.emit(EventType.VICTORY_CHECKED, payload)
+        if is_win and chosen is not None:
+            self.ended_by = "victory"
+            self.winner_type = "faction"
+            self.winner_faction = chosen["winner_faction"]
+            self.winning_condition = chosen["tier"]
+            context.event_bus.emit(
+                EventType.GAME_ENDED,
+                {
+                    "ended_by": self.ended_by,
+                    "winner_type": self.winner_type,
+                    "winner_player": self.winner_player,
+                    "winner_faction": self.winner_faction,
+                    "winning_condition": self.winning_condition,
+                    "tie_info": self.tie_info,
+                    "checked_timing": "v0_3_victory_check",
+                },
+            )
 
     def _initiative_tiebreaker_index(self, player_id: str) -> int:
         ordered = self._ordered_player_ids("clockwise")

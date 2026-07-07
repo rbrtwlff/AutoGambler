@@ -147,6 +147,7 @@ def _v03_to_game_config_data(v03: RulesV03Config) -> dict[str, Any]:
         "quality": {},
         "cards": [],
         "bots": [],
+        "v03": v03.model_dump(mode="json"),
     }
 
 

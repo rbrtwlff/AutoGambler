@@ -222,6 +222,14 @@ class PropagandaTrackState(BaseModel):
         self.slots.append(None)
         return card_id
 
+    def place_card_newest(self, card: str) -> str | None:
+        occupied = [slot for slot in self.slots if slot is not None]
+        updated = [card, *occupied]
+        removed_card = updated.pop() if len(updated) > len(self.slots) else None
+        updated.extend([None] * (len(self.slots) - len(updated)))
+        self.slots = updated
+        return removed_card
+
     def get_slots(self) -> list[str | None]:
         return list(self.slots)
 
@@ -290,6 +298,11 @@ class GameState(BaseModel):
     planned_actions: dict[str, PlannedAction] = Field(default_factory=dict)
     revealed_actions: list[RevealedAction] = Field(default_factory=list)
     resolved_actions: list[ResolvedAction] = Field(default_factory=list)
+    draft_pool: list[str] = Field(default_factory=list)
+    journalist_pool: list[str] = Field(default_factory=list)
+    media_mogul_pool: list[str] = Field(default_factory=list)
+    urn: list[str] = Field(default_factory=list)
+    world_history_row: list[str] = Field(default_factory=list)
     event_log: EventLog = Field(default_factory=EventLog)
 
     def total_population(self) -> int:
@@ -328,6 +341,8 @@ class GameState(BaseModel):
                 "disabled_card_count": len(self.deck.disabled_cards),
             },
             "propaganda_track": self.propaganda_track.serialize(),
+            "urn_count": len(self.urn),
+            "world_history_row": list(self.world_history_row),
             "round": self.round.model_dump(),
             "event_count": len(self.event_log.events),
         }
