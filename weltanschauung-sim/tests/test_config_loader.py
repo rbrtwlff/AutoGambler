@@ -95,7 +95,7 @@ def test_rules_v0_3_config_loads() -> None:
     assert config.population.neutral_start == 80
     assert config.draft.starting_hand_size == 5
     assert config.draft.hidden_research_orders == 2
-    assert config.draft.max_sources == 3
+    assert config.draft.max_sources == 99
     assert config.propaganda.slots == 4
     assert config.deck.reshuffle_discard_when_empty is True
     assert config.deck.when_not_enough_cards == "draw_less"

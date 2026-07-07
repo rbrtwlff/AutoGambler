@@ -128,7 +128,8 @@ class SimulationBatchRunner:
         for event in events:
             if event["event_type"] != "victory_checked" or event["round"] <= 0:
                 continue
-            if event["payload"].get("checked_timing") != "end_of_round":
+            checked_timing = event["payload"].get("checked_timing")
+            if checked_timing not in {"end_of_round", "v0_3_victory_check"}:
                 continue
             summaries.append(self._round_summary_from_events(game_index, seed, event["round"], events))
         return summaries
@@ -151,6 +152,8 @@ class SimulationBatchRunner:
             payload = event["payload"]
             populations[payload["target_faction_id"]] = payload["population_after"]
             neutral_population = payload["neutral_after"]
+        active_population = neutral_population + sum(populations.values())
+        destroyed_population = max(0, self.rules.population.total_population - active_population)
 
         round_events = [event for event in events if event["round"] == round_number]
         attacks = sum(
@@ -169,6 +172,19 @@ class SimulationBatchRunner:
             if event["event_type"] == "action_revealed"
         )
         propaganda_slots = self._latest_prop_slots(round_number, events)
+        snapshot = _latest_payload(round_events, "round_start_snapshot")
+        world_power = _latest_payload(round_events, "world_history_power_calculated")
+        combat = _latest_payload(round_events, "combat_resolved")
+        world_history = _latest_payload(round_events, "world_history_revealed")
+        victory = _latest_payload(round_events, "victory_checked")
+        source_counts = {
+            player_id: player.get("source_count")
+            for player_id, player in (snapshot.get("players") or {}).items()
+        }
+        hand_counts = {
+            player_id: player.get("hand_size")
+            for player_id, player in (snapshot.get("players") or {}).items()
+        }
         leader_population = max(populations.values())
         leader_factions = [key for key, value in populations.items() if value == leader_population]
         sorted_populations = sorted(populations.values(), reverse=True)
@@ -181,12 +197,28 @@ class SimulationBatchRunner:
             "seed": seed,
             "round": round_number,
             "neutral_population": neutral_population,
+            "destroyed_population": destroyed_population,
             "leader_faction": "|".join(leader_factions),
             "population_gap": population_gap,
             "attacks_this_round": attacks,
             "supports_this_round": supports,
             "cards_played_this_round": cards_played,
             "propaganda_slots": json.dumps(propaganda_slots),
+            "journalist_player": snapshot.get("journalist_player_id"),
+            "media_mogul_player": snapshot.get("media_mogul_player_id"),
+            "source_counts": json.dumps(source_counts, sort_keys=True),
+            "hand_counts": json.dumps(hand_counts, sort_keys=True),
+            "world_history_row": json.dumps(world_history.get("card_ids", [])),
+            "base_power_by_faction": json.dumps(world_power.get("base_power", {}), sort_keys=True),
+            "activated_propaganda_power_by_faction": json.dumps(world_power.get("propaganda_power", {}), sort_keys=True),
+            "final_power_by_faction": json.dumps(world_power.get("total_power", {}), sort_keys=True),
+            "combat_requested_deltas": json.dumps(combat.get("requested_deltas", {}), sort_keys=True),
+            "combat_applied_deltas": json.dumps(combat.get("applied_deltas", {}), sort_keys=True),
+            "successful_attacks": sum(1 for value in (combat.get("applied_deltas") or {}).values() if int(value or 0) < 0),
+            "neutral_impulses": sum(1 for value in (combat.get("requested_deltas") or {}).values() if int(value or 0) > 0),
+            "eliminated_factions": json.dumps(victory.get("eliminated_factions", [])),
+            "winning_condition_checked": victory.get("winning_condition"),
+            "blocked_tie_info": json.dumps(victory.get("tie_info"), sort_keys=True) if victory.get("tie_info") else "",
         }
         for faction_id, population in populations.items():
             row[f"{faction_id}_population"] = population
@@ -226,6 +258,8 @@ class SimulationBatchRunner:
                 continue
             payload = event["payload"]
             player_id = payload["player_id"]
+            if player_id not in rows:
+                continue
             row = rows[player_id]
             if payload["action_type"] == "attack":
                 row["attacks"] += 1
@@ -326,6 +360,14 @@ def _minimal_event_types() -> set[str]:
         "game_ended",
         "warning",
     }
+
+
+def _latest_payload(events: list[dict[str, Any]], event_type: str) -> dict[str, Any]:
+    for event in reversed(events):
+        if event.get("event_type") == event_type:
+            payload = event.get("payload")
+            return payload if isinstance(payload, dict) else {}
+    return {}
 
 
 def _directory_size(path: Path) -> int:

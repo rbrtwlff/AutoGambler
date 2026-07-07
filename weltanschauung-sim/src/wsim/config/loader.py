@@ -153,7 +153,7 @@ def _v03_to_game_config_data(v03: RulesV03Config) -> dict[str, Any]:
 
 def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) -> list[CardConfig]:
     data = load_yaml(path)
-    raw_cards = data.get("cards")
+    raw_cards = _load_cards_data(path, data, seen=set())
     if not isinstance(raw_cards, list):
         raise ConfigError(f"Cards config {Path(path)} must contain a 'cards' list.")
 
@@ -182,6 +182,34 @@ def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) 
 
     validate_card_effects(cards)
     return cards
+
+
+def _load_cards_data(path: str | Path, data: dict[str, Any], seen: set[Path]) -> list[dict[str, Any]]:
+    config_path = Path(path).resolve()
+    if config_path in seen:
+        raise ConfigError(f"Cards include cycle detected at {config_path}.")
+    seen.add(config_path)
+
+    raw_cards = data.get("cards")
+    if not isinstance(raw_cards, list):
+        raise ConfigError(f"Cards config {Path(path)} must contain a 'cards' list.")
+
+    merged_cards = list(raw_cards)
+    includes = data.get("includes", data.get("include", []))
+    if includes is None:
+        includes = []
+    if isinstance(includes, (str, Path)):
+        includes = [includes]
+    if not isinstance(includes, list):
+        raise ConfigError(f"Cards config {Path(path)} includes must be a list.")
+
+    for include in includes:
+        include_path = Path(include)
+        if not include_path.is_absolute():
+            include_path = Path(path).parent / include_path
+        include_data = load_yaml(include_path)
+        merged_cards.extend(_load_cards_data(include_path, include_data, seen))
+    return merged_cards
 
 
 def load_bots_config(path: str | Path, rules_config: GameConfig | None = None) -> list[BotConfig]:

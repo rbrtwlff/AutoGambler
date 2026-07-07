@@ -70,6 +70,7 @@ def _required_files() -> list[str]:
         "metrics_cards.json",
         "metrics_propaganda.json",
         "metrics_bots.json",
+        "metrics_v0_3.json",
     ]
 
 

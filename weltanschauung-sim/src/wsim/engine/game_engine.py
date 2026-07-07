@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -603,28 +604,58 @@ class GameEngine:
             faction_id: base_power.get(faction_id, 0) + propaganda_power.get(faction_id, 0)
             for faction_id in context.state.factions
         }
+        power_modifiers = self._apply_v03_power_text_effects(row, base_power, propaganda_power, total_power, context)
         context.event_bus.emit(
             EventType.WORLD_HISTORY_POWER_CALCULATED,
-            {"base_power": base_power, "propaganda_power": propaganda_power, "total_power": total_power},
+            {
+                "base_power": base_power,
+                "propaganda_power": propaganda_power,
+                "power_modifiers": power_modifiers,
+                "total_power": total_power,
+            },
         )
+        population_effects = self._apply_v03_population_text_effects(row, total_power, context)
         deltas = {faction_id: 0 for faction_id in context.state.factions}
-        for attacker, defender in self._world_history_transitions(row):
-            if attacker is None:
-                if defender is not None and total_power.get(defender, 0) > 0:
-                    deltas[defender] += 2 if total_power[defender] >= 12 else 1
-                continue
-            if defender is None or attacker == defender:
+        attack_pairs, target_effects = self._v03_attack_pairs(row, total_power, context)
+        attackers_with_targets = {attacker for attacker, defender in attack_pairs if defender is not None}
+        for faction_id, power in total_power.items():
+            if power > 0 and faction_id not in attackers_with_targets:
+                deltas[faction_id] += 2 if power >= 12 else 1
+        attack_records: list[dict[str, Any]] = []
+        for attacker, defender in attack_pairs:
+            if defender is None or defender not in deltas or attacker == defender:
                 continue
             margin = total_power.get(attacker, 0) - total_power.get(defender, 0)
             if margin <= 0:
                 continue
-            impact = self._combat_impact(margin)
+            base_impact = self._combat_impact(margin)
+            attack_records.append(
+                {
+                    "attacker": attacker,
+                    "defender": defender,
+                    "margin": margin,
+                    "base_impact": base_impact,
+                    "impact": base_impact,
+                    "destroyed_impact": 0,
+                    "prevented": False,
+                    "modifiers": [],
+                }
+            )
+        combat_modifiers = self._apply_v03_combat_text_modifiers(row, attack_records, total_power, context)
+        destroyed_by_faction = {faction_id: 0 for faction_id in context.state.factions}
+        for record in attack_records:
+            impact = max(0, int(record.get("impact", 0)))
+            destroyed_impact = min(impact, max(0, int(record.get("destroyed_impact", 0))))
+            record["destroyed_impact"] = destroyed_impact
+            defender = str(record["defender"])
             deltas[defender] -= impact
-            deltas["neutral"] = deltas.get("neutral", 0) + impact
+            destroyed_by_faction[defender] += destroyed_impact
+            deltas["neutral"] = deltas.get("neutral", 0) + impact - destroyed_impact
 
         before = {faction_id: faction.population for faction_id, faction in context.state.factions.items()}
         neutral_before = context.state.neutral_population
         applied: dict[str, int] = {}
+        destroyed_applied: dict[str, int] = {}
         for faction_id, delta in deltas.items():
             if faction_id == "neutral" or delta == 0:
                 continue
@@ -633,6 +664,10 @@ class GameEngine:
                 actual = -min(faction.population, abs(delta))
                 faction.population += actual
                 context.state.neutral_population -= actual
+                destroyed_actual = min(-actual, destroyed_by_faction.get(faction_id, 0))
+                if destroyed_actual:
+                    context.state.neutral_population -= destroyed_actual
+                    destroyed_applied[faction_id] = destroyed_actual
                 applied[faction_id] = actual
             else:
                 actual = min(context.state.neutral_population, delta)
@@ -645,8 +680,14 @@ class GameEngine:
                 "base_power": base_power,
                 "propaganda_power": propaganda_power,
                 "total_power": total_power,
+                "population_effects": population_effects,
+                "target_effects": target_effects,
+                "attack_pairs": [{"attacker": attacker, "defender": defender} for attacker, defender in attack_pairs],
+                "attack_records": attack_records,
+                "combat_modifiers": combat_modifiers,
                 "requested_deltas": deltas,
                 "applied_deltas": applied,
+                "destroyed_applied": destroyed_applied,
                 "population_before": before,
                 "population_after": {faction_id: faction.population for faction_id, faction in context.state.factions.items()},
                 "neutral_before": neutral_before,
@@ -1009,12 +1050,26 @@ class GameEngine:
                 if self._research_order_is_fulfilled(selected, context):
                     player.hidden_research_orders.remove(selected)
                     context.state.deck.discard_card(selected, event_bus=context.event_bus, reason="v03_research_order_completed", player_id=player_id)
-                    if len(player.sources) < player.max_sources:
+                    research_card = self.cards_by_id.get(selected)
+                    configured_reward = int(
+                        research_card.points
+                        if research_card is not None and research_card.points is not None
+                        else context.config.v03.get("research_assignments", {}).get("source_reward", 1)
+                    )
+                    source_reward = min(configured_reward, max(0, player.max_sources - len(player.sources)))
+                    for _ in range(source_reward):
                         player.sources.append(f"source_token_{context.state.round.round_number}_{player_id}_{len(player.sources) + 1}")
                     completed_count += 1
                     context.event_bus.emit(
                         EventType.RESEARCH_ORDER_COMPLETED,
-                        {"player_id": player_id, "card_id": selected, "source_reward": 1, "reason": decision.reason},
+                        {
+                            "player_id": player_id,
+                            "card_id": selected,
+                            "card_points": configured_reward,
+                            "source_reward": source_reward,
+                            "source_limit": player.max_sources,
+                            "reason": decision.reason,
+                        },
                     )
                 else:
                     redraw_decision = self.bots[player_id].choose_whether_to_discard_research_assignment(
@@ -1126,6 +1181,540 @@ class GameEngine:
             power[card.faction] += max(0, int(card.strength)) * factor
         return power
 
+    def _apply_v03_power_text_effects(
+        self,
+        row: list[str],
+        base_power: dict[str, int],
+        propaganda_power: dict[str, int],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        modifiers: list[dict[str, Any]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is None or not card.effect_text:
+                continue
+            modifiers.extend(
+                self._apply_v03_single_power_effect(
+                    card_id,
+                    card,
+                    source="world_history",
+                    slot_index=None,
+                    row=row,
+                    base_power=base_power,
+                    propaganda_power=propaganda_power,
+                    total_power=total_power,
+                    context=context,
+                )
+            )
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is None or not card.effect_text:
+                continue
+            modifiers.extend(
+                self._apply_v03_single_power_effect(
+                    str(card_id),
+                    card,
+                    source="propaganda",
+                    slot_index=slot_index,
+                    row=row,
+                    base_power=base_power,
+                    propaganda_power=propaganda_power,
+                    total_power=total_power,
+                    context=context,
+                )
+            )
+        return modifiers
+
+    def _apply_v03_single_power_effect(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        *,
+        source: Literal["world_history", "propaganda"],
+        slot_index: int | None,
+        row: list[str],
+        base_power: dict[str, int],
+        propaganda_power: dict[str, int],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        text = self._normalize_condition(card.effect_text or "")
+        if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+            return []
+        if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+            return []
+        if "macht" not in text and "propagandamacht" not in text:
+            return []
+        if not self._v03_power_condition_matches(text, card, row, base_power, propaganda_power, total_power, context):
+            return []
+
+        modifiers: list[dict[str, Any]] = []
+        faction_name_pattern = "|".join(self._v03_faction_name_map())
+        for match in re.finditer(rf"\b({faction_name_pattern})\s+erhaelt\s+\+(\d+)\s+macht\b", text):
+            faction_id = self._v03_faction_name_map()[match.group(1)]
+            amount = int(match.group(2))
+            modifiers.append(self._apply_v03_power_delta(instance_id, faction_id, amount, "text_add_power", total_power, context))
+        for match in re.finditer(rf"\berhaelt\s+({faction_name_pattern})\s+\+(\d+)\s+macht\b", text):
+            faction_id = self._v03_faction_name_map()[match.group(1)]
+            amount = int(match.group(2))
+            modifiers.append(self._apply_v03_power_delta(instance_id, faction_id, amount, "text_add_power", total_power, context))
+
+        variable_modifier = self._v03_variable_power_modifier(instance_id, card, text, row, total_power, context)
+        if variable_modifier is not None:
+            modifiers.append(variable_modifier)
+
+        reduction = self._v03_power_reduction_target(text, total_power, context)
+        if reduction is not None:
+            faction_id, amount = reduction
+            modifiers.append(self._apply_v03_power_delta(instance_id, faction_id, -amount, "text_reduce_power", total_power, context))
+        return modifiers
+
+    def _apply_v03_power_delta(
+        self,
+        card_id: str,
+        faction_id: str,
+        amount: int,
+        reason: str,
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        before = int(total_power.get(faction_id, 0))
+        total_power[faction_id] = before + amount
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_power_modifier",
+            "reason": reason,
+            "target_faction_id": faction_id,
+            "amount": amount,
+            "power_before": before,
+            "power_after": total_power[faction_id],
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _apply_v03_population_text_effects(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        effects: list[dict[str, Any]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is None or not card.effect_text:
+                continue
+            effects.extend(
+                self._apply_v03_single_population_effect(
+                    card_id,
+                    card,
+                    source="world_history",
+                    slot_index=None,
+                    row=row,
+                    total_power=total_power,
+                    context=context,
+                )
+            )
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is None or not card.effect_text:
+                continue
+            effects.extend(
+                self._apply_v03_single_population_effect(
+                    str(card_id),
+                    card,
+                    source="propaganda",
+                    slot_index=slot_index,
+                    row=row,
+                    total_power=total_power,
+                    context=context,
+                )
+            )
+        return effects
+
+    def _apply_v03_single_population_effect(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        *,
+        source: Literal["world_history", "propaganda"],
+        slot_index: int | None,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        text = self._normalize_condition(card.effect_text or "")
+        if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+            return []
+        if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+            return []
+        if not any(marker in text for marker in ["rekrutiert", "neutralisiere", "vernichte", "stelle"]):
+            return []
+        if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+            return []
+
+        effects: list[dict[str, Any]] = []
+        recruit = self._v03_recruit_amount(text, card, context)
+        if recruit is not None and card.faction in context.state.factions:
+            effects.append(self._v03_apply_population_delta(instance_id, card.faction, recruit, "text_recruit", context))
+        neutral_targets = self._v03_neutralize_targets(text, card, total_power, context)
+        for faction_id, amount in neutral_targets:
+            effects.append(self._v03_apply_population_delta(instance_id, faction_id, -amount, "text_neutralize", context))
+        destroyed_neutral = self._v03_destroy_neutral_amount(text, context)
+        if destroyed_neutral > 0:
+            effects.append(self._v03_apply_neutral_destruction(instance_id, destroyed_neutral, "text_destroy_neutral", context))
+        return [effect for effect in effects if effect]
+
+    def _v03_recruit_amount(self, text: str, card: CardConfig, context: PhaseContext) -> int | None:
+        faction_id = card.faction
+        if faction_id not in context.state.factions:
+            return None
+        faction_name = self._v03_faction_display_name(faction_id)
+        match = re.search(rf"{faction_name}\s+rekrutiert\s+(?:bis\s+zu\s+)?(\d+)\s+bevoelkerung", text)
+        if match is None:
+            match = re.search(r"rekrutiert\s+(?:bis\s+zu\s+)?(\d+)\s+bevoelkerung", text)
+        if match is None:
+            return None
+        amount = int(match.group(1))
+        prop_counts = self._research_propaganda_counts(context.state.propaganda_track.get_slots())
+        if "stattdessen 2 bevoelkerung" in text and context.state.factions[faction_id].population == min(
+            faction.population for faction in context.state.factions.values()
+        ):
+            amount = 2
+        if "stattdessen 2 bevoelkerung" in text and prop_counts.get(faction_id, 0) >= 1:
+            amount = 2
+        return amount
+
+    def _v03_neutralize_targets(
+        self,
+        text: str,
+        card: CardConfig,
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[tuple[str, int]]:
+        targets: list[tuple[str, int]] = []
+        own_faction = card.faction
+        for faction_name, faction_id in self._v03_faction_name_map().items():
+            match = re.search(rf"neutralisiere\s+(\d+)\s+{self._v03_faction_adjective(faction_id)}\s+bevoelkerung", text)
+            if match:
+                targets.append((faction_id, int(match.group(1))))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+der\s+fraktion\s+mit\s+der\s+meisten\s+bevoelkerung", text)
+        if match:
+            targets.append((self._population_tiebreak(max, context), int(match.group(1))))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+der\s+fraktion\s+mit\s+der\s+wenigsten\s+bevoelkerung", text)
+        if match:
+            targets.append((self._population_tiebreak(min, context), int(match.group(1))))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+der\s+fraktion\s+mit\s+der\s+hoechsten\s+macht", text)
+        if match:
+            targets.append((self._power_tiebreak(max(total_power.values()), total_power), int(match.group(1))))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+jeder\s+fraktion,\s+die\s+mehr\s+bevoelkerung\s+als\s+([a-z]+)\s+hat", text)
+        if match and own_faction in context.state.factions:
+            amount = int(match.group(1))
+            own_population = context.state.factions[own_faction].population
+            for faction_id, faction in context.state.factions.items():
+                if faction.population > own_population:
+                    targets.append((faction_id, amount))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+jeder\s+fraktion\s+mit\s+mindestens\s+(\d+)\s+bevoelkerung", text)
+        if match:
+            amount = int(match.group(1))
+            threshold = int(match.group(2))
+            for faction_id, faction in context.state.factions.items():
+                if faction.population >= threshold:
+                    targets.append((faction_id, amount))
+        match = re.search(r"neutralisiere\s+(\d+)\s+bevoelkerung\s+jeder\s+nicht-[a-z]+\s+fraktion\s+mit\s+(\d+)\s+oder\s+weniger\s+bevoelkerung", text)
+        if match and own_faction is not None:
+            amount = int(match.group(1))
+            threshold = int(match.group(2))
+            for faction_id, faction in context.state.factions.items():
+                if faction_id != own_faction and faction.population <= threshold:
+                    targets.append((faction_id, amount))
+        return targets
+
+    def _v03_destroy_neutral_amount(self, text: str, context: PhaseContext) -> int:
+        match = re.search(r"vernichte\s+(?:bis\s+zu\s+)?(\d+)\s+neutrale\s+bevoelkerung", text)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    def _v03_apply_population_delta(
+        self,
+        card_id: str,
+        faction_id: str,
+        amount: int,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        faction = context.state.factions[faction_id]
+        before = faction.population
+        neutral_before = context.state.neutral_population
+        if amount > 0:
+            applied = min(amount, context.state.neutral_population)
+            faction.population += applied
+            context.state.neutral_population -= applied
+        else:
+            applied = -min(before, abs(amount))
+            faction.population += applied
+            context.state.neutral_population -= applied
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_population_modifier",
+            "reason": reason,
+            "target_faction_id": faction_id,
+            "requested_delta": amount,
+            "applied_delta": applied,
+            "population_before": before,
+            "population_after": faction.population,
+            "neutral_before": neutral_before,
+            "neutral_after": context.state.neutral_population,
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        context.event_bus.emit(
+            EventType.POPULATION_CHANGED,
+            {
+                "player_id": None,
+                "action_type": reason,
+                "target_faction_id": faction_id,
+                "population_before": before,
+                "population_after": faction.population,
+                "neutral_before": neutral_before,
+                "neutral_after": context.state.neutral_population,
+                "applied_delta": applied,
+                "card_id": card_id,
+            },
+        )
+        return payload
+
+    def _v03_apply_neutral_destruction(
+        self,
+        card_id: str,
+        amount: int,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        neutral_before = context.state.neutral_population
+        applied = min(amount, context.state.neutral_population)
+        context.state.neutral_population -= applied
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_neutral_destroyed",
+            "reason": reason,
+            "requested_delta": -amount,
+            "applied_delta": -applied,
+            "neutral_before": neutral_before,
+            "neutral_after": context.state.neutral_population,
+            "destroyed_population_delta": applied,
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        context.event_bus.emit(
+            EventType.POPULATION_CHANGED,
+            {
+                "player_id": None,
+                "action_type": reason,
+                "target_faction_id": "neutral",
+                "population_before": neutral_before,
+                "population_after": context.state.neutral_population,
+                "neutral_before": neutral_before,
+                "neutral_after": context.state.neutral_population,
+                "applied_delta": -applied,
+                "destroyed_population_delta": applied,
+                "card_id": card_id,
+            },
+        )
+        return payload
+
+    def _population_tiebreak(self, selector: Any, context: PhaseContext) -> str:
+        selected_value = selector(faction.population for faction in context.state.factions.values())
+        candidates = [
+            faction_id for faction_id, faction in context.state.factions.items()
+            if faction.population == selected_value
+        ]
+        return self._tiebreak_factions(candidates)
+
+    def _population_tiebreak_excluding(self, selector: Any, context: PhaseContext, excluded: set[str]) -> str:
+        candidates_by_value = {
+            faction_id: faction.population
+            for faction_id, faction in context.state.factions.items()
+            if faction_id not in excluded
+        }
+        selected_value = selector(candidates_by_value.values())
+        return self._value_tiebreak(selected_value, candidates_by_value)
+
+    def _propaganda_power_tiebreak(self, selector: Any, powers: dict[str, int], context: PhaseContext, excluded: set[str]) -> str:
+        candidates_by_value = {
+            faction_id: powers.get(faction_id, 0)
+            for faction_id in context.state.factions
+            if faction_id not in excluded
+        }
+        selected_value = selector(candidates_by_value.values())
+        return self._value_tiebreak(selected_value, candidates_by_value)
+
+    def _value_tiebreak(self, selected_value: int, values_by_faction: dict[str, int]) -> str:
+        candidates = [faction_id for faction_id, value in values_by_faction.items() if value == selected_value]
+        return self._tiebreak_factions(candidates)
+
+    def _v03_power_condition_matches(
+        self,
+        text: str,
+        card: CardConfig,
+        row: list[str],
+        base_power: dict[str, int],
+        propaganda_power: dict[str, int],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> bool:
+        faction_id = card.faction
+        if faction_id not in context.state.factions:
+            return False
+        if "wenn" not in text and "im " not in text and "solange" not in text:
+            return True
+        prop_counts = self._research_propaganda_counts(context.state.propaganda_track.get_slots())
+        row_factions = [self.cards_by_id[card_id].faction for card_id in row if card_id in self.cards_by_id]
+        strengths = [
+            int(self.cards_by_id[card_id].strength)
+            for card_id in row
+            if card_id in self.cards_by_id and self.cards_by_id[card_id].faction == faction_id
+        ]
+        populations = {key: value.population for key, value in context.state.factions.items()}
+        values = list(populations.values())
+
+        own_adjective = self._v03_faction_adjective(faction_id)
+        own_name = self._v03_faction_display_name(faction_id)
+        if f"mindestens 1 {own_adjective} propagandakarte" in text and prop_counts.get(faction_id, 0) < 1:
+            return False
+        if f"mindestens 2 {own_adjective} propagandakarten" in text and prop_counts.get(faction_id, 0) < 2:
+            return False
+        card_count_match = re.search(rf"mindestens\s+(\d+)\s+{own_adjective}\s+karten", text)
+        if card_count_match and row_factions.count(faction_id) < int(card_count_match.group(1)):
+            return False
+        if f"{own_name} ein paar" in text and not self._has_pair(strengths):
+            return False
+        if f"{own_name} einen drilling" in text and not self._has_three_of_a_kind(strengths):
+            return False
+        if "strasse aus drei machtwerten" in text and not self._has_straight(strengths):
+            return False
+        if f"{own_name} derzeit nicht die niedrigste macht" in text and total_power.get(faction_id, 0) == min(total_power.values()):
+            return False
+        if f"{own_name} derzeit nicht die hoechste macht" in text and total_power.get(faction_id, 0) == max(total_power.values()):
+            return False
+        if f"{own_name} mindestens 10 macht" in text and total_power.get(faction_id, 0) < 10:
+            return False
+        if f"{own_name} mindestens 12 macht" in text and total_power.get(faction_id, 0) < 12:
+            return False
+        if f"{own_name} mindestens 15 macht" in text and total_power.get(faction_id, 0) < 15:
+            return False
+        if "mindestens eine fraktion 12 oder mehr macht" in text and not any(value >= 12 for value in total_power.values()):
+            return False
+        neutral_match = re.search(r"mindestens\s+(\d+)\s+neutrale\s+bevoelkerung", text)
+        if neutral_match and context.state.neutral_population < int(neutral_match.group(1)):
+            return False
+        if "mindestens 10 neutrale bevoelkerung" in text and context.state.neutral_population < 10:
+            return False
+        if "mindestens 15 neutrale bevoelkerung" in text and context.state.neutral_population < 15:
+            return False
+        if "mindestens 20 neutrale bevoelkerung" in text and context.state.neutral_population < 20:
+            return False
+        if "weniger als 15 neutrale bevoelkerung" in text and context.state.neutral_population >= 15:
+            return False
+        if "keine fraktion mehr als 15 bevoelkerung" in text and any(value > 15 for value in values):
+            return False
+        if "alle vier fraktionen bevoelkerung haben" in text and not all(value > 0 for value in values):
+            return False
+        if "mindestens drei fraktionen karten in der weltgeschichtsreihe" in text and len(set(row_factions)) < 3:
+            return False
+        if "zwei fraktionen dieselbe bevoelkerung" in text and len(values) == len(set(values)):
+            return False
+        if "unterschied zwischen der hoechsten und der niedrigsten fraktionsbevoelkerung hoechstens 4" in text and (not values or max(values) - min(values) > 4):
+            return False
+        if "weder die hoechste noch die niedrigste macht" in text:
+            own_power = total_power.get(faction_id, 0)
+            if own_power == max(total_power.values()) or own_power == min(total_power.values()):
+                return False
+        if "mindestens 10 propagandamacht" in text and self._objective_propaganda_power(context.state.propaganda_track.get_slots()).get(faction_id, 0) < 10:
+            return False
+        if "gelbe propagandamacht aktiviert wird" in text and propaganda_power.get("yellow", 0) <= 0:
+            return False
+        return True
+
+    def _v03_variable_power_modifier(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        text: str,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        faction_id = card.faction
+        if faction_id not in context.state.factions:
+            return None
+        amount = 0
+        if "fuer jede fraktion mit mindestens 8 bevoelkerung" in text:
+            amount = min(4, sum(1 for faction in context.state.factions.values() if faction.population >= 8))
+        elif "je 5 neutrale bevoelkerung" in text:
+            amount = min(5, context.state.neutral_population // 5)
+        elif "fuer jede gelbe propagandakarte" in text:
+            amount = self._research_propaganda_counts(context.state.propaganda_track.get_slots()).get("yellow", 0)
+        elif "fuer jede rote karte in der weltgeschichtsreihe" in text:
+            amount = sum(1 for card_id in row if self._card_faction(card_id) == "red")
+        elif "fuer jede schwarze karte mit gedrucktem machtwert 2" in text:
+            amount = sum(1 for card_id in row if self._card_faction(card_id) == "black" and self.cards_by_id[card_id].strength == 2)
+        elif "fuer jede weitere rote karte mit gedrucktem machtwert 3" in text:
+            red_threes = sum(1 for card_id in row if self._card_faction(card_id) == "red" and self.cards_by_id[card_id].strength == 3)
+            amount = max(0, red_threes - 1)
+        if amount <= 0:
+            return None
+        return self._apply_v03_power_delta(instance_id, faction_id, amount, "text_variable_power", total_power, context)
+
+    def _v03_power_reduction_target(self, text: str, total_power: dict[str, int], context: PhaseContext) -> tuple[str, int] | None:
+        match = re.search(r"senke\s+(?:die\s+)?(?:derzeit\s+)?hoechste\s+macht\s+um\s+(\d+)", text)
+        if match:
+            return self._power_tiebreak(max(total_power.values()), total_power), int(match.group(1))
+        match = re.search(r"senke\s+die\s+macht\s+der\s+fraktion\s+mit\s+der\s+wenigsten\s+bevoelkerung\s+um\s+(\d+)", text)
+        if match:
+            min_population = min(faction.population for faction in context.state.factions.values())
+            candidates = [faction_id for faction_id, faction in context.state.factions.items() if faction.population == min_population]
+            return self._tiebreak_factions(candidates), int(match.group(1))
+        match = re.search(r"senke\s+die\s+macht\s+der\s+fraktion\s+mit\s+der\s+hoechsten\s+propagandamacht\s+um\s+(\d+)", text)
+        if match:
+            prop_power = self._objective_propaganda_power(context.state.propaganda_track.get_slots())
+            return self._power_tiebreak(max(prop_power.values()), prop_power), int(match.group(1))
+        for faction_name, faction_id in self._v03_faction_name_map().items():
+            match = re.search(rf"senke\s+{faction_name}\s+um\s+(\d+)\s+macht", text)
+            if match:
+                return faction_id, int(match.group(1))
+        return None
+
+    def _power_tiebreak(self, value: int, powers: dict[str, int]) -> str:
+        candidates = [faction_id for faction_id, power in powers.items() if power == value]
+        return self._tiebreak_factions(candidates)
+
+    def _tiebreak_factions(self, candidates: list[str]) -> str:
+        for faction in self.config.factions:
+            if faction.id in candidates:
+                return faction.id
+        return candidates[0]
+
+    def _v03_slot_condition_matches(self, text: str, slot_index: int | None) -> bool:
+        if slot_index is None:
+            return True
+        slot_number = slot_index + 1
+        slot_words = {"ersten": 1, "zweiten": 2, "dritten": 3, "vierten": 4}
+        mentioned = [number for word, number in slot_words.items() if f"im {word} propagandaslot" in text]
+        if "im dritten oder vierten propagandaslot" in text:
+            mentioned.extend([3, 4])
+        if "im zweiten oder dritten propagandaslot" in text:
+            mentioned.extend([2, 3])
+        return not mentioned or slot_number in set(mentioned)
+
+    def _v03_faction_name_map(self) -> dict[str, str]:
+        return {"rot": "red", "schwarz": "black", "gelb": "yellow", "gruen": "green"}
+
+    def _v03_faction_display_name(self, faction_id: str) -> str:
+        return {"red": "rot", "black": "schwarz", "yellow": "gelb", "green": "gruen"}[faction_id]
+
+    def _v03_faction_adjective(self, faction_id: str) -> str:
+        return {"red": "rote", "black": "schwarze", "yellow": "gelbe", "green": "gruene"}[faction_id]
+
     def _world_history_transitions(self, row: list[str]) -> list[tuple[str | None, str | None]]:
         transitions: list[tuple[str | None, str | None]] = []
         factions = [self.cards_by_id[card_id].faction if card_id in self.cards_by_id else None for card_id in row]
@@ -1134,6 +1723,383 @@ class GameEngine:
         for left, right in zip(factions, factions[1:]):
             transitions.append((left, right))
         return transitions
+
+    def _v03_attack_pairs(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> tuple[list[tuple[str, str | None]], list[dict[str, Any]]]:
+        targets: dict[str, str | None] = {}
+        target_effects: list[dict[str, Any]] = []
+        for attacker, defender in self._world_history_transitions(row):
+            if attacker is not None:
+                targets[attacker] = defender
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is None or not card.effect_text:
+                continue
+            effect = self._v03_target_from_text(card_id, card, row, total_power, context)
+            if effect is None:
+                continue
+            targets[effect["attacker"]] = effect["defender"]
+            target_effects.append(effect)
+            context.event_bus.emit(EventType.EFFECT_TRIGGERED, effect)
+        for card_id in context.state.propaganda_track.get_slots():
+            card = self.cards_by_id.get(card_id or "")
+            if card is None or not card.effect_text:
+                continue
+            effect = self._v03_target_from_text(str(card_id), card, row, total_power, context)
+            if effect is None:
+                continue
+            targets[effect["attacker"]] = effect["defender"]
+            target_effects.append(effect)
+            context.event_bus.emit(EventType.EFFECT_TRIGGERED, effect)
+        return [(attacker, defender) for attacker, defender in targets.items() if defender is not None], target_effects
+
+    def _apply_v03_combat_text_modifiers(
+        self,
+        row: list[str],
+        attack_records: list[dict[str, Any]],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        modifiers: list[dict[str, Any]] = []
+        sources: list[tuple[str, CardConfig, int | None]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is not None:
+                sources.append((card_id, card, None))
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is not None:
+                sources.append((str(card_id), card, slot_index))
+
+        for instance_id, card, slot_index in sources:
+            if not card.effect_text:
+                continue
+            text = self._normalize_condition(card.effect_text)
+            if "kampfwirkung" not in text and "angriff" not in text and "neutralisierte bevoelkerung stattdessen vernichtet" not in text:
+                continue
+            if slot_index is None and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            produced = self._v03_combat_modifiers_from_text(instance_id, card, text, attack_records, total_power, context)
+            for modifier in produced:
+                modifiers.append(modifier)
+                context.event_bus.emit(EventType.EFFECT_TRIGGERED, modifier)
+        return modifiers
+
+    def _v03_combat_modifiers_from_text(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        text: str,
+        attack_records: list[dict[str, Any]],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        if not attack_records:
+            return []
+        modifiers: list[dict[str, Any]] = []
+        faction_id = card.faction
+        faction_name_map = self._v03_faction_name_map()
+
+        power_penalty_target = self._v03_attack_power_penalty_target(text, faction_name_map)
+        if power_penalty_target is not None:
+            amount_match = re.search(r"mit\s+-(\d+)\s+macht des angreifers", text)
+            amount = int(amount_match.group(1)) if amount_match else 0
+            record = self._first_attack_record(attack_records, defender=power_penalty_target)
+            if record is not None and amount > 0:
+                before_margin = int(record["margin"])
+                before_impact = int(record["impact"])
+                record["margin"] = before_margin - amount
+                record["base_impact"] = self._combat_impact(int(record["margin"]))
+                record["impact"] = min(int(record["impact"]), int(record["base_impact"]))
+                modifier = {
+                    "card_id": instance_id,
+                    "effect_type": "v03_combat_modifier",
+                    "reason": "attack_power_penalty",
+                    "attacker": record["attacker"],
+                    "defender": record["defender"],
+                    "amount": -amount,
+                    "margin_before": before_margin,
+                    "margin_after": int(record["margin"]),
+                    "before": before_impact,
+                    "after": int(record["impact"]),
+                }
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        prevent_target = self._v03_prevented_attack_target(text, faction_name_map)
+        if prevent_target is not None:
+            record = self._first_attack_record(attack_records, defender=prevent_target)
+            if record is not None:
+                before = int(record["impact"])
+                record["impact"] = 0
+                record["prevented"] = True
+                modifier = self._v03_record_combat_modifier(instance_id, "prevent_first_attack", record, -before, before, int(record["impact"]))
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        reduction_target = self._v03_reduced_attack_target(text, faction_name_map)
+        if reduction_target is not None:
+            amount = self._v03_reduction_amount(text, reduction_target, attack_records, context)
+            record = self._first_attack_record(attack_records, defender=reduction_target, min_impact=1)
+            if record is not None and amount > 0:
+                before = int(record["impact"])
+                record["impact"] = max(0, before - amount)
+                modifier = self._v03_record_combat_modifier(instance_id, "reduce_first_impact", record, -min(amount, before), before, int(record["impact"]))
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        less_loss_target = self._v03_less_loss_target(text, faction_id)
+        if less_loss_target is not None:
+            if "von mehr als einer fraktion angegriffen" in text:
+                attacker_count = sum(1 for record in attack_records if record["defender"] == less_loss_target)
+                if attacker_count <= 1:
+                    less_loss_target = None
+            if less_loss_target is not None and f"wenn {self._v03_faction_display_name(less_loss_target)}" in text:
+                if not self._v03_power_condition_matches(text, card, [], total_power, total_power, total_power, context):
+                    less_loss_target = None
+        if less_loss_target is not None:
+            record = self._first_attack_record(attack_records, defender=less_loss_target, min_impact=1)
+            if record is not None:
+                before = int(record["impact"])
+                record["impact"] = max(0, before - 1)
+                modifier = self._v03_record_combat_modifier(instance_id, "lose_one_less_population", record, -min(1, before), before, int(record["impact"]))
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        if "erste erfolgreiche angriff einer fraktion mit mindestens 12 macht verursacht 1 weniger kampfwirkung" in text:
+            record = next((candidate for candidate in attack_records if total_power.get(str(candidate["attacker"]), 0) >= 12 and int(candidate.get("impact", 0)) > 0), None)
+            if record is not None:
+                before = int(record["impact"])
+                record["impact"] = max(0, before - 1)
+                modifier = self._v03_record_combat_modifier(instance_id, "high_power_attack_reduced", record, -min(1, before), before, int(record["impact"]))
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        added_impact = self._v03_added_impact_amount(text)
+        boosted_attacker = self._v03_boosted_attacker(text, faction_id)
+        if added_impact > 0 and boosted_attacker is not None:
+            records = [record for record in attack_records if record["attacker"] == boosted_attacker and int(record.get("impact", 0)) > 0]
+            if "ersten erfolgreichen" in text or "eines erfolgreichen" in text or "dessen kampfwirkung" in text:
+                records = records[:1]
+            for record in records:
+                if "ziel auf 5 oder weniger bevoelkerung bringt" in text:
+                    defender_population = context.state.factions[str(record["defender"])].population
+                    if defender_population - int(record["impact"]) > 5:
+                        continue
+                before = int(record["impact"])
+                record["impact"] = before + added_impact
+                modifier = self._v03_record_combat_modifier(instance_id, "add_combat_impact", record, added_impact, before, int(record["impact"]))
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        destroyed_amount = self._v03_destroyed_instead_amount(text)
+        destroyed_attacker = self._v03_boosted_attacker(text, faction_id)
+        if destroyed_amount > 0 and destroyed_attacker is not None:
+            records = [record for record in attack_records if record["attacker"] == destroyed_attacker and int(record.get("impact", 0)) > 0]
+            for record in records[:1]:
+                before = int(record.get("destroyed_impact", 0))
+                record["destroyed_impact"] = min(int(record["impact"]), before + destroyed_amount)
+                modifier = self._v03_record_combat_modifier(
+                    instance_id,
+                    "destroy_instead_of_neutralize",
+                    record,
+                    int(record["destroyed_impact"]) - before,
+                    before,
+                    int(record["destroyed_impact"]),
+                )
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        return modifiers
+
+    def _v03_prevented_attack_target(self, text: str, faction_name_map: dict[str, str]) -> str | None:
+        if "wird verhindert" not in text:
+            return None
+        for faction_name, faction_id in faction_name_map.items():
+            if f"angriff gegen {faction_name}" in text:
+                return faction_id
+        return None
+
+    def _v03_attack_power_penalty_target(self, text: str, faction_name_map: dict[str, str]) -> str | None:
+        if "macht des angreifers" not in text:
+            return None
+        for faction_name, faction_id in faction_name_map.items():
+            if f"angriff gegen {faction_name}" in text:
+                return faction_id
+        return None
+
+    def _v03_reduced_attack_target(self, text: str, faction_name_map: dict[str, str]) -> str | None:
+        if "reduziere die erste kampfwirkung gegen" not in text:
+            return None
+        for faction_name, faction_id in faction_name_map.items():
+            if f"gegen {faction_name}" in text:
+                return faction_id
+        return None
+
+    def _v03_less_loss_target(self, text: str, fallback_faction_id: str | None) -> str | None:
+        if "verliert durch den ersten erfolgreichen angriff 1 weniger bevoelkerung" in text:
+            return fallback_faction_id
+        if "verliert 1 weniger bevoelkerung" in text:
+            return fallback_faction_id
+        for faction_id in self.state.factions:
+            display_name = self._v03_faction_display_name(faction_id)
+            if f"verliert {display_name} 1 weniger bevoelkerung" in text:
+                return faction_id
+        return None
+
+    def _v03_reduction_amount(
+        self,
+        text: str,
+        defender: str,
+        attack_records: list[dict[str, Any]],
+        context: PhaseContext,
+    ) -> int:
+        amount_match = re.search(r"reduziere die erste kampfwirkung gegen \w+ um (\d+)", text)
+        amount = int(amount_match.group(1)) if amount_match else 1
+        if "stattdessen um 2" in text:
+            record = self._first_attack_record(attack_records, defender=defender)
+            if record is not None:
+                attacker_population = context.state.factions[str(record["attacker"])].population
+                defender_population = context.state.factions[defender].population
+                if defender_population < attacker_population:
+                    amount = 2
+        return amount
+
+    def _v03_added_impact_amount(self, text: str) -> int:
+        match = re.search(r"kampfwirkung\s+um\s+(\d+)", text)
+        if match:
+            return int(match.group(1))
+        match = re.search(r"kampfwirkung", text)
+        if match:
+            plus_match = re.search(r"\+(\d+)\s+kampfwirkung", text)
+            if plus_match:
+                return int(plus_match.group(1))
+        match = re.search(r"neutralisieren\s+(\d+)\s+zusaetzliche bevoelkerung", text)
+        if match:
+            return int(match.group(1))
+        match = re.search(r"neutralisiere zusaetzlich\s+(\d+)\s+bevoelkerung", text)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    def _v03_destroyed_instead_amount(self, text: str) -> int:
+        if "neutralisierte bevoelkerung stattdessen vernichtet" not in text:
+            return 0
+        match = re.search(r"(\d+)\s+durch .*? neutralisierte bevoelkerung stattdessen vernichtet", text)
+        return int(match.group(1)) if match else 1
+
+    def _v03_boosted_attacker(self, text: str, fallback_faction_id: str | None) -> str | None:
+        for faction_id in self.state.factions:
+            adjective = self._v03_faction_adjective(faction_id)
+            display_name = self._v03_faction_display_name(faction_id)
+            if adjective in text and "angriff" in text:
+                return faction_id
+            if f"wenn {display_name} einen erfolgreichen angriff" in text:
+                return faction_id
+        if "erfolgreichen angriff" in text or "erfolgreiche" in text:
+            return fallback_faction_id
+        return None
+
+    def _first_attack_record(
+        self,
+        attack_records: list[dict[str, Any]],
+        *,
+        attacker: str | None = None,
+        defender: str | None = None,
+        min_impact: int = 0,
+    ) -> dict[str, Any] | None:
+        for record in attack_records:
+            if attacker is not None and record["attacker"] != attacker:
+                continue
+            if defender is not None and record["defender"] != defender:
+                continue
+            if int(record.get("impact", 0)) < min_impact:
+                continue
+            return record
+        return None
+
+    def _v03_record_combat_modifier(
+        self,
+        card_id: str,
+        reason: str,
+        record: dict[str, Any],
+        amount: int,
+        before: int,
+        after: int,
+    ) -> dict[str, Any]:
+        return {
+            "card_id": card_id,
+            "effect_type": "v03_combat_modifier",
+            "reason": reason,
+            "attacker": record["attacker"],
+            "defender": record["defender"],
+            "amount": amount,
+            "before": before,
+            "after": after,
+        }
+
+    def _v03_target_from_text(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        text = self._normalize_condition(card.effect_text or "")
+        if "greift" not in text:
+            return None
+        if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+            return None
+        attacker = card.faction
+        if "die fraktion mit der hoechsten macht greift" in text:
+            attacker = self._power_tiebreak(max(total_power.values()), total_power)
+        if attacker not in context.state.factions:
+            return None
+        defender: str | None = None
+        reason = "text_target"
+        if "nicht-rote fraktion mit der niedrigsten bevoelkerung" in text:
+            defender = self._population_tiebreak_excluding(min, context, {"red"})
+            reason = "text_target_lowest_population_excluding_red"
+        elif "fraktion mit der wenigsten bevoelkerung" in text:
+            defender = self._population_tiebreak_excluding(min, context, {attacker})
+            reason = "text_target_lowest_population"
+        elif "fraktion mit der niedrigsten bevoelkerung" in text:
+            defender = self._population_tiebreak_excluding(min, context, {attacker})
+            reason = "text_target_lowest_population"
+        elif "fraktion mit der meisten bevoelkerung" in text:
+            defender = self._population_tiebreak_excluding(max, context, {attacker})
+            reason = "text_target_highest_population"
+        elif "fraktion mit der niedrigsten propagandamacht" in text:
+            prop_power = self._objective_propaganda_power(context.state.propaganda_track.get_slots())
+            defender = self._propaganda_power_tiebreak(min, prop_power, context, {attacker})
+            reason = "text_target_lowest_propaganda_power"
+        elif "fraktion mit der hoechsten propagandamacht" in text:
+            prop_power = self._objective_propaganda_power(context.state.propaganda_track.get_slots())
+            defender = self._propaganda_power_tiebreak(max, prop_power, context, {attacker})
+            reason = "text_target_highest_propaganda_power"
+        elif "fraktion an, die in dieser weltgeschichtsreihe die wenigsten karten hat" in text:
+            row_factions = [self._card_faction(card_id) for card_id in row]
+            counts = {faction_id: row_factions.count(faction_id) for faction_id in context.state.factions if faction_id != attacker}
+            defender = self._value_tiebreak(min(counts.values()), counts)
+            reason = "text_target_fewest_world_history_cards"
+        if defender is None or defender == attacker:
+            return None
+        return {
+            "card_id": instance_id,
+            "effect_type": "v03_target_modifier",
+            "reason": reason,
+            "attacker": attacker,
+            "defender": defender,
+        }
 
     def _combat_impact(self, margin: int) -> int:
         bands = self.config.v03.get("combat", {}).get("impact_by_margin", [])
@@ -1151,15 +2117,294 @@ class GameEngine:
         return 1 if margin >= 1 else 0
 
     def _research_order_is_fulfilled(self, card_id: str, context: PhaseContext) -> bool:
+        card = self.cards_by_id.get(card_id)
+        if card is None or not card.condition:
+            fulfilled = False
+            condition = None
+        else:
+            condition = card.condition
+            fulfilled = self._evaluate_research_condition(condition, context)
         context.event_bus.emit(
             EventType.RESEARCH_ASSIGNMENTS_CHECKED,
             {
                 "card_id": card_id,
-                "fulfilled": False,
-                "todo": "Concrete v0.3 research assignment fulfillment logic is not implemented yet.",
+                "condition": condition,
+                "fulfilled": fulfilled,
             },
         )
+        return fulfilled
+
+    def _evaluate_research_condition(self, condition: str, context: PhaseContext) -> bool:
+        text = self._normalize_condition(condition)
+        populations = {faction_id: faction.population for faction_id, faction in context.state.factions.items()}
+        values = list(populations.values())
+        round_events = self._current_round_events(context)
+        world_power = self._latest_payload(round_events, EventType.WORLD_HISTORY_POWER_CALCULATED)
+        combat = self._latest_payload(round_events, EventType.COMBAT_RESOLVED)
+        total_power = {key: int(value) for key, value in (world_power.get("total_power") or {}).items()}
+        row = list(context.state.world_history_row)
+        if not row:
+            row = list(self._latest_payload(round_events, EventType.WORLD_HISTORY_REVEALED).get("card_ids") or [])
+        row_factions = [self.cards_by_id[card_id].faction for card_id in row if card_id in self.cards_by_id]
+        row_strengths = {
+            faction_id: [
+                int(self.cards_by_id[card_id].strength)
+                for card_id in row
+                if card_id in self.cards_by_id and self.cards_by_id[card_id].faction == faction_id
+            ]
+            for faction_id in context.state.factions
+        }
+        transitions = self._world_history_transitions(row)
+        attack_records = self._research_attack_records(row, total_power)
+        applied_deltas = {key: int(value) for key, value in (combat.get("applied_deltas") or {}).items()}
+        requested_deltas = {key: int(value) for key, value in (combat.get("requested_deltas") or {}).items()}
+        prop_slots = context.state.propaganda_track.get_slots()
+        prop_counts = self._research_propaganda_counts(prop_slots)
+        objective_prop_power = self._objective_propaganda_power(prop_slots)
+        active_population = context.state.total_population()
+        destroyed_population = max(0, int(context.config.population.total_population) - active_population)
+
+        if "mindestens 60 neutrale bevoelkerung" in text:
+            return context.state.neutral_population >= 60
+        if "weniger als 65 neutrale bevoelkerung" in text:
+            return context.state.neutral_population < 65
+        if "5 oder weniger bevoelkerung" in text and "keine fraktion" not in text and "jeder fraktion" not in text:
+            return any(value <= 5 for value in values)
+        if "mindestens 12 bevoelkerung" in text and "fraktion hat" in text:
+            return any(value >= 12 for value in values)
+        if "alle vier fraktionen mindestens 1 bevoelkerung" in text:
+            return len(values) >= 4 and all(value >= 1 for value in values)
+        if "2 oder mehr bevoelkerung rekrutiert" in text:
+            return any(delta >= 2 for delta in applied_deltas.values())
+        if "insgesamt mindestens 2 bevoelkerung neutralisiert" in text:
+            return sum(abs(delta) for delta in applied_deltas.values() if delta < 0) >= 2
+        if "bevoelkerung verloren und bevoelkerung rekrutiert" in text:
+            return any(delta < 0 for delta in applied_deltas.values()) and any(delta > 0 for delta in applied_deltas.values())
+        if "mindestens 13 finale macht" in text:
+            return any(value >= 13 for value in total_power.values())
+        if "keine fraktion erreicht" in text and "mehr als 10 finale macht" in text:
+            return bool(total_power) and all(value <= 10 for value in total_power.values())
+        if "hoechstens 3 macht vorsprung" in text:
+            return any(0 < record["margin"] <= 3 and record["impact"] > 0 for record in attack_records)
+        if "mindestens drei fraktionen" in text and "angriffsziel" in text:
+            attackers = {attacker for attacker, defender in transitions if attacker and defender and attacker != defender}
+            return len(attackers) >= 3
+        if "macht, aber kein angriffsziel" in text:
+            return any(delta > 0 for key, delta in requested_deltas.items() if key in context.state.factions)
+        if "angriff wird verhindert" in text or "kampfwirkung wird auf 0" in text:
+            return any(record["margin"] <= 0 or record["impact"] == 0 for record in attack_records)
+        if "dieselbe finale macht" in text:
+            living_powers = [
+                total_power.get(faction_id, 0)
+                for faction_id, population in populations.items()
+                if population > 0 and total_power.get(faction_id, 0) >= 0
+            ]
+            return len(living_powers) != len(set(living_powers))
+        if "neue propaganda einer fraktion" in text and "vorher keine propagandakarte" in text:
+            starting = self._round_start_payload(round_events).get("propaganda_slots") or []
+            starting_factions = set(self._research_propaganda_counts(starting))
+            for event in round_events:
+                if event.event_type == EventType.PROPAGANDA_PLACED:
+                    faction_id = self._card_faction(event.payload.get("card_id"))
+                    if faction_id is not None and faction_id not in starting_factions:
+                        return True
+            return False
+        if "dieselbe propagandakarte in slot 4" in text:
+            starting = self._round_start_payload(round_events).get("propaganda_slots") or []
+            return len(starting) >= 4 and len(prop_slots) >= 4 and starting[3] is not None and starting[3] == prop_slots[3]
+        if "mindestens eine propagandakarte entfernt" in text:
+            return any(event.event_type == EventType.PROPAGANDA_REMOVED for event in round_events)
+        if "mindestens eine propagandakarte verdraengt" in text:
+            return any(
+                event.event_type == EventType.PROPAGANDA_REMOVED and "displaced" in str(event.payload.get("reason", ""))
+                for event in round_events
+            )
+        if "mindestens zwei propagandakarten derselben fraktion" in text:
+            return any(count >= 2 for count in prop_counts.values())
+        if "mindestens drei verschiedenen fraktionen" in text:
+            return len([faction_id for faction_id, count in prop_counts.items() if count > 0]) >= 3
+        if "weniger als drei propagandakarten" in text:
+            return sum(1 for card_id in prop_slots if card_id is not None) < 3
+        if "propaganda in der leiste" in text and "keine karte in der weltgeschichtsreihe" in text:
+            return any(faction_id not in set(row_factions) for faction_id in prop_counts)
+        if "bleibt vom beginn bis zum ende der runde im selben propagandaslot" in text:
+            starting = self._round_start_payload(round_events).get("propaganda_slots") or []
+            return any(card_id is not None and index < len(prop_slots) and prop_slots[index] == card_id for index, card_id in enumerate(starting))
+        if "quelle gegen den journalisten eingesetzt" in text:
+            return any(event.event_type == EventType.SOURCE_SPENT and event.payload.get("purpose") == "journalist_challenge" for event in round_events)
+        if "journalist bleibt im amt" in text and "quelle gegen ihn" in text:
+            payload = self._latest_payload(round_events, EventType.JOURNALIST_CHECKED)
+            return int(payload.get("challenger_total") or 0) >= 1 and payload.get("changed") is False
+        if "medienmogulwahl entsteht ein gleichstand" in text:
+            payload = self._latest_payload(round_events, EventType.MEDIA_MOGUL_CHANGED)
+            return len(payload.get("tied_candidates") or []) > 1
+        if "medienmogul dieser runde war in der vorrunde nicht medienmogul" in text:
+            payload = self._latest_payload(round_events, EventType.MEDIA_MOGUL_CHANGED)
+            return bool(payload) and payload.get("old_media_mogul_player_id") != payload.get("new_media_mogul_player_id")
+        if "keine fraktion" in text and "alleinige hoechste macht" in text:
+            return bool(total_power) and list(total_power.values()).count(max(total_power.values())) > 1
+        if "alle vier fraktionen haben mindestens eine karte" in text:
+            return set(context.state.factions).issubset(set(row_factions))
+        if "ein paar" in text:
+            return any(self._has_pair(strengths) for strengths in row_strengths.values())
+        if "verliert keine fraktion bevoelkerung" in text:
+            return not any(delta < 0 for delta in applied_deltas.values())
+        if "mindestens 1 bevoelkerung vernichtet" in text:
+            return destroyed_population >= 1 or self._event_payload_sum(round_events, "destroyed_population_delta") >= 1
+        if "mindestens 1 bevoelkerung wiederhergestellt" in text:
+            return self._event_payload_sum(round_events, "restored_population_delta") >= 1
+        if "weniger als 95 bevoelkerung im aktiven spiel" in text:
+            return active_population < 95
+        if "keine fraktion hat" in text and "5 oder weniger bevoelkerung" in text:
+            return all(value > 5 for value in values)
+        if "unterschied zwischen der fraktion mit der meisten bevoelkerung" in text and "mindestens 12" in text:
+            return bool(values) and max(values) - min(values) >= 12
+        if "unterschied zwischen der fraktion mit der meisten bevoelkerung" in text and "hoechstens 3" in text:
+            return bool(values) and max(values) - min(values) <= 3
+        if "4 oder mehr bevoelkerung rekrutiert" in text:
+            return any(delta >= 4 for delta in applied_deltas.values())
+        if "insgesamt mindestens 4 bevoelkerung neutralisiert" in text:
+            return sum(abs(delta) for delta in applied_deltas.values() if delta < 0) >= 4
+        if "mindestens 8 macht vorsprung" in text:
+            return any(record["margin"] >= 8 and record["impact"] > 0 for record in attack_records)
+        if "kampfwirkung betraegt" in text and "mindestens 4" in text:
+            return any(record["impact"] >= 4 for record in attack_records)
+        if "ziel von mindestens zwei angriffen" in text:
+            defenders = [defender for _, defender in transitions if defender is not None]
+            return any(defenders.count(faction_id) >= 2 for faction_id in context.state.factions)
+        if "mindestens 10 finaler macht" in text and "keinen erfolgreichen angriff" in text:
+            successful_attackers = {record["attacker"] for record in attack_records if record["impact"] > 0}
+            return any(power >= 10 and faction_id not in successful_attackers for faction_id, power in total_power.items())
+        if "mindestens zwei karteneffekte" in text:
+            return sum(1 for event in round_events if event.event_type == EventType.EFFECT_TRIGGERED) >= 2
+        if "mindestens 12 propagandamacht" in text:
+            return any(value >= 12 for value in objective_prop_power.values())
+        if "verliert in dieser runde ihre letzte propagandakarte" in text:
+            removed_factions = {
+                self._card_faction(event.payload.get("card_id"))
+                for event in round_events
+                if event.event_type == EventType.PROPAGANDA_REMOVED
+            }
+            return any(faction_id is not None and prop_counts.get(faction_id, 0) == 0 for faction_id in removed_factions)
+        if "propagandakarte verschoben" in text:
+            return any("moved" in str(event.event_type) or "verschob" in str(event.payload).lower() for event in round_events)
+        if "mindestens 3 stimmen" in text:
+            payload = self._latest_payload(round_events, EventType.MEDIA_MOGUL_CHANGED)
+            return any(int(count) >= 3 for count in (payload.get("counts") or {}).values())
+        if "journalist entscheidet einen gleichstand" in text:
+            payload = self._latest_payload(round_events, EventType.MEDIA_MOGUL_CHANGED)
+            return payload.get("tie_breaker") == "journalist"
+        if "mindestens 4 karten in der weltgeschichtsreihe" in text:
+            return any(row_factions.count(faction_id) >= 4 for faction_id in context.state.factions)
+        if "strasse aus drei machtwerten" in text:
+            return any(self._has_straight(strengths) for strengths in row_strengths.values())
+        if "mindestens 3 bevoelkerung vernichtet" in text:
+            return destroyed_population >= 3 or self._event_payload_sum(round_events, "destroyed_population_delta") >= 3
+        if "genau 1 bevoelkerung" in text:
+            return any(value == 1 for value in values)
+        if "veraendert sich die bevoelkerung derselben fraktion insgesamt um mindestens 6" in text:
+            return any(abs(delta) >= 6 for delta in applied_deltas.values())
+        if "mindestens 3 propagandakarten" in text and "mindestens 15 propagandamacht" in text:
+            return any(prop_counts.get(faction_id, 0) >= 3 and objective_prop_power.get(faction_id, 0) >= 15 for faction_id in context.state.factions)
+        if "mindestens drei erfolgreiche angriffe" in text:
+            return sum(1 for record in attack_records if record["impact"] > 0) >= 3
+        if "mindestens zwei verschiedene komboarten" in text:
+            return any(
+                sum([self._has_pair(strengths), self._has_three_of_a_kind(strengths), self._has_straight(strengths)]) >= 2
+                for strengths in row_strengths.values()
+            )
+        if "journalist wird gestuerzt" in text and "mindestens 3 quellen" in text:
+            payload = self._latest_payload(round_events, EventType.JOURNALIST_CHECKED)
+            return payload.get("changed") is True and int(payload.get("challenger_total") or 0) >= 3
+        if "weniger als 80 bevoelkerung im aktiven spiel" in text:
+            return active_population < 80
         return False
+
+    def _current_round_events(self, context: PhaseContext) -> list[Any]:
+        return [event for event in context.state.event_log.events if event.round == context.state.round.round_number]
+
+    def _latest_payload(self, events: list[Any], event_type: EventType) -> dict[str, Any]:
+        for event in reversed(events):
+            if event.event_type == event_type:
+                return dict(event.payload)
+        return {}
+
+    def _round_start_payload(self, events: list[Any]) -> dict[str, Any]:
+        return self._latest_payload(events, EventType.ROUND_START_SNAPSHOT)
+
+    def _normalize_condition(self, condition: str) -> str:
+        normalized = condition.lower()
+        replacements = {
+            "ä": "ae",
+            "ö": "oe",
+            "ü": "ue",
+            "ß": "ss",
+            "höchstens": "hoechstens",
+            "straße": "strasse",
+            "gestürzt": "gestuerzt",
+        }
+        for old, new in replacements.items():
+            normalized = normalized.replace(old, new)
+        return normalized
+
+    def _research_attack_records(self, row: list[str], total_power: dict[str, int]) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
+        for attacker, defender in self._world_history_transitions(row):
+            if attacker is None or defender is None or attacker == defender:
+                continue
+            margin = total_power.get(attacker, 0) - total_power.get(defender, 0)
+            records.append(
+                {
+                    "attacker": attacker,
+                    "defender": defender,
+                    "margin": margin,
+                    "impact": self._combat_impact(margin),
+                }
+            )
+        return records
+
+    def _research_propaganda_counts(self, slots: list[str | None]) -> dict[str, int]:
+        counts = {faction_id: 0 for faction_id in self.state.factions}
+        for card_id in slots:
+            faction_id = self._card_faction(card_id)
+            if faction_id in counts:
+                counts[faction_id] += 1
+        return {faction_id: count for faction_id, count in counts.items() if count > 0}
+
+    def _objective_propaganda_power(self, slots: list[str | None]) -> dict[str, int]:
+        slot_factors = self.config.v03.get("propaganda", {}).get("slot_factors", [1 for _ in slots])
+        power = {faction_id: 0 for faction_id in self.state.factions}
+        for index, card_id in enumerate(slots):
+            card = self.cards_by_id.get(card_id or "")
+            if card is None or card.faction not in power:
+                continue
+            factor = int(slot_factors[index]) if index < len(slot_factors) else 1
+            power[card.faction] += max(0, int(card.strength)) * factor
+        return power
+
+    def _card_faction(self, card_id: Any) -> str | None:
+        if card_id is None:
+            return None
+        card = self.cards_by_id.get(str(card_id))
+        return card.faction if card is not None else None
+
+    def _event_payload_sum(self, events: list[Any], key: str) -> int:
+        total = 0
+        for event in events:
+            value = event.payload.get(key)
+            if isinstance(value, int):
+                total += value
+        return total
+
+    def _has_pair(self, strengths: list[int]) -> bool:
+        return any(strengths.count(value) >= 2 for value in set(strengths))
+
+    def _has_three_of_a_kind(self, strengths: list[int]) -> bool:
+        return any(strengths.count(value) >= 3 for value in set(strengths))
+
+    def _has_straight(self, strengths: list[int]) -> bool:
+        unique = sorted(set(strengths))
+        return any({value, value + 1, value + 2}.issubset(unique) for value in unique)
 
     def _check_v03_victory(self, context: PhaseContext) -> None:
         for faction in context.state.factions.values():

@@ -30,8 +30,8 @@ class DashboardRunResult(BaseModel):
 
 def default_config_paths() -> dict[str, Path]:
     return {
-        "rules": PROJECT_ROOT / "configs" / "rules" / "base_rules.yaml",
-        "cards": PROJECT_ROOT / "configs" / "cards" / "base_cards.yaml",
+        "rules": PROJECT_ROOT / "configs" / "rules" / "rules_v0_3.yaml",
+        "cards": PROJECT_ROOT / "configs" / "cards" / "cards_v0_3.yaml",
         "bots": PROJECT_ROOT / "configs" / "bots" / "bot_profiles.yaml",
     }
 

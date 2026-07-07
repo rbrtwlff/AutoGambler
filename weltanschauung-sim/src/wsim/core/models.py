@@ -360,6 +360,14 @@ class CardConfig(BaseModel):
     count: int = Field(default=1, ge=0)
     tags: list[str] = Field(default_factory=list)
     enabled: bool = True
+    rules_version: str | None = None
+    timing: str | None = None
+    archetype: str | None = None
+    effect_text: str | None = None
+    points: int | None = Field(default=None, ge=0)
+    category: str | None = None
+    scope: str | None = None
+    condition: str | None = None
     action_effects: list[dict[str, Any]] = Field(default_factory=list)
     propaganda_effects: list[dict[str, Any]] = Field(default_factory=list)
     notes: str | None = None

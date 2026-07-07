@@ -25,6 +25,13 @@ wsim --help
 wsim version
 ```
 
+Aktuellen Regel- und Kartensatz validieren:
+
+```powershell
+wsim validate-config --rules configs/rules/rules_v0_3.yaml
+wsim validate-cards --rules configs/rules/rules_v0_3.yaml --cards configs/cards/cards_v0_3.yaml
+```
+
 Tests ausfuehren:
 
 ```powershell
@@ -34,7 +41,7 @@ python -m pytest
 Experiment mit Regelvarianten ausfuehren:
 
 ```powershell
-wsim experiment --base-rules configs/rules/base_rules.yaml --variants configs/experiments --cards configs/cards/base_cards.yaml --bots configs/bots/bot_profiles.yaml --games-per-variant 10000 --seed 123 --output outputs/runs/experiment_001
+wsim experiment --base-rules configs/rules/rules_v0_3.yaml --variants configs/experiments --cards configs/cards/cards_v0_3.yaml --bots configs/bots/bot_profiles.yaml --games-per-variant 10000 --seed 123 --output outputs/runs/experiment_001
 ```
 
 Der Experiment-Runner erzeugt pro Variante einen eigenen Run-Ordner sowie `comparison_metrics.json` und `comparison_report.md` im Experiment-Ordner.
@@ -47,6 +54,19 @@ Der Experiment-Runner erzeugt pro Variante einen eigenen Run-Ordner sowie `compa
 - `tests/`: automatisierte Tests
 
 ## Karten und Decks
+
+Der aktuelle V0.3-Kartensatz liegt in `configs/cards/cards_v0_3.yaml`.
+Er enthaelt die 240 gelieferten Fraktionskarten als Datenkonfiguration.
+Die Felder `timing`, `archetype` und `effect_text` bewahren den verbindlichen
+Kartentext, ohne ihn im Code hart zu verdrahten.
+
+Die Rechercheauftraege liegen getrennt in
+`configs/cards/research_assignments_v0_3.yaml` und werden von
+`cards_v0_3.yaml` eingebunden. Jeder Auftrag hat `points` mit dem Wert 1, 2
+oder 3; dieser Wert ist der Quellen-Ertrag, wenn der Auftrag erfuellt wird.
+V0.3 begrenzt Quellen nicht mehr auf 3, sondern nutzt aktuell ein hohes
+praktisches Limit von 99 Quellen pro Spieler, damit Spieler mehr Quellen
+sammeln und in der Journalistenpruefung einsetzen koennen.
 
 Kartenarten werden in YAML als `CardConfig` beschrieben. Das Feld `count`
 bestimmt, wie oft diese Kartenart physisch im Deck vorkommt. Jede physische

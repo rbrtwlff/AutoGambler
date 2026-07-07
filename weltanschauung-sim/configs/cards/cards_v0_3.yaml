@@ -1,0 +1,3605 @@
+# Kartensatz v0.3 - aus C:\Users\rbrtw\Downloads\kartensatz_v0_3.md importiert.
+# Die 240 Fraktionskarten bleiben Daten. Konkrete Effekte werden spaeter ueber maschinenlesbare effect-Tags ergaenzt.
+includes:
+  - research_assignments_v0_3.yaml
+cards:
+  - id: 'R01'
+    name: 'Marschbefehl'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Grundmacht'
+    effect_text: 'Rot erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot erhält +2 Macht.'
+  - id: 'R02'
+    name: 'Stahlkolonne'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Rot erhält +1 Macht. Wenn Rot in dieser Weltgeschichte ein Angriffsziel hat, erhält Rot zusätzlich +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot erhält +1 Macht. Wenn Rot in dieser Weltgeschichte ein Angriffsziel hat, erhält Rot zusätzlich +1 Macht.'
+  - id: 'R03'
+    name: 'Parolenwand'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 1 rote Propagandakarte ausliegt, erhält Rot +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 rote Propagandakarte ausliegt, erhält Rot +2 Macht.'
+  - id: 'R04'
+    name: 'Disziplin'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn Rot derzeit nicht die niedrigste Macht hat, erhält Rot +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot derzeit nicht die niedrigste Macht hat, erhält Rot +2 Macht.'
+  - id: 'R05'
+    name: 'Ordnung herstellen'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Grundmacht'
+    effect_text: 'Senke die Macht der Fraktion mit der wenigsten Bevölkerung um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die Macht der Fraktion mit der wenigsten Bevölkerung um 2.'
+  - id: 'R06'
+    name: 'Straßensperre'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:grundmacht', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Grundmacht'
+    effect_text: 'Der erste Angriff gegen Rot wird mit -2 Macht des Angreifers berechnet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der erste Angriff gegen Rot wird mit -2 Macht des Angreifers berechnet.'
+  - id: 'R07'
+    name: 'Schwarze Stiefel'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Grundmacht'
+    effect_text: 'Rot gewinnt in dieser Weltgeschichte Machtgleichstände in Kämpfen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot gewinnt in dieser Weltgeschichte Machtgleichstände in Kämpfen.'
+  - id: 'R08'
+    name: 'Befehlskette'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Nach Abschluss der Machtberechnung: Wenn Rot mindestens 10 Macht hat, erhält Rot +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Nach Abschluss der Machtberechnung: Wenn Rot mindestens 10 Macht hat, erhält Rot +2 Macht.'
+  - id: 'R09'
+    name: 'Sturmabteilung'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:sturm', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Sturm'
+    effect_text: 'Wenn Rot einen erfolgreichen Angriff ausführt, erhöhe dessen Kampfwirkung um 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot einen erfolgreichen Angriff ausführt, erhöhe dessen Kampfwirkung um 1.'
+  - id: 'R10'
+    name: 'Durchbruch'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:sturm', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Sturm'
+    effect_text: 'Wenn Rot mit mindestens 4 Macht Vorsprung erfolgreich angreift, neutralisiere zusätzlich 1 Bevölkerung des Ziels.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot mit mindestens 4 Macht Vorsprung erfolgreich angreift, neutralisiere zusätzlich 1 Bevölkerung des Ziels.'
+  - id: 'R11'
+    name: 'Kesselschlag'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_bedingt', 'archetype:sturm', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Bedingt'
+    archetype: 'Sturm'
+    effect_text: 'Wenn Rot derzeit die höchste Macht hat, greift Rot die nicht-rote Fraktion mit der niedrigsten Bevölkerung an.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot derzeit die höchste Macht hat, greift Rot die nicht-rote Fraktion mit der niedrigsten Bevölkerung an.'
+  - id: 'R12'
+    name: 'Überrennen'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:sturm', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Sturm'
+    effect_text: 'Am Ende der Kampfbestimmung: Wenn Rot ein Ziel mit niedrigerer Macht angreift, erhält Rot +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Am Ende der Kampfbestimmung: Wenn Rot ein Ziel mit niedrigerer Macht angreift, erhält Rot +2 Macht.'
+  - id: 'R13'
+    name: 'Gewaltmonopol'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:sturm', 'propaganda_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Sturm'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, erhöhen erfolgreiche rote Angriffe ihre Kampfwirkung um 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, erhöhen erfolgreiche rote Angriffe ihre Kampfwirkung um 1.'
+  - id: 'R14'
+    name: 'Morgenappell'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:sturm']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Sturm'
+    effect_text: 'Wenn mindestens 3 rote Karten in der Weltgeschichtsreihe liegen, erhält Rot +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 3 rote Karten in der Weltgeschichtsreihe liegen, erhält Rot +3 Macht.'
+  - id: 'R15'
+    name: 'Ausnahmezustand'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:sturm']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Sturm'
+    effect_text: 'Nach Abschluss der Machtberechnung: Wenn mindestens eine Fraktion 12 oder mehr Macht hat, erhält Rot +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Nach Abschluss der Machtberechnung: Wenn mindestens eine Fraktion 12 oder mehr Macht hat, erhält Rot +3 Macht.'
+  - id: 'R16'
+    name: 'Blutiger Vorsprung'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:sturm', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Sturm'
+    effect_text: 'Wenn Rot mit mindestens 6 Macht Vorsprung erfolgreich angreift, wird 1 durch diesen Angriff neutralisierte Bevölkerung stattdessen vernichtet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot mit mindestens 6 Macht Vorsprung erfolgreich angreift, wird 1 durch diesen Angriff neutralisierte Bevölkerung stattdessen vernichtet.'
+  - id: 'R17'
+    name: 'Einschüchterung'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_statisch', 'archetype:feindbild', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Statisch'
+    archetype: 'Feindbild'
+    effect_text: 'Rot greift die Fraktion mit der wenigsten Bevölkerung an. Diese Fraktion kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot greift die Fraktion mit der wenigsten Bevölkerung an. Diese Fraktion kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'R18'
+    name: 'Zerschlagen'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:sturm', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Sturm'
+    effect_text: 'Wenn ein erfolgreicher roter Angriff das Ziel auf 5 oder weniger Bevölkerung bringt, neutralisiere zusätzlich 1 Bevölkerung dieses Ziels.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn ein erfolgreicher roter Angriff das Ziel auf 5 oder weniger Bevölkerung bringt, neutralisiere zusätzlich 1 Bevölkerung dieses Ziels.'
+  - id: 'R19'
+    name: 'Gleichschritt'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot ein Paar hat, erhält Rot +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot ein Paar hat, erhält Rot +3 Macht.'
+  - id: 'R20'
+    name: 'Trommelschlag'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:gleichschritt', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot ein Paar hat, erhöhe die Kampfwirkung des ersten erfolgreichen roten Angriffs um 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot ein Paar hat, erhöhe die Kampfwirkung des ersten erfolgreichen roten Angriffs um 1.'
+  - id: 'R21'
+    name: 'Fahnenmeer'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn mindestens 2 rote Propagandakarten ausliegen, erhält Rot +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 2 rote Propagandakarten ausliegen, erhält Rot +4 Macht.'
+  - id: 'R22'
+    name: 'Marschformation'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot eine Straße aus drei Machtwerten hat, erhält Rot +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot eine Straße aus drei Machtwerten hat, erhält Rot +4 Macht.'
+  - id: 'R23'
+    name: 'Ein Takt'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot genau zwei Karten mit gedrucktem Machtwert 2 in der Weltgeschichtsreihe hat, erhält Rot +2 Macht und gewinnt Machtgleichstände in Kämpfen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot genau zwei Karten mit gedrucktem Machtwert 2 in der Weltgeschichtsreihe hat, erhält Rot +2 Macht und gewinnt Machtgleichstände in Kämpfen.'
+  - id: 'R24'
+    name: 'Doppelschritt'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot ein Paar hat, erhält Rot +3 Macht. Wenn Rot einen Drilling hat, erhält Rot stattdessen +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot ein Paar hat, erhält Rot +3 Macht. Wenn Rot einen Drilling hat, erhält Rot stattdessen +5 Macht.'
+  - id: 'R25'
+    name: 'Drill'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn Rot einen Drilling hat, erhält Rot +5 Macht. Andernfalls erhält Rot +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot einen Drilling hat, erhält Rot +5 Macht. Andernfalls erhält Rot +1 Macht.'
+  - id: 'R26'
+    name: 'Marsch der Vielen'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Wenn mindestens 4 rote Karten in der Weltgeschichtsreihe liegen, neutralisiere 1 Bevölkerung der Fraktion mit der wenigsten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 4 rote Karten in der Weltgeschichtsreihe liegen, neutralisiere 1 Bevölkerung der Fraktion mit der wenigsten Bevölkerung.'
+  - id: 'R27'
+    name: 'Blut und Boden'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch_slot', 'archetype:gleichschritt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch/Slot'
+    archetype: 'Gleichschritt'
+    effect_text: 'Solange diese Karte im dritten oder vierten Propagandaslot liegt, erhält Rot für jedes rote Paar in der Weltgeschichtsreihe +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte im dritten oder vierten Propagandaslot liegt, erhält Rot für jedes rote Paar in der Weltgeschichtsreihe +2 Macht.'
+  - id: 'R28'
+    name: 'Eiserner Rhythmus'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichschritt']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichschritt'
+    effect_text: 'Rot erhält +1 Macht für jede weitere rote Karte mit gedrucktem Machtwert 3 in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot erhält +1 Macht für jede weitere rote Karte mit gedrucktem Machtwert 3 in der Weltgeschichtsreihe.'
+  - id: 'R29'
+    name: 'Feindbild'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel', 'archetype:feindbild', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel'
+    archetype: 'Feindbild'
+    effect_text: 'Rot greift die Fraktion mit der wenigsten Bevölkerung an.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot greift die Fraktion mit der wenigsten Bevölkerung an.'
+  - id: 'R30'
+    name: 'Sündenbock'
+    type: hybrid
+    faction: red
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel', 'archetype:feindbild', 'propaganda_relevant', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel'
+    archetype: 'Feindbild'
+    effect_text: 'Rot greift die Fraktion mit der niedrigsten Propagandamacht an. Bei Gleichstand greift Rot davon die Fraktion mit der niedrigeren Bevölkerung an.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot greift die Fraktion mit der niedrigsten Propagandamacht an. Bei Gleichstand greift Rot davon die Fraktion mit der niedrigeren Bevölkerung an.'
+  - id: 'R31'
+    name: 'Markierung'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:feindbild', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Feindbild'
+    effect_text: 'Am Ende der Kampfbestimmung: Die Fraktion, die Rot angreift, erhält -2 Macht. Hat sie weniger als 10 Bevölkerung, erhält sie stattdessen -3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Am Ende der Kampfbestimmung: Die Fraktion, die Rot angreift, erhält -2 Macht. Hat sie weniger als 10 Bevölkerung, erhält sie stattdessen -3 Macht.'
+  - id: 'R32'
+    name: 'Hetzrede'
+    type: hybrid
+    faction: red
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:feindbild', 'propaganda_relevant', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Feindbild'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt: Am Ende der Kampfbestimmung erhält Rot +2 Macht, wenn sein Angriffsziel weniger als 10 Bevölkerung hat.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt: Am Ende der Kampfbestimmung erhält Rot +2 Macht, wenn sein Angriffsziel weniger als 10 Bevölkerung hat.'
+  - id: 'R33'
+    name: 'Innerer Feind'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel', 'archetype:feindbild', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel'
+    archetype: 'Feindbild'
+    effect_text: 'Rot greift die Fraktion an, die in dieser Weltgeschichtsreihe die wenigsten Karten hat.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Rot greift die Fraktion an, die in dieser Weltgeschichtsreihe die wenigsten Karten hat.'
+  - id: 'R34'
+    name: 'Öffentliche Demütigung'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:feindbild', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Feindbild'
+    effect_text: 'Am Ende der Kampfbestimmung: Wenn Rot ein Ziel mit niedrigerer Macht angreift, neutralisiere 1 Bevölkerung dieses Ziels vor der Kampfabwicklung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Am Ende der Kampfbestimmung: Wenn Rot ein Ziel mit niedrigerer Macht angreift, neutralisiere 1 Bevölkerung dieses Ziels vor der Kampfabwicklung.'
+  - id: 'R35'
+    name: 'Säuberungsliste'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_bedingt', 'archetype:feindbild', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Bedingt'
+    archetype: 'Feindbild'
+    effect_text: 'Wenn eine nicht-rote Fraktion 5 oder weniger Bevölkerung hat, greift Rot diese Fraktion an und erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine nicht-rote Fraktion 5 oder weniger Bevölkerung hat, greift Rot diese Fraktion an und erhält +2 Macht.'
+  - id: 'R36'
+    name: 'Belagerung'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:feindbild', 'propaganda_relevant', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Feindbild'
+    effect_text: 'Wenn mindestens 1 rote Propagandakarte ausliegt, neutralisiere bei einem erfolgreichen roten Angriff zusätzlich 1 Bevölkerung des Ziels.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 rote Propagandakarte ausliegt, neutralisiere bei einem erfolgreichen roten Angriff zusätzlich 1 Bevölkerung des Ziels.'
+  - id: 'R37'
+    name: 'Junge Bewegung'
+    type: hybrid
+    faction: red
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im ersten Propagandaslot: Wenn mindestens 1 rote Karte in der Weltgeschichtsreihe liegt, erhält Rot +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im ersten Propagandaslot: Wenn mindestens 1 rote Karte in der Weltgeschichtsreihe liegt, erhält Rot +2 Macht.'
+  - id: 'R38'
+    name: 'Gleichgeschaltete Presse'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz_slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz/Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im zweiten Propagandaslot: Der erste Angriff gegen Rot in jeder Weltgeschichte wird verhindert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten Propagandaslot: Der erste Angriff gegen Rot in jeder Weltgeschichte wird verhindert.'
+  - id: 'R39'
+    name: 'Führungsmythos'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im dritten oder vierten Propagandaslot: Rot gewinnt Machtgleichstände in Kämpfen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im dritten oder vierten Propagandaslot: Rot gewinnt Machtgleichstände in Kämpfen.'
+  - id: 'R40'
+    name: 'Nationaler Rausch'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:propaganda', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Propaganda'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, erhält Rot +1 Macht für jede rote Karte in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, erhält Rot +1 Macht für jede rote Karte in der Weltgeschichtsreihe.'
+  - id: 'R41'
+    name: 'Das große Versprechen'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:nachhall', 'archetype:propaganda', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Nachhall'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn diese Karte verdrängt wird, rekrutiert Rot 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn diese Karte verdrängt wird, rekrutiert Rot 1 Bevölkerung.'
+  - id: 'R42'
+    name: 'Feuersäulen'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:propaganda', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn diese Karte als Propaganda ausliegt und Rot nach Abschluss der Machtberechnung mindestens 12 Macht hat, neutralisiere 1 Bevölkerung der Fraktion mit der wenigsten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn diese Karte als Propaganda ausliegt und Rot nach Abschluss der Machtberechnung mindestens 12 Macht hat, neutralisiere 1 Bevölkerung der Fraktion mit der wenigsten Bevölkerung.'
+  - id: 'R43'
+    name: 'Alte Ordnung'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im vierten Propagandaslot: Erfolgreiche rote Angriffe erhalten +1 Kampfwirkung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im vierten Propagandaslot: Erfolgreiche rote Angriffe erhalten +1 Kampfwirkung.'
+  - id: 'R44'
+    name: 'Märtyrerbild'
+    type: hybrid
+    faction: red
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:opfer', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Opfer'
+    effect_text: 'Wenn rote Bevölkerung neutralisiert wird, erhält Rot in dieser Weltgeschichte +3 Macht. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn rote Bevölkerung neutralisiert wird, erhält Rot in dieser Weltgeschichte +3 Macht. Maximal einmal pro Weltgeschichte.'
+  - id: 'R45'
+    name: 'Ewiger Feind'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:feindbild', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Feindbild'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, ersetzen rote Feindbild-Effekte „wenigste Bevölkerung“ durch „meiste Bevölkerung“.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, ersetzen rote Feindbild-Effekte „wenigste Bevölkerung“ durch „meiste Bevölkerung“.'
+  - id: 'R46'
+    name: 'Aufmarschplatz'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:propaganda', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn mindestens 3 rote Karten in der Weltgeschichtsreihe liegen, erhält Rot +2 zusätzliche Macht aus aktivierter roter Propaganda.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 3 rote Karten in der Weltgeschichtsreihe liegen, erhält Rot +2 zusätzliche Macht aus aktivierter roter Propaganda.'
+  - id: 'R47'
+    name: 'Fanatisierung'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:opfer', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Opfer'
+    effect_text: 'Neutralisiere 1 rote Bevölkerung: Rot erhält +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 rote Bevölkerung: Rot erhält +5 Macht.'
+  - id: 'R48'
+    name: 'Opfergang'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:opfer', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Opfer'
+    effect_text: 'Senke Rot um 2 Macht. Wenn Rot dadurch nicht mehr die höchste Macht hat, erhöhe die Kampfwirkung eines erfolgreichen roten Angriffs um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Rot um 2 Macht. Wenn Rot dadurch nicht mehr die höchste Macht hat, erhöhe die Kampfwirkung eines erfolgreichen roten Angriffs um 2.'
+  - id: 'R49'
+    name: 'Letztes Aufgebot'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:opfer', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Opfer'
+    effect_text: 'Wenn Rot 6 oder weniger Bevölkerung hat, neutralisiere 1 rote Bevölkerung und Rot erhält +6 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot 6 oder weniger Bevölkerung hat, neutralisiere 1 rote Bevölkerung und Rot erhält +6 Macht.'
+  - id: 'R50'
+    name: 'Verbrannte Straße'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_verzoegert', 'archetype:opfer', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Verzögert'
+    archetype: 'Opfer'
+    effect_text: 'Vernichte 1 neutrale Bevölkerung: Wenn Rot einen erfolgreichen Angriff ausführt, neutralisiere zusätzlich 1 Bevölkerung des Ziels.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Vernichte 1 neutrale Bevölkerung: Wenn Rot einen erfolgreichen Angriff ausführt, neutralisiere zusätzlich 1 Bevölkerung des Ziels.'
+  - id: 'R51'
+    name: 'Treueschwur'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:opfer', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Opfer'
+    effect_text: 'Entferne 1 rote Propagandakarte: Rot erhält +5 Macht und gewinnt Machtgleichstände in Kämpfen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne 1 rote Propagandakarte: Rot erhält +5 Macht und gewinnt Machtgleichstände in Kämpfen.'
+  - id: 'R52'
+    name: 'Schildwall'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Reduziere die erste Kampfwirkung gegen Rot um 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Reduziere die erste Kampfwirkung gegen Rot um 1.'
+  - id: 'R53'
+    name: 'Gegenmarsch'
+    type: hybrid
+    faction: red
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz_bedingt', 'archetype:gegenwehr']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz/Bedingt'
+    archetype: 'Gegenwehr'
+    effect_text: 'Wenn Rot angegriffen wird, erhält Rot +3 Macht gegen den Angreifer mit der höchsten Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot angegriffen wird, erhält Rot +3 Macht gegen den Angreifer mit der höchsten Macht.'
+  - id: 'R54'
+    name: 'Kein Rückzug'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:gegenwehr', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Das erste Mal in dieser Weltgeschichte, wenn Rot Bevölkerung verlieren würde, verliert Rot 1 weniger. Rot kann in dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal in dieser Weltgeschichte, wenn Rot Bevölkerung verlieren würde, verliert Rot 1 weniger. Rot kann in dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'R55'
+    name: 'Standgericht'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:gegenwehr']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Gegenwehr'
+    effect_text: 'Wenn eine Fraktion Rots Macht senkt, senke die Macht dieser Fraktion um 1. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine Fraktion Rots Macht senkt, senke die Macht dieser Fraktion um 1. Maximal einmal pro Weltgeschichte.'
+  - id: 'R56'
+    name: 'Kriegsbeute'
+    type: hybrid
+    faction: red
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'combat_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn Rot in dieser Weltgeschichte einen erfolgreichen Angriff ausführt, zieht der Spieler mit den wenigsten Handkarten 1 Karte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot in dieser Weltgeschichte einen erfolgreichen Angriff ausführt, zieht der Spieler mit den wenigsten Handkarten 1 Karte.'
+  - id: 'R57'
+    name: 'Informanten'
+    type: hybrid
+    faction: red
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'propaganda_relevant', 'combat_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn Rot eine Fraktion mit höherer Propagandamacht angreift, erhält der Journalist 1 Quelle.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot eine Fraktion mit höherer Propagandamacht angreift, erhält der Journalist 1 Quelle.'
+  - id: 'R58'
+    name: 'Totaler Krieg'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_verzoegert', 'archetype:bombe', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Verzögert'
+    archetype: 'Bombe'
+    effect_text: 'Erfolgreiche rote Angriffe neutralisieren 1 zusätzliche Bevölkerung des Ziels. Wenn Rot mindestens 15 Macht hat, wird 1 durch einen roten Angriff neutralisierte Bevölkerung stattdessen vernichtet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Erfolgreiche rote Angriffe neutralisieren 1 zusätzliche Bevölkerung des Ziels. Wenn Rot mindestens 15 Macht hat, wird 1 durch einen roten Angriff neutralisierte Bevölkerung stattdessen vernichtet.'
+  - id: 'R59'
+    name: 'Ein Volk, ein Wille'
+    type: hybrid
+    faction: red
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn Rot mindestens 1 Paar und mindestens 1 rote Propagandakarte hat, erhält Rot +6 Macht und gewinnt Machtgleichstände in Kämpfen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot mindestens 1 Paar und mindestens 1 rote Propagandakarte hat, erhält Rot +6 Macht und gewinnt Machtgleichstände in Kämpfen.'
+  - id: 'R60'
+    name: 'Nacht der Messer'
+    type: hybrid
+    faction: red
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn Rot die höchste Macht hat, neutralisiere 1 Bevölkerung jeder nicht-roten Fraktion mit 5 oder weniger Bevölkerung. Würde dadurch eine Fraktion ausgelöscht, wird diese Bevölkerung stattdessen vernichtet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Rot die höchste Macht hat, neutralisiere 1 Bevölkerung jeder nicht-roten Fraktion mit 5 oder weniger Bevölkerung. Würde dadurch eine Fraktion ausgelöscht, wird diese Bevölkerung stattdessen vernichtet.'
+  - id: 'S01'
+    name: 'Versammlung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Schwarz +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Schwarz +2 Macht.'
+  - id: 'S02'
+    name: 'Rote Fahnen'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 1 schwarze Propagandakarte ausliegt, erhält Schwarz +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 schwarze Propagandakarte ausliegt, erhält Schwarz +2 Macht.'
+  - id: 'S03'
+    name: 'Kollektivbeschluss'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn keine Fraktion mehr als 15 Bevölkerung hat, erhält Schwarz +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn keine Fraktion mehr als 15 Bevölkerung hat, erhält Schwarz +3 Macht.'
+  - id: 'S04'
+    name: 'Parteidisziplin'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Schwarz erhält +1 Macht für jede Fraktion mit mindestens 8 Bevölkerung, maximal +4.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Schwarz erhält +1 Macht für jede Fraktion mit mindestens 8 Bevölkerung, maximal +4.'
+  - id: 'S05'
+    name: 'Betriebsrat'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Grundmacht'
+    effect_text: 'Senke die derzeit höchste Macht um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die derzeit höchste Macht um 2.'
+  - id: 'S06'
+    name: 'Solidaritätsfonds'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 1 Bevölkerung vernichtet ist, stelle 1 Bevölkerung wieder her.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 Bevölkerung vernichtet ist, stelle 1 Bevölkerung wieder her.'
+  - id: 'S07'
+    name: 'Agitationskreis'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn Schwarz derzeit nicht die höchste Macht hat, erhält Schwarz +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz derzeit nicht die höchste Macht hat, erhält Schwarz +3 Macht.'
+  - id: 'S08'
+    name: 'Genossenschaft'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Schwarz rekrutiert 1 Bevölkerung. Wenn Schwarz die wenigste Bevölkerung hat, rekrutiert Schwarz stattdessen 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Schwarz rekrutiert 1 Bevölkerung. Wenn Schwarz die wenigste Bevölkerung hat, rekrutiert Schwarz stattdessen 2 Bevölkerung.'
+  - id: 'S09'
+    name: 'Enteignung'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Umverteilung'
+    effect_text: 'Neutralisiere 2 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 2 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+  - id: 'S10'
+    name: 'Klassenkampf'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Umverteilung'
+    effect_text: 'Neutralisiere 1 Bevölkerung jeder Fraktion, die mehr Bevölkerung als Schwarz hat.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 Bevölkerung jeder Fraktion, die mehr Bevölkerung als Schwarz hat.'
+  - id: 'S11'
+    name: 'Besitzstand brechen'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:umverteilung', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Umverteilung'
+    effect_text: 'Senke die Macht der Fraktion mit der höchsten Propagandamacht um 3.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die Macht der Fraktion mit der höchsten Propagandamacht um 3.'
+  - id: 'S12'
+    name: 'Ausgleich'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Umverteilung'
+    effect_text: 'Wenn eine Fraktion mindestens 5 Bevölkerung mehr als Schwarz hat, neutralisiere 1 Bevölkerung dieser Fraktion.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine Fraktion mindestens 5 Bevölkerung mehr als Schwarz hat, neutralisiere 1 Bevölkerung dieser Fraktion.'
+  - id: 'S13'
+    name: 'Umverteilung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Umverteilung'
+    effect_text: 'Das erste Mal in jeder Weltgeschichte, wenn Bevölkerung einer Fraktion neutralisiert wird, rekrutiert Schwarz 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal in jeder Weltgeschichte, wenn Bevölkerung einer Fraktion neutralisiert wird, rekrutiert Schwarz 1 Bevölkerung.'
+  - id: 'S14'
+    name: 'Streikfront'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Umverteilung'
+    effect_text: 'Senke die derzeit höchste Macht um 4. Wenn diese Fraktion dadurch nicht mehr allein die höchste Macht hat, rekrutiert Schwarz 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die derzeit höchste Macht um 4. Wenn diese Fraktion dadurch nicht mehr allein die höchste Macht hat, rekrutiert Schwarz 1 Bevölkerung.'
+  - id: 'S15'
+    name: 'Mieterversammlung'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Umverteilung'
+    effect_text: 'Die Fraktion mit der meisten Bevölkerung kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Die Fraktion mit der meisten Bevölkerung kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'S16'
+    name: 'Kaderarbeit'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Umverteilung'
+    effect_text: 'Das erste Mal, wenn eine Fraktion, die zu diesem Zeitpunkt die höchste Macht hat, Bevölkerung neutralisiert, erhält Schwarz +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal, wenn eine Fraktion, die zu diesem Zeitpunkt die höchste Macht hat, Bevölkerung neutralisiert, erhält Schwarz +3 Macht.'
+  - id: 'S17'
+    name: 'Planwirtschaft'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:umverteilung', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Umverteilung'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, kann keine Fraktion mehr als 2 Bevölkerung pro Weltgeschichte rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, kann keine Fraktion mehr als 2 Bevölkerung pro Weltgeschichte rekrutieren.'
+  - id: 'S18'
+    name: 'Zwangskollektivierung'
+    type: hybrid
+    faction: black
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:umverteilung', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Umverteilung'
+    effect_text: 'Neutralisiere 3 Bevölkerung der Fraktion mit der meisten Bevölkerung. Schwarz kann in dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 3 Bevölkerung der Fraktion mit der meisten Bevölkerung. Schwarz kann in dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'S19'
+    name: 'Die Masse'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Schwarz erhält +1 Macht je 5 neutrale Bevölkerung, maximal +5.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Schwarz erhält +1 Macht je 5 neutrale Bevölkerung, maximal +5.'
+  - id: 'S20'
+    name: 'Volksküche'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Masse'
+    effect_text: 'Schwarz rekrutiert 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Schwarz rekrutiert 1 Bevölkerung.'
+  - id: 'S21'
+    name: 'Komitee'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Wenn mindestens 15 neutrale Bevölkerung vorhanden sind, rekrutiert Schwarz 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 15 neutrale Bevölkerung vorhanden sind, rekrutiert Schwarz 1 Bevölkerung.'
+  - id: 'S22'
+    name: 'Fabriktore'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Wenn mindestens 3 schwarze Karten in der Weltgeschichtsreihe liegen, rekrutiert Schwarz 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 3 schwarze Karten in der Weltgeschichtsreihe liegen, rekrutiert Schwarz 2 Bevölkerung.'
+  - id: 'S23'
+    name: 'Arbeiterrat'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Wenn Schwarz ein Paar hat, rekrutiert Schwarz 1 Bevölkerung und erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz ein Paar hat, rekrutiert Schwarz 1 Bevölkerung und erhält +2 Macht.'
+  - id: 'S24'
+    name: 'Volksfront'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Masse'
+    effect_text: 'Sobald Schwarz in dieser Weltgeschichte zum zweiten Mal Bevölkerung rekrutiert, erhält Schwarz +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Sobald Schwarz in dieser Weltgeschichte zum zweiten Mal Bevölkerung rekrutiert, erhält Schwarz +4 Macht.'
+  - id: 'S25'
+    name: 'Kollektivierung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Masse'
+    effect_text: 'Das erste Mal in jeder Weltgeschichte, wenn Schwarz rekrutiert, rekrutiert Schwarz 1 zusätzliche Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal in jeder Weltgeschichte, wenn Schwarz rekrutiert, rekrutiert Schwarz 1 zusätzliche Bevölkerung.'
+  - id: 'S26'
+    name: 'Die Straße gehört uns'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_bedingt', 'archetype:masse', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Wenn mindestens 20 neutrale Bevölkerung vorhanden sind, greift Schwarz die Fraktion mit der meisten Bevölkerung an und erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 20 neutrale Bevölkerung vorhanden sind, greift Schwarz die Fraktion mit der meisten Bevölkerung an und erhält +2 Macht.'
+  - id: 'S27'
+    name: 'Wiederaufbauprogramm'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch_nachhall', 'archetype:masse', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch/Nachhall'
+    archetype: 'Masse'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt: Wenn in einer Weltgeschichte Bevölkerung vernichtet wurde, stelle am Ende dieser Weltgeschichte 1 Bevölkerung wieder her.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt: Wenn in einer Weltgeschichte Bevölkerung vernichtet wurde, stelle am Ende dieser Weltgeschichte 1 Bevölkerung wieder her.'
+  - id: 'S28'
+    name: 'Internationale'
+    type: hybrid
+    faction: black
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:masse', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Masse'
+    effect_text: 'Wenn alle vier Fraktionen Bevölkerung haben, rekrutiert Schwarz 2 Bevölkerung und senkt die derzeit höchste Macht um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn alle vier Fraktionen Bevölkerung haben, rekrutiert Schwarz 2 Bevölkerung und senkt die derzeit höchste Macht um 2.'
+  - id: 'S29'
+    name: 'Gleicher Lohn'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn zwei Fraktionen dieselbe Bevölkerung haben, erhält Schwarz +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn zwei Fraktionen dieselbe Bevölkerung haben, erhält Schwarz +4 Macht.'
+  - id: 'S30'
+    name: 'Nivellierung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn der Unterschied zwischen der höchsten und der niedrigsten Fraktionsbevölkerung höchstens 4 beträgt, rekrutiert Schwarz 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn der Unterschied zwischen der höchsten und der niedrigsten Fraktionsbevölkerung höchstens 4 beträgt, rekrutiert Schwarz 1 Bevölkerung.'
+  - id: 'S31'
+    name: 'Gleichstand'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn zwei nicht ausgelöschte Fraktionen mit mindestens 1 Macht dieselbe Macht haben, erhält Schwarz +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn zwei nicht ausgelöschte Fraktionen mit mindestens 1 Macht dieselbe Macht haben, erhält Schwarz +3 Macht.'
+  - id: 'S32'
+    name: 'Kein Herr, kein Knecht'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:gleichheit', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Gleichheit'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt: Nach Abschluss aller Machtboni und Machtmalusse verliert jede Fraktion mit mehr als 20 Macht 2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt: Nach Abschluss aller Machtboni und Machtmalusse verliert jede Fraktion mit mehr als 20 Macht 2 Macht.'
+  - id: 'S33'
+    name: 'Die Mitte kippt'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn Schwarz weder die höchste noch die niedrigste Macht hat, erhält Schwarz +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz weder die höchste noch die niedrigste Macht hat, erhält Schwarz +4 Macht.'
+  - id: 'S34'
+    name: 'Rätegleichgewicht'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn der Unterschied zwischen der höchsten und niedrigsten Macht nicht ausgelöschter Fraktionen höchstens 6 beträgt, rekrutiert Schwarz 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn der Unterschied zwischen der höchsten und niedrigsten Macht nicht ausgelöschter Fraktionen höchstens 6 beträgt, rekrutiert Schwarz 2 Bevölkerung.'
+  - id: 'S35'
+    name: 'Volkszählung'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn alle Fraktionen mindestens 1 Bevölkerung haben und keine Fraktion mehr als 15 Bevölkerung hat, erhält Schwarz +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn alle Fraktionen mindestens 1 Bevölkerung haben und keine Fraktion mehr als 15 Bevölkerung hat, erhält Schwarz +5 Macht.'
+  - id: 'S36'
+    name: 'Parität'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn Schwarz ein Paar hat, senke die höchste Macht um 2 und erhöhe die niedrigste Macht um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz ein Paar hat, senke die höchste Macht um 2 und erhöhe die niedrigste Macht um 2.'
+  - id: 'S37'
+    name: 'Aus der Reihe'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn die Fraktion mit der höchsten Macht mindestens 4 Macht mehr als die Fraktion mit der zweithöchsten Macht hat, neutralisiere 1 Bevölkerung der Fraktion mit der höchsten Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die Fraktion mit der höchsten Macht mindestens 4 Macht mehr als die Fraktion mit der zweithöchsten Macht hat, neutralisiere 1 Bevölkerung der Fraktion mit der höchsten Macht.'
+  - id: 'S38'
+    name: 'Kollektive Stimme'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:gleichheit']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Gleichheit'
+    effect_text: 'Wenn mindestens drei Fraktionen Karten in der Weltgeschichtsreihe haben, erhält Schwarz +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens drei Fraktionen Karten in der Weltgeschichtsreihe haben, erhält Schwarz +3 Macht.'
+  - id: 'S39'
+    name: 'Manifest'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im ersten Propagandaslot: Wenn mindestens 1 schwarze Karte in der Weltgeschichtsreihe liegt, senke die derzeit höchste Macht um 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im ersten Propagandaslot: Wenn mindestens 1 schwarze Karte in der Weltgeschichtsreihe liegt, senke die derzeit höchste Macht um 1.'
+  - id: 'S40'
+    name: 'Klassenbewusstsein'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_trigger', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Trigger'
+    archetype: 'Propaganda'
+    effect_text: 'Im zweiten Propagandaslot: Wenn Bevölkerung neutralisiert wird, erhält Schwarz +1 Macht, maximal +3 pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten Propagandaslot: Wenn Bevölkerung neutralisiert wird, erhält Schwarz +1 Macht, maximal +3 pro Weltgeschichte.'
+  - id: 'S41'
+    name: 'Revolutionszeitung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_trigger', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Trigger'
+    archetype: 'Propaganda'
+    effect_text: 'Im dritten Propagandaslot: Wenn die Fraktion mit der meisten Bevölkerung Bevölkerung verliert, rekrutiert Schwarz 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im dritten Propagandaslot: Wenn die Fraktion mit der meisten Bevölkerung Bevölkerung verliert, rekrutiert Schwarz 1 Bevölkerung.'
+  - id: 'S42'
+    name: 'Staatsapparat'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_schutz', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Schutz'
+    archetype: 'Propaganda'
+    effect_text: 'Im vierten Propagandaslot: Wenn Schwarz durch einen erfolgreichen Angriff Bevölkerung verlieren würde, verliert Schwarz 1 weniger.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im vierten Propagandaslot: Wenn Schwarz durch einen erfolgreichen Angriff Bevölkerung verlieren würde, verliert Schwarz 1 weniger.'
+  - id: 'S43'
+    name: 'Parteiprogramm'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:propaganda', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Propaganda'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, erhält Schwarz +1 Macht für jede schwarze Karte mit gedrucktem Machtwert 2 in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, erhält Schwarz +1 Macht für jede schwarze Karte mit gedrucktem Machtwert 2 in der Weltgeschichtsreihe.'
+  - id: 'S44'
+    name: 'Die gerechte Sache'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:nachhall', 'archetype:propaganda', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Nachhall'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn diese Karte verdrängt wird, stelle 1 Bevölkerung wieder her.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn diese Karte verdrängt wird, stelle 1 Bevölkerung wieder her.'
+  - id: 'S45'
+    name: 'Volkskongress'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:propaganda', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn mindestens 2 schwarze Propagandakarten ausliegen, rekrutiert Schwarz 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 2 schwarze Propagandakarten ausliegen, rekrutiert Schwarz 2 Bevölkerung.'
+  - id: 'S46'
+    name: 'Permanente Revolution'
+    type: hybrid
+    faction: black
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:propaganda', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Propaganda'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, neutralisiere am Ende jeder Weltgeschichte 1 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, neutralisiere am Ende jeder Weltgeschichte 1 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+  - id: 'S47'
+    name: 'Funktionärsnetz'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:propaganda', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn Schwarz mindestens 10 Propagandamacht hat, erhält Schwarz +3 Macht und rekrutiert 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz mindestens 10 Propagandamacht hat, erhält Schwarz +3 Macht und rekrutiert 1 Bevölkerung.'
+  - id: 'S48'
+    name: 'Zentralkomitee'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im zweiten oder dritten Propagandaslot zählt schwarze Propagandamacht auch dann, wenn keine schwarze Karte in der Weltgeschichtsreihe liegt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten oder dritten Propagandaslot zählt schwarze Propagandamacht auch dann, wenn keine schwarze Karte in der Weltgeschichtsreihe liegt.'
+  - id: 'S49'
+    name: 'Selbstkritik'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:revolution', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Revolution'
+    effect_text: 'Senke Schwarz um 2 Macht. Wenn Schwarz dadurch nicht mehr die höchste Macht hat, rekrutiert Schwarz 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Schwarz um 2 Macht. Wenn Schwarz dadurch nicht mehr die höchste Macht hat, rekrutiert Schwarz 2 Bevölkerung.'
+  - id: 'S50'
+    name: 'Parteisäuberung'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:revolution', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Revolution'
+    effect_text: 'Neutralisiere 1 schwarze Bevölkerung: Senke die derzeit höchste Macht um 5.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 schwarze Bevölkerung: Senke die derzeit höchste Macht um 5.'
+  - id: 'S51'
+    name: 'Kollektives Opfer'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:revolution', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Revolution'
+    effect_text: 'Neutralisiere 1 Bevölkerung jeder Fraktion mit mindestens 10 Bevölkerung. Wenn dadurch schwarze Bevölkerung neutralisiert wurde, erhält Schwarz +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 Bevölkerung jeder Fraktion mit mindestens 10 Bevölkerung. Wenn dadurch schwarze Bevölkerung neutralisiert wurde, erhält Schwarz +4 Macht.'
+  - id: 'S52'
+    name: 'Verzicht'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:revolution', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Revolution'
+    effect_text: 'Schwarz kann in dieser Weltgeschichte nicht rekrutieren. Neutralisiere 2 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Schwarz kann in dieser Weltgeschichte nicht rekrutieren. Neutralisiere 2 Bevölkerung der Fraktion mit der meisten Bevölkerung.'
+  - id: 'S53'
+    name: 'Planfehler'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:revolution', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Revolution'
+    effect_text: 'Wenn Schwarz durch einen schwarzen Karteneffekt Macht verliert, stelle 1 Bevölkerung wieder her. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz durch einen schwarzen Karteneffekt Macht verliert, stelle 1 Bevölkerung wieder her. Maximal einmal pro Weltgeschichte.'
+  - id: 'S54'
+    name: 'Genossen schützen Genossen'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Reduziere die erste Kampfwirkung gegen Schwarz um 1. Wenn Schwarz weniger Bevölkerung als der Angreifer hat, reduziere sie stattdessen um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Reduziere die erste Kampfwirkung gegen Schwarz um 1. Wenn Schwarz weniger Bevölkerung als der Angreifer hat, reduziere sie stattdessen um 2.'
+  - id: 'S55'
+    name: 'Bürokratische Verzögerung'
+    type: hybrid
+    faction: black
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Der erste erfolgreiche Angriff einer Fraktion mit mindestens 12 Macht verursacht 1 weniger Kampfwirkung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der erste erfolgreiche Angriff einer Fraktion mit mindestens 12 Macht verursacht 1 weniger Kampfwirkung.'
+  - id: 'S56'
+    name: 'Kollektive Haftung'
+    type: hybrid
+    faction: black
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz_schutz', 'archetype:gegenwehr', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz/Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Das erste Mal, wenn Schwarz in dieser Weltgeschichte Bevölkerung verlieren würde, verliert Schwarz 1 weniger. Danach neutralisiere 1 Bevölkerung der nicht-schwarzen Fraktion mit der meisten Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal, wenn Schwarz in dieser Weltgeschichte Bevölkerung verlieren würde, verliert Schwarz 1 weniger. Danach neutralisiere 1 Bevölkerung der nicht-schwarzen Fraktion mit der meisten Bevölkerung.'
+  - id: 'S57'
+    name: 'Schulungsabend'
+    type: hybrid
+    faction: black
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn Schwarz nicht die höchste Macht hat, zieht der Spieler mit den wenigsten Handkarten 1 Karte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Schwarz nicht die höchste Macht hat, zieht der Spieler mit den wenigsten Handkarten 1 Karte.'
+  - id: 'S58'
+    name: 'Quellen im Betrieb'
+    type: hybrid
+    faction: black
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn die Fraktion mit der höchsten Macht in dieser Weltgeschichte Macht verliert, erhält der Journalist 1 Quelle.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die Fraktion mit der höchsten Macht in dieser Weltgeschichte Macht verliert, erhält der Journalist 1 Quelle.'
+  - id: 'S59'
+    name: 'Generalstreik'
+    type: hybrid
+    faction: black
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe', 'archetype:bombe', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe'
+    archetype: 'Bombe'
+    effect_text: 'Neutralisiere 2 Bevölkerung jeder Fraktion, die mehr Bevölkerung als Schwarz hat. Schwarz erhält +1 Macht für jede dadurch neutralisierte Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 2 Bevölkerung jeder Fraktion, die mehr Bevölkerung als Schwarz hat. Schwarz erhält +1 Macht für jede dadurch neutralisierte Bevölkerung.'
+  - id: 'S60'
+    name: 'Revolution'
+    type: hybrid
+    faction: black
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn die Fraktion mit der meisten Bevölkerung mindestens 6 Bevölkerung mehr als Schwarz hat, neutralisiere 4 Bevölkerung dieser Fraktion. Danach rekrutiert Schwarz bis zu 3 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die Fraktion mit der meisten Bevölkerung mindestens 6 Bevölkerung mehr als Schwarz hat, neutralisiere 4 Bevölkerung dieser Fraktion. Danach rekrutiert Schwarz bis zu 3 Bevölkerung.'
+  - id: 'G01'
+    name: 'Marktsignal'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Gelb +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Gelb +2 Macht.'
+  - id: 'G02'
+    name: 'Wachstumskurve'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Wachstum'
+    effect_text: 'Gelb rekrutiert 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb rekrutiert 1 Bevölkerung.'
+  - id: 'G03'
+    name: 'Angebot und Nachfrage'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 1 gelbe Propagandakarte ausliegt, erhält Gelb +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 gelbe Propagandakarte ausliegt, erhält Gelb +2 Macht.'
+  - id: 'G04'
+    name: 'Flexible Märkte'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:opportunismus']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Nach Abschluss der Machtberechnung erhält Gelb +1 Macht für jede Fraktion mit mindestens 8 Macht, maximal +4.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Nach Abschluss der Machtberechnung erhält Gelb +1 Macht für jede Fraktion mit mindestens 8 Macht, maximal +4.'
+  - id: 'G05'
+    name: 'Investitionsrunde'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:wachstum', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Wachstum'
+    effect_text: 'Am Ende der Kampfbestimmung: Wenn Gelb kein Ziel eines Angriffs ist, rekrutiert Gelb 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Am Ende der Kampfbestimmung: Wenn Gelb kein Ziel eines Angriffs ist, rekrutiert Gelb 2 Bevölkerung.'
+  - id: 'G06'
+    name: 'Netzwerk'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:opportunismus']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn mindestens drei Fraktionen Karten in der Weltgeschichtsreihe haben, erhält Gelb +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens drei Fraktionen Karten in der Weltgeschichtsreihe haben, erhält Gelb +3 Macht.'
+  - id: 'G07'
+    name: 'Lobbykontakt'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Engine'
+    effect_text: 'Der Medienmogul zieht 1 Karte. Danach wirft er 1 Handkarte ab, falls möglich. Gelb erhält +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der Medienmogul zieht 1 Karte. Danach wirft er 1 Handkarte ab, falls möglich. Gelb erhält +1 Macht.'
+  - id: 'G08'
+    name: 'Markenaufbau'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:medienmarkt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Medienmarkt'
+    effect_text: 'Gelb erhält +1 Macht für jede gelbe Propagandakarte in der Leiste.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb erhält +1 Macht für jede gelbe Propagandakarte in der Leiste.'
+  - id: 'G09'
+    name: 'Liquidität'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Engine'
+    effect_text: 'Der Spieler mit den wenigsten Handkarten zieht 1 Karte. Gelb erhält +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der Spieler mit den wenigsten Handkarten zieht 1 Karte. Gelb erhält +1 Macht.'
+  - id: 'G10'
+    name: 'Portfolio'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Engine'
+    effect_text: 'Der Startspieler sieht die obersten 2 Karten des Nachziehstapels, legt 1 oben auf den Nachziehstapel und 1 unter den Nachziehstapel. Gelb erhält +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der Startspieler sieht die obersten 2 Karten des Nachziehstapels, legt 1 oben auf den Nachziehstapel und 1 unter den Nachziehstapel. Gelb erhält +1 Macht.'
+  - id: 'G11'
+    name: 'Kreditlinie'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:engine', 'population_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Engine'
+    effect_text: 'Wenn Gelb in dieser Weltgeschichte rekrutiert, zieht der Spieler mit den wenigsten Handkarten 1 Karte. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb in dieser Weltgeschichte rekrutiert, zieht der Spieler mit den wenigsten Handkarten 1 Karte. Maximal einmal pro Weltgeschichte.'
+  - id: 'G12'
+    name: 'Marktanalyse'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Engine'
+    effect_text: 'Der Journalist sieht die obersten 2 Karten des Nachziehstapels und legt sie in beliebiger Reihenfolge zurück.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der Journalist sieht die obersten 2 Karten des Nachziehstapels und legt sie in beliebiger Reihenfolge zurück.'
+  - id: 'G13'
+    name: 'Risikokapital'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Engine'
+    effect_text: 'Gelb erhält +3 Macht. Wenn Gelb dadurch die höchste Macht hat, zieht der Medienmogul 1 Karte und wirft danach 1 Handkarte ab, falls möglich.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb erhält +3 Macht. Wenn Gelb dadurch die höchste Macht hat, zieht der Medienmogul 1 Karte und wirft danach 1 Handkarte ab, falls möglich.'
+  - id: 'G14'
+    name: 'Skalierung'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:engine', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Engine'
+    effect_text: 'Wenn Gelb ein Paar hat, rekrutiert Gelb 1 Bevölkerung und erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb ein Paar hat, rekrutiert Gelb 1 Bevölkerung und erhält +2 Macht.'
+  - id: 'G15'
+    name: 'Dividende'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:wachstum', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Wachstum'
+    effect_text: 'Nach Berechnung der Angriffe: Wenn Gelb einen erfolgreichen Angriff berechnet hat oder kein Ziel eines Angriffs ist, rekrutiert Gelb 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Nach Berechnung der Angriffe: Wenn Gelb einen erfolgreichen Angriff berechnet hat oder kein Ziel eines Angriffs ist, rekrutiert Gelb 1 Bevölkerung.'
+  - id: 'G16'
+    name: 'Arbitrage'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:opportunismus']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn eine andere Fraktion in dieser Weltgeschichte Macht verliert, erhält Gelb +2 Macht, maximal +4 pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine andere Fraktion in dieser Weltgeschichte Macht verliert, erhält Gelb +2 Macht, maximal +4 pro Weltgeschichte.'
+  - id: 'G17'
+    name: 'Optionsschein'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch_runde', 'archetype:medienmarkt', 'propaganda_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch/Runde'
+    archetype: 'Medienmarkt'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, zieht der Medienmogul vor seiner Propagandaentscheidung 1 zusätzliche Karte und wirft nach der Auswahl alle übrigen Karten aus dieser Propagandaentscheidung ab.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, zieht der Medienmogul vor seiner Propagandaentscheidung 1 zusätzliche Karte und wirft nach der Auswahl alle übrigen Karten aus dieser Propagandaentscheidung ab.'
+  - id: 'G18'
+    name: 'Wachstumsfantasie'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn Gelb nach Abschluss der Machtberechnung mindestens 12 Macht hat, rekrutiert Gelb 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb nach Abschluss der Machtberechnung mindestens 12 Macht hat, rekrutiert Gelb 2 Bevölkerung.'
+  - id: 'G19'
+    name: 'Spin Doctor'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:medienmarkt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Medienmarkt'
+    effect_text: 'Tausche zwei benachbarte Propagandakarten.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Tausche zwei benachbarte Propagandakarten.'
+  - id: 'G20'
+    name: 'Sendezeit'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:medienmarkt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Medienmarkt'
+    effect_text: 'Wenn mindestens 1 gelbe Karte in der Weltgeschichtsreihe liegt und gelbe Propagandamacht aktiviert wird, erhält Gelb zusätzlich +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 gelbe Karte in der Weltgeschichtsreihe liegt und gelbe Propagandamacht aktiviert wird, erhält Gelb zusätzlich +2 Macht.'
+  - id: 'G21'
+    name: 'Werbekampagne'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:medienmarkt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Medienmarkt'
+    effect_text: 'Im ersten Propagandaslot: Wenn mindestens 1 gelbe Karte in der Weltgeschichtsreihe liegt, erhält Gelb +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im ersten Propagandaslot: Wenn mindestens 1 gelbe Karte in der Weltgeschichtsreihe liegt, erhält Gelb +2 Macht.'
+  - id: 'G22'
+    name: 'Framing'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:medienmarkt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Medienmarkt'
+    effect_text: 'Verschiebe eine gelbe Propagandakarte einen Slot nach hinten, falls möglich.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Verschiebe eine gelbe Propagandakarte einen Slot nach hinten, falls möglich.'
+  - id: 'G23'
+    name: 'Medienhaus'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:medienmarkt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Medienmarkt'
+    effect_text: 'Im zweiten oder dritten Propagandaslot zählt gelbe Propagandamacht auch dann, wenn keine gelbe Karte in der Weltgeschichtsreihe liegt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten oder dritten Propagandaslot zählt gelbe Propagandamacht auch dann, wenn keine gelbe Karte in der Weltgeschichtsreihe liegt.'
+  - id: 'G24'
+    name: 'Narrative Kontrolle'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_statisch', 'archetype:medienmarkt', 'propaganda_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Statisch'
+    archetype: 'Medienmarkt'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, greift Gelb die Fraktion mit der höchsten Propagandamacht an.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, greift Gelb die Fraktion mit der höchsten Propagandamacht an.'
+  - id: 'G25'
+    name: 'Markenmonopol'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:medienmarkt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Medienmarkt'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, erhält Gelb +2 Propagandamacht für jede andere gelbe Propagandakarte in der Leiste.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, erhält Gelb +2 Propagandamacht für jede andere gelbe Propagandakarte in der Leiste.'
+  - id: 'G26'
+    name: 'Public Relations'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:medienmarkt', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Medienmarkt'
+    effect_text: 'Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, rekrutiert Gelb 1 Bevölkerung. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, rekrutiert Gelb 1 Bevölkerung. Maximal einmal pro Weltgeschichte.'
+  - id: 'G27'
+    name: 'Platzierung'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:medienmarkt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Medienmarkt'
+    effect_text: 'Verschiebe die Propagandakarte aus Slot 1 in Slot 4. Die übrigen Propagandakarten rücken entsprechend nach vorn.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Verschiebe die Propagandakarte aus Slot 1 in Slot 4. Die übrigen Propagandakarten rücken entsprechend nach vorn.'
+  - id: 'G28'
+    name: 'Anzeigenmacht'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:medienmarkt', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Medienmarkt'
+    effect_text: 'Wenn Gelb mindestens 10 Propagandamacht hat, erhält Gelb +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb mindestens 10 Propagandamacht hat, erhält Gelb +4 Macht.'
+  - id: 'G29'
+    name: 'Kampagnenbudget'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:medienmarkt', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Medienmarkt'
+    effect_text: 'Entferne 1 gelbe Propagandakarte: Gelb erhält +5 Macht und rekrutiert 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne 1 gelbe Propagandakarte: Gelb erhält +5 Macht und rekrutiert 1 Bevölkerung.'
+  - id: 'G30'
+    name: 'Prime Time'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_nachhall', 'archetype:medienmarkt', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Nachhall'
+    archetype: 'Medienmarkt'
+    effect_text: 'Im vierten Propagandaslot: Am Ende jeder Weltgeschichte rekrutiert Gelb 1 Bevölkerung, wenn Gelb in dieser Weltgeschichte keine Bevölkerung verloren hat.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im vierten Propagandaslot: Am Ende jeder Weltgeschichte rekrutiert Gelb 1 Bevölkerung, wenn Gelb in dieser Weltgeschichte keine Bevölkerung verloren hat.'
+  - id: 'G31'
+    name: 'Trittbrettfahrer'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:opportunismus']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn eine andere Fraktion nach Abschluss der Machtberechnung mindestens 12 Macht hat, erhält Gelb +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine andere Fraktion nach Abschluss der Machtberechnung mindestens 12 Macht hat, erhält Gelb +3 Macht.'
+  - id: 'G32'
+    name: 'Marktöffnung'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:opportunismus', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Opportunismus'
+    effect_text: 'Das erste Mal in jeder Weltgeschichte, wenn eine Fraktion Bevölkerung neutralisiert, rekrutiert Gelb 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal in jeder Weltgeschichte, wenn eine Fraktion Bevölkerung neutralisiert, rekrutiert Gelb 1 Bevölkerung.'
+  - id: 'G33'
+    name: 'Krisengewinner'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:opportunismus', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn in dieser Weltgeschichte Bevölkerung vernichtet wurde, erhält Gelb +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte Bevölkerung vernichtet wurde, erhält Gelb +4 Macht.'
+  - id: 'G34'
+    name: 'Zwischenhändler'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:opportunismus']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn zwei Fraktionen gegeneinander kämpfen und keine davon Gelb ist, erhält Gelb +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn zwei Fraktionen gegeneinander kämpfen und keine davon Gelb ist, erhält Gelb +2 Macht.'
+  - id: 'G35'
+    name: 'Sponsoring'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt_runde', 'archetype:opportunismus', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt/Runde'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn in dieser Runde keine gelbe Propagandakarte neu ausgelegt wurde, erhält Gelb +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Runde keine gelbe Propagandakarte neu ausgelegt wurde, erhält Gelb +2 Macht.'
+  - id: 'G36'
+    name: 'Lobbyismus'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel_bedingt', 'archetype:opportunismus', 'propaganda_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel/Bedingt'
+    archetype: 'Opportunismus'
+    effect_text: 'Gelb greift die Fraktion mit der niedrigsten Propagandamacht an. Gelb erhält +2 Macht gegen dieses Ziel.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb greift die Fraktion mit der niedrigsten Propagandamacht an. Gelb erhält +2 Macht gegen dieses Ziel.'
+  - id: 'G37'
+    name: 'Marktbereinigung'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:opportunismus', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn eine Fraktion mit 5 oder weniger Bevölkerung Bevölkerung verliert, rekrutiert Gelb 1 Bevölkerung. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine Fraktion mit 5 oder weniger Bevölkerung Bevölkerung verliert, rekrutiert Gelb 1 Bevölkerung. Maximal einmal pro Weltgeschichte.'
+  - id: 'G38'
+    name: 'Übernahmeangebot'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:opportunismus', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Opportunismus'
+    effect_text: 'Beim ersten erfolgreichen Angriff von Gelb: Wenn das Ziel weniger Bevölkerung als Gelb hat, wird 1 durch diesen Angriff neutralisierte Bevölkerung stattdessen direkt zu Gelb bewegt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Beim ersten erfolgreichen Angriff von Gelb: Wenn das Ziel weniger Bevölkerung als Gelb hat, wird 1 durch diesen Angriff neutralisierte Bevölkerung stattdessen direkt zu Gelb bewegt.'
+  - id: 'G39'
+    name: 'Goldene Brücke'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:opportunismus', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn die Fraktion mit der meisten Bevölkerung in dieser Weltgeschichte Bevölkerung neutralisiert, rekrutiert Gelb 1 Bevölkerung und erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die Fraktion mit der meisten Bevölkerung in dieser Weltgeschichte Bevölkerung neutralisiert, rekrutiert Gelb 1 Bevölkerung und erhält +2 Macht.'
+  - id: 'G40'
+    name: 'Imagewechsel'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz_trigger', 'archetype:opportunismus', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz/Trigger'
+    archetype: 'Opportunismus'
+    effect_text: 'Wenn Gelb Ziel eines Angriffs wird, senke die Macht dieses Angreifers um 2 und Gelb erhält +2 Macht. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb Ziel eines Angriffs wird, senke die Macht dieses Angreifers um 2 und Gelb erhält +2 Macht. Maximal einmal pro Weltgeschichte.'
+  - id: 'G41'
+    name: 'Wohlstandsversprechen'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:wachstum', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Gelb rekrutiert 1 Bevölkerung. Wenn mindestens 1 gelbe Propagandakarte ausliegt, rekrutiert Gelb stattdessen 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb rekrutiert 1 Bevölkerung. Wenn mindestens 1 gelbe Propagandakarte ausliegt, rekrutiert Gelb stattdessen 2 Bevölkerung.'
+  - id: 'G42'
+    name: 'Konsumrausch'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn Gelb rekrutiert, erhält Gelb +1 Macht, maximal +3 pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb rekrutiert, erhält Gelb +1 Macht, maximal +3 pro Weltgeschichte.'
+  - id: 'G43'
+    name: 'Aufstiegserzählung'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:nachhall', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Nachhall'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn diese Karte verdrängt wird, rekrutiert Gelb 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn diese Karte verdrängt wird, rekrutiert Gelb 1 Bevölkerung.'
+  - id: 'G44'
+    name: 'Immobilienboom'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:wachstum', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn mindestens 2 gelbe Propagandakarten ausliegen, rekrutiert Gelb 3 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 2 gelbe Propagandakarten ausliegen, rekrutiert Gelb 3 Bevölkerung.'
+  - id: 'G45'
+    name: 'Arbeitsmarkt'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn mindestens 15 neutrale Bevölkerung vorhanden sind, rekrutiert Gelb 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 15 neutrale Bevölkerung vorhanden sind, rekrutiert Gelb 2 Bevölkerung.'
+  - id: 'G46'
+    name: 'Privatisierung'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Wachstum'
+    effect_text: 'Gelb rekrutiert 1 Bevölkerung. Danach senke Schwarz um 2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb rekrutiert 1 Bevölkerung. Danach senke Schwarz um 2 Macht.'
+  - id: 'G47'
+    name: 'Globalisierung'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Wenn alle vier Fraktionen Karten in der Weltgeschichtsreihe haben, rekrutiert Gelb 2 Bevölkerung und erhält +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn alle vier Fraktionen Karten in der Weltgeschichtsreihe haben, rekrutiert Gelb 2 Bevölkerung und erhält +3 Macht.'
+  - id: 'G48'
+    name: 'Standortvorteil'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_nachhall', 'archetype:wachstum', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Nachhall'
+    archetype: 'Wachstum'
+    effect_text: 'Im zweiten Propagandaslot: Nach Abschluss der Machtberechnung rekrutiert Gelb 1 Bevölkerung, wenn Gelb nicht die niedrigste Macht hat.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten Propagandaslot: Nach Abschluss der Machtberechnung rekrutiert Gelb 1 Bevölkerung, wenn Gelb nicht die niedrigste Macht hat.'
+  - id: 'G49'
+    name: 'Insiderhandel'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:engine', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Engine'
+    effect_text: 'Der Medienmogul wirft 1 Handkarte ab, falls möglich. Wenn dadurch eine Karte abgeworfen wurde, erhält Gelb +4 Macht. Andernfalls erhält Gelb +1 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der Medienmogul wirft 1 Handkarte ab, falls möglich. Wenn dadurch eine Karte abgeworfen wurde, erhält Gelb +4 Macht. Andernfalls erhält Gelb +1 Macht.'
+  - id: 'G50'
+    name: 'Blase'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:engine', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Engine'
+    effect_text: 'Gelb erhält +6 Macht. Am Ende der Weltgeschichte neutralisiere 1 gelbe Bevölkerung, wenn Gelb nach Abschluss der Machtberechnung die höchste Macht hatte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb erhält +6 Macht. Am Ende der Weltgeschichte neutralisiere 1 gelbe Bevölkerung, wenn Gelb nach Abschluss der Machtberechnung die höchste Macht hatte.'
+  - id: 'G51'
+    name: 'Austerität'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:wachstum', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Wachstum'
+    effect_text: 'Senke Gelb um 2 Macht. Wenn Gelb dadurch unter 8 Macht fällt, rekrutiert Gelb 2 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Gelb um 2 Macht. Wenn Gelb dadurch unter 8 Macht fällt, rekrutiert Gelb 2 Bevölkerung.'
+  - id: 'G52'
+    name: 'Verkaufte Erzählung'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_ressourcen', 'archetype:medienmarkt', 'propaganda_relevant', 'population_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Ressourcen'
+    archetype: 'Medienmarkt'
+    effect_text: 'Entferne 1 gelbe Propagandakarte: Der Medienmogul zieht 2 Karten und wirft danach 1 Handkarte ab, falls möglich. Gelb rekrutiert 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne 1 gelbe Propagandakarte: Der Medienmogul zieht 2 Karten und wirft danach 1 Handkarte ab, falls möglich. Gelb rekrutiert 1 Bevölkerung.'
+  - id: 'G53'
+    name: 'Bailout'
+    type: hybrid
+    faction: yellow
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:gegenwehr', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Das erste Mal in dieser Weltgeschichte, wenn Gelb Bevölkerung verlieren würde, verliert Gelb 1 weniger und Gelb erhält -2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal in dieser Weltgeschichte, wenn Gelb Bevölkerung verlieren würde, verliert Gelb 1 weniger und Gelb erhält -2 Macht.'
+  - id: 'G54'
+    name: 'Vertragsklausel'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Die erste Zieländerung, die Gelb zum Ziel eines Angriffs machen würde, wird ignoriert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Die erste Zieländerung, die Gelb zum Ziel eines Angriffs machen würde, wird ignoriert.'
+  - id: 'G55'
+    name: 'Risikostreuung'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz_bedingt', 'archetype:gegenwehr', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz/Bedingt'
+    archetype: 'Gegenwehr'
+    effect_text: 'Wenn Gelb von mehr als einer Fraktion angegriffen wird, erhält Gelb +4 Macht und verliert durch den ersten erfolgreichen Angriff 1 weniger Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb von mehr als einer Fraktion angegriffen wird, erhält Gelb +4 Macht und verliert durch den ersten erfolgreichen Angriff 1 weniger Bevölkerung.'
+  - id: 'G56'
+    name: 'Pressefreiheit'
+    type: hybrid
+    faction: yellow
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'propaganda_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn in dieser Weltgeschichte eine Propagandakarte verschoben wird, erhält der Journalist 1 Quelle.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte eine Propagandakarte verschoben wird, erhält der Journalist 1 Quelle.'
+  - id: 'G57'
+    name: 'Think Tank'
+    type: hybrid
+    faction: yellow
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'propaganda_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn Gelb mindestens 10 Propagandamacht hat, zieht der Journalist 1 Rechercheauftrag.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb mindestens 10 Propagandamacht hat, zieht der Journalist 1 Rechercheauftrag.'
+  - id: 'G58'
+    name: 'Unsichtbare Hand'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn Gelb nach Abschluss der Machtberechnung nicht die höchste Macht hat, erhält Gelb Macht in Höhe der Differenz zur höchsten Macht, maximal +6. Danach rekrutiert Gelb 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Gelb nach Abschluss der Machtberechnung nicht die höchste Macht hat, erhält Gelb Macht in Höhe der Differenz zur höchsten Macht, maximal +6. Danach rekrutiert Gelb 1 Bevölkerung.'
+  - id: 'G59'
+    name: 'Monopol'
+    type: hybrid
+    faction: yellow
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn mindestens 2 gelbe Propagandakarten ausliegen, wird gelbe Propagandamacht nach allen sonstigen Propagandamacht-Modifikationen verdoppelt, maximal +10 zusätzliche Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 2 gelbe Propagandakarten ausliegen, wird gelbe Propagandamacht nach allen sonstigen Propagandamacht-Modifikationen verdoppelt, maximal +10 zusätzliche Macht.'
+  - id: 'G60'
+    name: 'Goldrausch'
+    type: hybrid
+    faction: yellow
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_verzoegert', 'archetype:bombe', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Verzögert'
+    archetype: 'Bombe'
+    effect_text: 'Gelb rekrutiert bis zu 4 Bevölkerung. Danach neutralisiere 1 gelbe Bevölkerung für jede Fraktion, die Gelb in dieser Weltgeschichte erfolgreich angreift.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Gelb rekrutiert bis zu 4 Bevölkerung. Danach neutralisiere 1 gelbe Bevölkerung für jede Fraktion, die Gelb in dieser Weltgeschichte erfolgreich angreift.'
+  - id: 'GR01'
+    name: 'Störsignal'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Senke die derzeit höchste Macht um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die derzeit höchste Macht um 2.'
+  - id: 'GR02'
+    name: 'Moos im Getriebe'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 1 Propagandakarte ausliegt, erhält Grün +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 1 Propagandakarte ausliegt, erhält Grün +2 Macht.'
+  - id: 'GR03'
+    name: 'Schwarzer Wald'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Grün +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 10 neutrale Bevölkerung vorhanden sind, erhält Grün +2 Macht.'
+  - id: 'GR04'
+    name: 'Stilllegung'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Senke die Macht der Fraktion mit der höchsten Propagandamacht um 3.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die Macht der Fraktion mit der höchsten Propagandamacht um 3.'
+  - id: 'GR05'
+    name: 'Rückbau'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Entzug'
+    effect_text: 'Das erste Mal, wenn eine Fraktion in dieser Weltgeschichte rekrutiert, senke die Macht dieser Fraktion um 3.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal, wenn eine Fraktion in dieser Weltgeschichte rekrutiert, senke die Macht dieser Fraktion um 3.'
+  - id: 'GR06'
+    name: 'Sabotagezelle'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:grundmacht']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Grundmacht'
+    effect_text: 'Wenn Grün derzeit nicht die höchste Macht hat, erhält Grün +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Grün derzeit nicht die höchste Macht hat, erhält Grün +3 Macht.'
+  - id: 'GR07'
+    name: 'Stiller Alarm'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Sabotage'
+    effect_text: 'Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, erhält Grün +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, erhält Grün +3 Macht.'
+  - id: 'GR08'
+    name: 'Riss im Beton'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:sabotage']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Sabotage'
+    effect_text: 'Wenn die derzeit höchste Macht mindestens 12 beträgt, senke diese Macht um 4.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die derzeit höchste Macht mindestens 12 beträgt, senke diese Macht um 4.'
+  - id: 'GR09'
+    name: 'Kabelbrand'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Entferne die Propagandakarte aus Slot 1.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne die Propagandakarte aus Slot 1.'
+  - id: 'GR10'
+    name: 'Sendeausfall'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Entferne 1 Propagandakarte der Fraktion mit der höchsten Propagandamacht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne 1 Propagandakarte der Fraktion mit der höchsten Propagandamacht.'
+  - id: 'GR11'
+    name: 'Sabotierter Sender'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Sabotage'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, wird aktivierte Propagandamacht jeder Fraktion um 2 reduziert, mindestens auf 0.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, wird aktivierte Propagandamacht jeder Fraktion um 2 reduziert, mindestens auf 0.'
+  - id: 'GR12'
+    name: 'Funkloch'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Sabotage'
+    effect_text: 'Jede Fraktion kann in dieser Weltgeschichte höchstens 6 Macht aus Propaganda erhalten.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Jede Fraktion kann in dieser Weltgeschichte höchstens 6 Macht aus Propaganda erhalten.'
+  - id: 'GR13'
+    name: 'Brandanschlag'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:sabotage', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Sabotage'
+    effect_text: 'Entferne die Propagandakarte der Fraktion mit der höchsten Propagandamacht aus ihrem ältesten Slot. Wenn danach keine Propagandakarte dieser Fraktion mehr ausliegt, vernichte 1 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne die Propagandakarte der Fraktion mit der höchsten Propagandamacht aus ihrem ältesten Slot. Wenn danach keine Propagandakarte dieser Fraktion mehr ausliegt, vernichte 1 neutrale Bevölkerung.'
+  - id: 'GR14'
+    name: 'Unterwanderung'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ziel', 'archetype:sabotage', 'propaganda_relevant', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ziel'
+    archetype: 'Sabotage'
+    effect_text: 'Die Fraktion mit der höchsten Macht greift die Fraktion mit der höchsten Propagandamacht an.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Die Fraktion mit der höchsten Macht greift die Fraktion mit der höchsten Propagandamacht an.'
+  - id: 'GR15'
+    name: 'Verstopfte Kanäle'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Entzug'
+    effect_text: 'Die nächste Rekrutierung in dieser Weltgeschichte wird um 2 Bevölkerung reduziert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Die nächste Rekrutierung in dieser Weltgeschichte wird um 2 Bevölkerung reduziert.'
+  - id: 'GR16'
+    name: 'Leere Frequenz'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:sabotage', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Sabotage'
+    effect_text: 'Im zweiten Propagandaslot: Andere Fraktionen erhalten höchstens +3 Macht aus Propaganda.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten Propagandaslot: Andere Fraktionen erhalten höchstens +3 Macht aus Propaganda.'
+  - id: 'GR17'
+    name: 'Zersetzung'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Senke die Macht jeder Fraktion mit mindestens 2 Propagandakarten um 3.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die Macht jeder Fraktion mit mindestens 2 Propagandakarten um 3.'
+  - id: 'GR18'
+    name: 'Systemfehler'
+    type: hybrid
+    faction: green
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:sabotage', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Sabotage'
+    effect_text: 'Entferne die Propagandakarte mit dem höchsten einzelnen Propagandamachtwert. Danach senke die Macht dieser Fraktion um 5.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Entferne die Propagandakarte mit dem höchsten einzelnen Propagandamachtwert. Danach senke die Macht dieser Fraktion um 5.'
+  - id: 'GR19'
+    name: 'Ausgebrannte Erde'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Kollaps'
+    effect_text: 'Vernichte 1 neutrale Bevölkerung. Grün erhält +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Vernichte 1 neutrale Bevölkerung. Grün erhält +2 Macht.'
+  - id: 'GR20'
+    name: 'Kein Wiederaufbau'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Kollaps'
+    effect_text: 'In dieser Weltgeschichte kann höchstens 1 Bevölkerung wiederhergestellt werden.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: In dieser Weltgeschichte kann höchstens 1 Bevölkerung wiederhergestellt werden.'
+  - id: 'GR21'
+    name: 'Entsiegelung'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kollaps'
+    effect_text: 'Wenn in dieser Weltgeschichte mindestens 1 Bevölkerung vernichtet wurde, erhält Grün +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte mindestens 1 Bevölkerung vernichtet wurde, erhält Grün +4 Macht.'
+  - id: 'GR22'
+    name: 'Kipplinie'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kollaps'
+    effect_text: 'Wenn weniger als 15 neutrale Bevölkerung vorhanden sind, vernichte 1 neutrale Bevölkerung und Grün erhält +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn weniger als 15 neutrale Bevölkerung vorhanden sind, vernichte 1 neutrale Bevölkerung und Grün erhält +3 Macht.'
+  - id: 'GR23'
+    name: 'Hungerwinter'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Entzug'
+    effect_text: 'Jede Fraktion mit mindestens 12 Bevölkerung kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Jede Fraktion mit mindestens 12 Bevölkerung kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'GR24'
+    name: 'Aschefeld'
+    type: hybrid
+    faction: green
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kollaps'
+    effect_text: 'Vernichte 2 neutrale Bevölkerung. Wenn danach weniger als 10 neutrale Bevölkerung vorhanden sind, erhält Grün +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Vernichte 2 neutrale Bevölkerung. Wenn danach weniger als 10 neutrale Bevölkerung vorhanden sind, erhält Grün +5 Macht.'
+  - id: 'GR25'
+    name: 'Der Boden nimmt nichts mehr'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:kollaps', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Kollaps'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt: Das erste Mal in jeder Weltgeschichte, dass Bevölkerung wiederhergestellt würde, wird diese Wiederherstellung verhindert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt: Das erste Mal in jeder Weltgeschichte, dass Bevölkerung wiederhergestellt würde, wird diese Wiederherstellung verhindert.'
+  - id: 'GR26'
+    name: 'Rationierung'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Entzug'
+    effect_text: 'Wenn eine Fraktion in dieser Weltgeschichte 2 oder mehr Bevölkerung rekrutieren würde, rekrutiert sie 1 Bevölkerung weniger.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine Fraktion in dieser Weltgeschichte 2 oder mehr Bevölkerung rekrutieren würde, rekrutiert sie 1 Bevölkerung weniger.'
+  - id: 'GR27'
+    name: 'Verlorene Ernte'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Entzug'
+    effect_text: 'Das erste Mal, wenn eine Fraktion in dieser Weltgeschichte rekrutiert, senke die Macht dieser Fraktion um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Das erste Mal, wenn eine Fraktion in dieser Weltgeschichte rekrutiert, senke die Macht dieser Fraktion um 2.'
+  - id: 'GR28'
+    name: 'Totes Land'
+    type: hybrid
+    faction: green
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:kollaps', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Kollaps'
+    effect_text: 'Wenn neutrale Bevölkerung vernichtet wird, erhält Grün +1 Macht je vernichteter Bevölkerung, maximal +5 pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn neutrale Bevölkerung vernichtet wird, erhält Grün +1 Macht je vernichteter Bevölkerung, maximal +5 pro Weltgeschichte.'
+  - id: 'GR29'
+    name: 'Kipppunkt'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn insgesamt weniger als 60 Bevölkerung im aktiven Spiel ist, erhält Grün +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn insgesamt weniger als 60 Bevölkerung im aktiven Spiel ist, erhält Grün +5 Macht.'
+  - id: 'GR30'
+    name: 'Panik'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn eine Fraktion 5 oder weniger Bevölkerung hat, erhält Grün +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn eine Fraktion 5 oder weniger Bevölkerung hat, erhält Grün +4 Macht.'
+  - id: 'GR31'
+    name: 'Letzte Generation'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn Grün 5 oder weniger Bevölkerung hat, erhält Grün +5 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Grün 5 oder weniger Bevölkerung hat, erhält Grün +5 Macht.'
+  - id: 'GR32'
+    name: 'Alles muss fallen'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn mindestens zwei Fraktionen jeweils 8 oder weniger Bevölkerung haben, vernichte 1 neutrale Bevölkerung und Grün erhält +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens zwei Fraktionen jeweils 8 oder weniger Bevölkerung haben, vernichte 1 neutrale Bevölkerung und Grün erhält +4 Macht.'
+  - id: 'GR33'
+    name: 'Kettenreaktion'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn in dieser Weltgeschichte Bevölkerung vernichtet wurde, erhält Grün +4 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte Bevölkerung vernichtet wurde, erhält Grün +4 Macht.'
+  - id: 'GR34'
+    name: 'Bruchstelle'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:sabotage']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Sabotage'
+    effect_text: 'Wenn die höchste Macht mindestens doppelt so hoch ist wie die niedrigste positive Macht, senke die höchste Macht um 5.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn die höchste Macht mindestens doppelt so hoch ist wie die niedrigste positive Macht, senke die höchste Macht um 5.'
+  - id: 'GR35'
+    name: 'Alarmismus'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:kipppunkt', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Kipppunkt'
+    effect_text: 'Im ersten Propagandaslot: Wenn eine Fraktion nach Abschluss der Machtberechnung mindestens 12 Macht hat, erhält Grün +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im ersten Propagandaslot: Wenn eine Fraktion nach Abschluss der Machtberechnung mindestens 12 Macht hat, erhält Grün +3 Macht.'
+  - id: 'GR36'
+    name: 'Radikalisierung'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:kipppunkt', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Kipppunkt'
+    effect_text: 'Am Ende der Kampfbestimmung: Wenn Grün kein Ziel eines Angriffs ist und in dieser Weltgeschichte Bevölkerung vernichtet wurde, rekrutiert Grün 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Am Ende der Kampfbestimmung: Wenn Grün kein Ziel eines Angriffs ist und in dieser Weltgeschichte Bevölkerung vernichtet wurde, rekrutiert Grün 1 Bevölkerung.'
+  - id: 'GR37'
+    name: 'Endzeitpredigt'
+    type: hybrid
+    faction: green
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn in dieser Weltgeschichte mindestens 3 Bevölkerung vernichtet wurden, erhält Grün +7 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte mindestens 3 Bevölkerung vernichtet wurden, erhält Grün +7 Macht.'
+  - id: 'GR38'
+    name: 'Kollapsromantik'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:nachhall', 'archetype:kipppunkt', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Nachhall'
+    archetype: 'Kipppunkt'
+    effect_text: 'Wenn diese Karte verdrängt wird, vernichte 1 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn diese Karte verdrängt wird, vernichte 1 neutrale Bevölkerung.'
+  - id: 'GR39'
+    name: 'Deindustrialisierung'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:entzug']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Entzug'
+    effect_text: 'Senke die Macht jeder Fraktion mit mindestens 10 Macht um 2.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke die Macht jeder Fraktion mit mindestens 10 Macht um 2.'
+  - id: 'GR40'
+    name: 'Entzug'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ersatz', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ersatz'
+    archetype: 'Entzug'
+    effect_text: 'Jede Fraktion, die in dieser Weltgeschichte rekrutieren würde, rekrutiert 1 Bevölkerung weniger.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Jede Fraktion, die in dieser Weltgeschichte rekrutieren würde, rekrutiert 1 Bevölkerung weniger.'
+  - id: 'GR41'
+    name: 'Askese'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:entzug']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Entzug'
+    effect_text: 'Grün erhält +2 Macht. Kein Spieler kann in dieser Weltgeschichte durch Karteneffekte mehr als 1 Karte ziehen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Grün erhält +2 Macht. Kein Spieler kann in dieser Weltgeschichte durch Karteneffekte mehr als 1 Karte ziehen.'
+  - id: 'GR42'
+    name: 'Infrastrukturbruch'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Entzug'
+    effect_text: 'Neutralisiere 1 Bevölkerung der Fraktion mit der meisten Bevölkerung. Diese Fraktion kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 Bevölkerung der Fraktion mit der meisten Bevölkerung. Diese Fraktion kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren.'
+  - id: 'GR43'
+    name: 'Degrowth'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:statisch', 'archetype:entzug', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Statisch'
+    archetype: 'Entzug'
+    effect_text: 'Solange diese Karte als Propaganda ausliegt, kann keine Fraktion mehr als +2 Macht aus einem einzelnen Machtbonus erhalten.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Solange diese Karte als Propaganda ausliegt, kann keine Fraktion mehr als +2 Macht aus einem einzelnen Machtbonus erhalten.'
+  - id: 'GR44'
+    name: 'Leerer Markt'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:entzug', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Entzug'
+    effect_text: 'Senke Gelb um 3 Macht. Wenn Gelb dadurch unter 8 Macht fällt, vernichte 1 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Gelb um 3 Macht. Wenn Gelb dadurch unter 8 Macht fällt, vernichte 1 neutrale Bevölkerung.'
+  - id: 'GR45'
+    name: 'Anti-Apparat'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:sofort', 'archetype:entzug']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Sofort'
+    archetype: 'Entzug'
+    effect_text: 'Senke Schwarz um 3 Macht. Schwarz kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren. Grün erhält +3 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Schwarz um 3 Macht. Schwarz kann ab jetzt bis zum Ende dieser Weltgeschichte nicht rekrutieren. Grün erhält +3 Macht.'
+  - id: 'GR46'
+    name: 'Anti-Marsch'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:verzoegert', 'archetype:entzug', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Verzögert'
+    archetype: 'Entzug'
+    effect_text: 'Senke Rot um 3 Macht. Nach Berechnung der Angriffe: Wenn Rot keinen erfolgreichen Angriff berechnet hat, rekrutiert Grün 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Rot um 3 Macht. Nach Berechnung der Angriffe: Wenn Rot keinen erfolgreichen Angriff berechnet hat, rekrutiert Grün 1 Bevölkerung.'
+  - id: 'GR47'
+    name: 'Baumhaus'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot'
+    archetype: 'Propaganda'
+    effect_text: 'Im ersten Propagandaslot: Wenn mindestens 1 grüne Karte in der Weltgeschichtsreihe liegt, erhält Grün +2 Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im ersten Propagandaslot: Wenn mindestens 1 grüne Karte in der Weltgeschichtsreihe liegt, erhält Grün +2 Macht.'
+  - id: 'GR48'
+    name: 'Blockadecamp'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_ersatz', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Ersatz'
+    archetype: 'Propaganda'
+    effect_text: 'Im zweiten Propagandaslot: Die erste Rekrutierung aus neutral in jeder Weltgeschichte wird um 1 Bevölkerung reduziert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im zweiten Propagandaslot: Die erste Rekrutierung aus neutral in jeder Weltgeschichte wird um 1 Bevölkerung reduziert.'
+  - id: 'GR49'
+    name: 'Schwarzgrüne Nacht'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_trigger', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Trigger'
+    archetype: 'Propaganda'
+    effect_text: 'Im dritten Propagandaslot: Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, vernichte 1 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im dritten Propagandaslot: Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, vernichte 1 neutrale Bevölkerung.'
+  - id: 'GR50'
+    name: 'Die Erde schweigt'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:slot_nachhall', 'archetype:propaganda', 'propaganda_relevant', 'slot_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Slot/Nachhall'
+    archetype: 'Propaganda'
+    effect_text: 'Im vierten Propagandaslot: Am Ende jeder Weltgeschichte wird 1 neutrale Bevölkerung vernichtet, wenn mindestens eine Fraktion nach Abschluss der Machtberechnung 12 oder mehr Macht hatte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Im vierten Propagandaslot: Am Ende jeder Weltgeschichte wird 1 neutrale Bevölkerung vernichtet, wenn mindestens eine Fraktion nach Abschluss der Machtberechnung 12 oder mehr Macht hatte.'
+  - id: 'GR51'
+    name: 'Mahnwache'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:trigger', 'archetype:propaganda', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Trigger'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn Bevölkerung neutralisiert wird, erhält Grün +2 Macht, maximal +4 pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Bevölkerung neutralisiert wird, erhält Grün +2 Macht, maximal +4 pro Weltgeschichte.'
+  - id: 'GR52'
+    name: 'Aussteigerkult'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bedingt', 'archetype:propaganda', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bedingt'
+    archetype: 'Propaganda'
+    effect_text: 'Wenn mindestens 2 grüne Propagandakarten ausliegen, rekrutiert Grün 1 Bevölkerung und vernichtet 1 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn mindestens 2 grüne Propagandakarten ausliegen, rekrutiert Grün 1 Bevölkerung und vernichtet 1 neutrale Bevölkerung.'
+  - id: 'GR53'
+    name: 'Märtyrer der Erde'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:opfer', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Opfer'
+    effect_text: 'Neutralisiere 1 grüne Bevölkerung: Vernichte bis zu 2 neutrale Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Neutralisiere 1 grüne Bevölkerung: Vernichte bis zu 2 neutrale Bevölkerung.'
+  - id: 'GR54'
+    name: 'Selbstsabotage'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten_bedingt', 'archetype:opfer', 'propaganda_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten/Bedingt'
+    archetype: 'Opfer'
+    effect_text: 'Senke Grün um 2 Macht. Wenn Grün dadurch die niedrigste Macht hat, entferne 1 Propagandakarte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Senke Grün um 2 Macht. Wenn Grün dadurch die niedrigste Macht hat, entferne 1 Propagandakarte.'
+  - id: 'GR55'
+    name: 'Feuer legen'
+    type: hybrid
+    faction: green
+    strength: 4
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:opfer', 'propaganda_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Opfer'
+    effect_text: 'Vernichte 1 neutrale Bevölkerung: Entferne 1 Propagandakarte der Fraktion mit der höchsten Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Vernichte 1 neutrale Bevölkerung: Entferne 1 Propagandakarte der Fraktion mit der höchsten Macht.'
+  - id: 'GR56'
+    name: 'Hungerstreik'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:kosten', 'archetype:opfer']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Kosten'
+    archetype: 'Opfer'
+    effect_text: 'Grün kann in dieser Weltgeschichte nicht rekrutieren. Senke die derzeit höchste Macht um 4.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Grün kann in dieser Weltgeschichte nicht rekrutieren. Senke die derzeit höchste Macht um 4.'
+  - id: 'GR57'
+    name: 'Unsichtbare Zelle'
+    type: hybrid
+    faction: green
+    strength: 2
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Wenn Grün Ziel eines Angriffs wird, senke die Macht dieses Angreifers um 3. Maximal einmal pro Weltgeschichte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn Grün Ziel eines Angriffs wird, senke die Macht dieses Angreifers um 3. Maximal einmal pro Weltgeschichte.'
+  - id: 'GR58'
+    name: 'Im Unterholz'
+    type: hybrid
+    faction: green
+    strength: 3
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:schutz', 'archetype:gegenwehr', 'combat_relevant', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Schutz'
+    archetype: 'Gegenwehr'
+    effect_text: 'Der erste Angriff gegen Grün wird verhindert, wenn mindestens 5 neutrale Bevölkerung vorhanden sind.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Der erste Angriff gegen Grün wird verhindert, wenn mindestens 5 neutrale Bevölkerung vorhanden sind.'
+  - id: 'GR59'
+    name: 'Whistleblower'
+    type: hybrid
+    faction: green
+    strength: 1
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:ressourcen', 'archetype:ressourcen', 'propaganda_relevant', 'resource_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Ressourcen'
+    archetype: 'Ressourcen'
+    effect_text: 'Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, erhält der Journalist 1 Quelle.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn in dieser Weltgeschichte eine Propagandakarte entfernt wird, erhält der Journalist 1 Quelle.'
+  - id: 'GR60'
+    name: 'Großer Zusammenbruch'
+    type: hybrid
+    faction: green
+    strength: 5
+    count: 1
+    tags: ['v0_3', 'faction_card', 'timing:bombe_bedingt', 'archetype:bombe', 'population_relevant']
+    enabled: true
+    rules_version: '0.3'
+    timing: 'Bombe/Bedingt'
+    archetype: 'Bombe'
+    effect_text: 'Wenn insgesamt weniger als 70 Bevölkerung im aktiven Spiel ist, vernichte 2 neutrale Bevölkerung und neutralisiere 1 Bevölkerung jeder Fraktion mit 5 oder weniger Bevölkerung. Danach erfolgt die normale Siegprüfung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'V0.3 Effekttext: Wenn insgesamt weniger als 70 Bevölkerung im aktiven Spiel ist, vernichte 2 neutrale Bevölkerung und neutralisiere 1 Bevölkerung jeder Fraktion mit 5 oder weniger Bevölkerung. Danach erfolgt die normale Siegprüfung.'

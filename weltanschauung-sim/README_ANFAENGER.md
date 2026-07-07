@@ -52,8 +52,8 @@ Das Dashboard startet lokal. Normalerweise oeffnet sich automatisch ein Browserf
 
 Im Tab `Start / Simulation starten` sind einfache Default-Dateien vorausgewaehlt:
 
-- Regeln: `configs/rules/base_rules.yaml`
-- Karten: `configs/cards/base_cards.yaml`
+- Regeln: `configs/rules/rules_v0_3.yaml`
+- Karten: `configs/cards/cards_v0_3.yaml`
 - Bots: `configs/bots/bot_profiles.yaml`
 
 Fuer den ersten Beispiel-Run sind 10 Spiele und Seed 123 voreingestellt. Klicken Sie auf `Simulation starten`.
@@ -77,6 +77,24 @@ Jeder Run hat einen eigenen Ordner. Darin finden Sie unter anderem:
 Im Dashboard koennen Sie einen vorhandenen Run links in der Seitenleiste laden.
 
 ## Hinweis zu Karten
+
+Der aktuelle Kartensatz fuer Version 0.3 liegt in:
+
+```text
+configs/cards/cards_v0_3.yaml
+```
+
+Diese Datei enthaelt die 240 aktuellen Fraktionskarten. Die echten
+Rechercheauftraege liegen in:
+
+```text
+configs/cards/research_assignments_v0_3.yaml
+```
+
+Sie werden automatisch mitgeladen. Rechercheauftraege geben je nach Auftrag
+1, 2 oder 3 Quellen. In Version 0.3 ist das Quellenlimit nicht mehr 3; das
+Programm erlaubt aktuell bis zu 99 Quellen pro Spieler, damit Spieler mehr
+Quellen sammeln und einsetzen koennen.
 
 In den Karten-Dateien kann bei einer Karte `count` stehen. Das bedeutet:
 Diese Kartenart liegt mehrfach im Deck. Das Programm behandelt jede einzelne

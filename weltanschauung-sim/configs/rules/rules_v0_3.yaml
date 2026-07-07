@@ -69,14 +69,14 @@ roles:
 
 sources:
   starting_sources: 0
-  max_sources: 3
+  max_sources: 99
   used_sources_are_spent: true
 
 research_assignments:
   starting_assignments: 2
   max_assignments: 2
   max_completed_per_round: 1
-  source_reward: 1
+  source_reward: 0
   allow_discard_and_redraw_if_none_completed: true
 
 round_flow:

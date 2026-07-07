@@ -37,6 +37,7 @@ def generate_report(run_dir: str | Path) -> dict[str, Any]:
     metrics["cards"] = card_metrics
     metrics["propaganda_advanced"] = propaganda_metrics
     metrics["bots"] = bot_metrics
+    metrics["v0_3"] = build_v03_metrics(event_rows, round_summaries)
     metrics["warnings"] = build_balancing_warnings(metrics, metadata.get("analytics"))
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
@@ -50,6 +51,7 @@ def generate_report(run_dir: str | Path) -> dict[str, Any]:
         encoding="utf-8",
     )
     (run_path / "metrics_bots.json").write_text(json.dumps(bot_metrics, ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
+    (run_path / "metrics_v0_3.json").write_text(json.dumps(metrics["v0_3"], ensure_ascii=True, indent=2, sort_keys=True), encoding="utf-8")
     report_path.write_text(render_markdown_report(metrics), encoding="utf-8")
     return metrics
 
@@ -68,6 +70,7 @@ def generate_charts(run_dir: str | Path) -> list[str]:
     metrics["cards"] = build_card_metrics(event_rows, game_summaries)
     metrics["propaganda_advanced"] = build_propaganda_metrics(event_rows)
     metrics["bots"] = build_bot_metrics(event_rows, game_summaries, bot_metrics_frame)
+    metrics["v0_3"] = build_v03_metrics(event_rows, round_summaries)
     metrics["warnings"] = build_balancing_warnings(metrics, metadata.get("analytics"))
     chart_files = _generate_charts_from_data(run_path, metrics, game_summaries, round_summaries)
     metrics["charts"] = chart_files
@@ -163,6 +166,9 @@ def render_markdown_report(metrics: dict[str, Any]) -> str:
         "## Botanalyse",
         _markdown_mapping(metrics.get("bots", {}).get("win_rate_by_bot_type", {}), percent=True),
         f"- Bot-Typ-Metriken: {json.dumps(metrics.get('bots', {}).get('by_bot_type', {}), ensure_ascii=True, sort_keys=True)}",
+        "",
+        "## v0.3 Analyse",
+        _markdown_v03(metrics.get("v0_3", {})),
         "",
         "## Hinweise fuer ChatGPT",
         "- Pruefe Balancing-Signale: dauerhaft dominante Fraktionen, hohe Siegquoten einzelner Spielerpositionen, extreme Population-Gaps.",
@@ -502,6 +508,150 @@ def build_bot_metrics(events: list[dict[str, Any]], game_summaries: pl.DataFrame
     }
 
 
+def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFrame) -> dict[str, Any]:
+    round_rows = round_summaries.to_dicts()
+    victory_counts: dict[str, int] = defaultdict(int)
+    blocked_wins = 0
+    journalist_changes = 0
+    media_mogul_counts: dict[str, int] = defaultdict(int)
+    source_gain_by_player: dict[str, int] = defaultdict(int)
+    research_completed = 0
+    research_discards = 0
+    max_sources_reached = 0
+    propaganda = {
+        "placements_by_media_mogul": 0,
+        "removed_by_journalist": 0,
+        "slot4_displacements": 0,
+        "power_samples": [],
+    }
+    world_history = {
+        "urn_card_counts": [],
+        "cards_by_faction": defaultdict(int),
+        "pairs_by_faction": defaultdict(int),
+        "three_of_a_kind_by_faction": defaultdict(int),
+        "straights_by_faction": defaultdict(int),
+        "transition_count": 0,
+        "power_margins": [],
+    }
+    combat = {
+        "impacts": [],
+        "successful_attacks": 0,
+        "neutral_impulses": 0,
+    }
+    eliminated_counts: dict[str, int] = defaultdict(int)
+
+    for event in events:
+        event_type = event.get("event_type")
+        payload = event.get("payload", {})
+        if event_type == "victory_checked":
+            condition = payload.get("winning_condition")
+            if condition:
+                victory_counts[str(condition)] += 1
+            if payload.get("tie_info"):
+                blocked_wins += 1
+            for faction_id in payload.get("eliminated_factions", []) or []:
+                eliminated_counts[str(faction_id)] += 1
+        elif event_type == "journalist_changed":
+            journalist_changes += 1
+        elif event_type == "media_mogul_changed":
+            media_mogul_counts[str(payload.get("new_media_mogul_player_id"))] += 1
+        elif event_type == "research_order_completed":
+            research_completed += 1
+            player_id = str(payload.get("player_id"))
+            source_gain_by_player[player_id] += int(payload.get("source_reward") or 0)
+        elif event_type == "research_order_discarded":
+            research_discards += 1
+        elif event_type == "propaganda_placed":
+            propaganda["placements_by_media_mogul"] += 1
+        elif event_type == "propaganda_removed":
+            reason = str(payload.get("reason", ""))
+            if "journalist" in reason:
+                propaganda["removed_by_journalist"] += 1
+            if "slot_4" in reason or "displaced" in reason:
+                propaganda["slot4_displacements"] += 1
+        elif event_type == "world_history_revealed":
+            world_history["urn_card_counts"].append(len(payload.get("card_ids") or []))
+        elif event_type == "world_history_power_calculated":
+            base = payload.get("base_power") or {}
+            prop = payload.get("propaganda_power") or {}
+            total = payload.get("total_power") or {}
+            propaganda["power_samples"].append({"base": base, "activated": prop, "final": total})
+            values = [int(value or 0) for value in total.values()]
+            if len(values) >= 2:
+                ordered = sorted(values, reverse=True)
+                world_history["power_margins"].append(ordered[0] - ordered[1])
+        elif event_type == "combat_resolved":
+            applied = payload.get("applied_deltas") or {}
+            requested = payload.get("requested_deltas") or {}
+            for value in applied.values():
+                impact = abs(int(value or 0))
+                if impact:
+                    combat["impacts"].append(impact)
+                    if int(value or 0) < 0:
+                        combat["successful_attacks"] += 1
+            combat["neutral_impulses"] += sum(1 for value in requested.values() if int(value or 0) > 0)
+
+    for row in round_rows:
+        for player_id, count in (_parse_json(row.get("source_counts"), fallback={}) or {}).items():
+            if int(count or 0) >= 3:
+                max_sources_reached += 1
+        for faction_id in _parse_json(row.get("eliminated_factions"), fallback=[]) or []:
+            eliminated_counts[str(faction_id)] += 1
+
+    for row in round_rows:
+        cards = _parse_json(row.get("world_history_row"), fallback=[]) or []
+        by_faction_strengths: dict[str, list[int]] = defaultdict(list)
+        for card_id in cards:
+            parts = str(card_id).split("_")
+            if parts and parts[0] in {"red", "black", "yellow", "green"}:
+                by_faction_strengths[parts[0]].append(_strength_from_card_id(str(card_id)))
+        for faction_id, strengths in by_faction_strengths.items():
+            world_history["cards_by_faction"][faction_id] += len(strengths)
+            for strength in set(strengths):
+                if strengths.count(strength) >= 2:
+                    world_history["pairs_by_faction"][faction_id] += 1
+                if strengths.count(strength) >= 3:
+                    world_history["three_of_a_kind_by_faction"][faction_id] += 1
+            ordered = sorted(set(strengths))
+            if any(b == a + 1 and c == b + 1 for a, b, c in zip(ordered, ordered[1:], ordered[2:])):
+                world_history["straights_by_faction"][faction_id] += 1
+
+    return {
+        "event_log_available": bool(events),
+        "round_summary_available": bool(round_rows),
+        "victory": {
+            "wins_by_condition": dict(victory_counts),
+            "blocked_simultaneous_wins": blocked_wins,
+        },
+        "roles": {
+            "journalist_changes": journalist_changes,
+            "media_mogul_distribution": dict(media_mogul_counts),
+        },
+        "propaganda": propaganda,
+        "world_history": {
+            **world_history,
+            "cards_by_faction": dict(world_history["cards_by_faction"]),
+            "pairs_by_faction": dict(world_history["pairs_by_faction"]),
+            "three_of_a_kind_by_faction": dict(world_history["three_of_a_kind_by_faction"]),
+            "straights_by_faction": dict(world_history["straights_by_faction"]),
+            "average_urn_cards": _average(world_history["urn_card_counts"]),
+            "average_power_margin": _average(world_history["power_margins"]),
+        },
+        "combat": {
+            **combat,
+            "average_impact": _average(combat["impacts"]),
+        },
+        "research_assignments": {
+            "completed": research_completed,
+            "discarded_or_redrawn": research_discards,
+            "source_gain_by_player": dict(source_gain_by_player),
+            "max_sources_reached_samples": max_sources_reached,
+        },
+        "eliminated_factions": dict(eliminated_counts),
+        "eliminaten": dict(eliminated_counts),
+    }
+
+
 def _generate_charts_from_data(
     run_path: Path,
     metrics: dict[str, Any],
@@ -568,6 +718,21 @@ def _generate_charts_from_data(
     saboteur_chart = _saboteur_winrate_by_round_chart(game_rows)
     if saboteur_chart is not None:
         chart_files.append(_write_chart(charts_dir / "saboteur_winrate_by_round.html", saboteur_chart))
+
+    optional_charts = {
+        "destroyed_population_by_round.html": _single_round_column_chart(round_rows, "destroyed_population", "Destroyed Population je Runde"),
+        "propaganda_power_by_round.html": _json_power_chart(round_rows, "activated_propaganda_power_by_faction", "Aktivierte Propagandamacht je Runde"),
+        "activated_propaganda_power_by_round.html": _json_power_chart(round_rows, "activated_propaganda_power_by_faction", "Aktivierte Propagandamacht je Runde"),
+        "final_power_by_round.html": _json_power_chart(round_rows, "final_power_by_faction", "Finale Macht je Fraktion je Runde"),
+        "winrates_by_victory_type.html": _victory_type_chart(game_rows),
+        "sources_by_round.html": _json_player_count_chart(round_rows, "source_counts", "Quellenentwicklung"),
+        "journalist_changes.html": _categorical_round_chart(round_rows, "journalist_player", "Journalist je Runde"),
+        "media_mogul_distribution.html": _categorical_round_chart(round_rows, "media_mogul_player", "Medienmogul-Verteilung"),
+        "combat_impact_histogram.html": _combat_impact_histogram(round_rows),
+    }
+    for filename, figure in optional_charts.items():
+        if figure is not None:
+            chart_files.append(_write_chart(charts_dir / filename, figure))
 
     return [f"charts/{Path(path).name}" for path in chart_files]
 
@@ -659,6 +824,101 @@ def _saboteur_winrate_by_round_chart(game_rows: list[dict[str, Any]]) -> go.Figu
         yaxis_title="Saboteur-Siegquote (%)",
     )
     return figure
+
+
+def _single_round_column_chart(round_rows: list[dict[str, Any]], column: str, title: str) -> go.Figure | None:
+    if not round_rows or not any(row.get(column) is not None for row in round_rows):
+        return None
+    by_round: dict[int, list[float]] = defaultdict(list)
+    for row in round_rows:
+        value = _to_float(row.get(column))
+        if value is not None and row.get("round") is not None:
+            by_round[int(row["round"])].append(value)
+    figure = go.Figure()
+    rounds = sorted(by_round)
+    figure.add_scatter(x=rounds, y=[_average(by_round[round_number]) for round_number in rounds], mode="lines+markers", name=column)
+    figure.update_layout(title=title, xaxis_title="Runde", yaxis_title=column)
+    return figure
+
+
+def _json_power_chart(round_rows: list[dict[str, Any]], column: str, title: str) -> go.Figure | None:
+    by_round: dict[int, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for row in round_rows:
+        round_number = row.get("round")
+        payload = _parse_json(row.get(column), fallback={})
+        if round_number is None or not isinstance(payload, dict):
+            continue
+        for faction_id, value in payload.items():
+            number = _to_float(value)
+            if number is not None:
+                by_round[int(round_number)][str(faction_id)].append(number)
+    if not by_round:
+        return None
+    figure = go.Figure()
+    rounds = sorted(by_round)
+    faction_ids = sorted({faction_id for values in by_round.values() for faction_id in values})
+    for faction_id in faction_ids:
+        figure.add_scatter(
+            x=rounds,
+            y=[_average(by_round[round_number].get(faction_id, [])) for round_number in rounds],
+            mode="lines+markers",
+            name=faction_id,
+        )
+    figure.update_layout(title=title, xaxis_title="Runde", yaxis_title="Macht")
+    return figure
+
+
+def _json_player_count_chart(round_rows: list[dict[str, Any]], column: str, title: str) -> go.Figure | None:
+    by_round: dict[int, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for row in round_rows:
+        payload = _parse_json(row.get(column), fallback={})
+        if row.get("round") is None or not isinstance(payload, dict):
+            continue
+        for player_id, value in payload.items():
+            number = _to_float(value)
+            if number is not None:
+                by_round[int(row["round"])][str(player_id)].append(number)
+    if not by_round:
+        return None
+    figure = go.Figure()
+    rounds = sorted(by_round)
+    player_ids = sorted({player_id for values in by_round.values() for player_id in values})
+    for player_id in player_ids:
+        figure.add_scatter(x=rounds, y=[_average(by_round[r].get(player_id, [])) for r in rounds], mode="lines+markers", name=player_id)
+    figure.update_layout(title=title, xaxis_title="Runde", yaxis_title="Anzahl")
+    return figure
+
+
+def _categorical_round_chart(round_rows: list[dict[str, Any]], column: str, title: str) -> go.Figure | None:
+    counts: dict[str, int] = defaultdict(int)
+    for row in round_rows:
+        value = row.get(column)
+        if value:
+            counts[str(value)] += 1
+    if not counts:
+        return None
+    return _bar_chart(title, list(counts.keys()), list(counts.values()), "Anzahl Runden")
+
+
+def _victory_type_chart(game_rows: list[dict[str, Any]]) -> go.Figure | None:
+    counts: dict[str, int] = defaultdict(int)
+    for row in game_rows:
+        counts[str(row.get("winning_condition") or row.get("winner_type") or "none")] += 1
+    if not counts:
+        return None
+    total = sum(counts.values())
+    return _bar_chart("Siegquoten nach Siegtyp", list(counts.keys()), [value / total * 100 for value in counts.values()], "Siegquote (%)")
+
+
+def _combat_impact_histogram(round_rows: list[dict[str, Any]]) -> go.Figure | None:
+    impacts: list[int] = []
+    for row in round_rows:
+        payload = _parse_json(row.get("combat_applied_deltas"), fallback={})
+        if isinstance(payload, dict):
+            impacts.extend(abs(int(value or 0)) for value in payload.values() if int(value or 0) != 0)
+    if not impacts:
+        return None
+    return _histogram_chart("Kampfwirkungen", impacts, "Impact")
 
 
 def _overview_metrics(game_rows: list[dict[str, Any]], faction_ids: list[str], game_count: int) -> dict[str, Any]:
@@ -1046,3 +1306,45 @@ def _markdown_top_metric(items: dict[str, dict[str, Any]], metric_name: str) -> 
         return "- Keine Kartenmetriken verfuegbar"
     top_items = sorted(items.items(), key=lambda item: item[1].get(metric_name, 0), reverse=True)[:10]
     return "\n".join(f"- {card_id}: {metric_name}={_fmt(values.get(metric_name))}" for card_id, values in top_items)
+
+
+def _markdown_v03(metrics: dict[str, Any]) -> str:
+    if not metrics or not metrics.get("event_log_available"):
+        return "- Keine v0.3-Eventdaten vorhanden."
+    return "\n".join(
+        [
+            f"- Siegbedingungen: {json.dumps(metrics.get('victory', {}).get('wins_by_condition', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Gleichzeitig blockierte Siege: {metrics.get('victory', {}).get('blocked_simultaneous_wins', 0)}",
+            f"- Journalistwechsel: {metrics.get('roles', {}).get('journalist_changes', 0)}",
+            f"- Medienmogul-Verteilung: {json.dumps(metrics.get('roles', {}).get('media_mogul_distribution', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Propaganda: {json.dumps(metrics.get('propaganda', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Weltgeschichte: {json.dumps(metrics.get('world_history', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Kampf: {json.dumps(metrics.get('combat', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Rechercheauftraege: {json.dumps(metrics.get('research_assignments', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Eliminaten / ausgeloeschte Fraktionen: {json.dumps(metrics.get('eliminaten', {}), ensure_ascii=True, sort_keys=True)}",
+        ]
+    )
+
+
+def _parse_json(value: Any, *, fallback: Any) -> Any:
+    if value is None:
+        return fallback
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(str(value))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return fallback
+
+
+def _strength_from_card_id(card_id: str) -> int:
+    tail = card_id.rsplit("_", 1)[-1]
+    try:
+        number = int(tail)
+    except ValueError:
+        return 0
+    if number <= 2:
+        return 1
+    if number <= 4:
+        return 2
+    return 3

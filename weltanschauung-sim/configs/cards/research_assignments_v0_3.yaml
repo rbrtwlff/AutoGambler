@@ -1,0 +1,1143 @@
+# Rechercheauftraege v0.3 - aus C:\Users\rbrtw\Downloads\rechercheauftraege_v0_3.md importiert.
+# Eigener Auftragstapel; wird von cards_v0_3.yaml eingebunden.
+cards:
+  - id: 'RA001'
+    name: 'Neutrale Masse'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Am Ende der Weltgeschichte sind mindestens 60 neutrale Bevölkerung vorhanden.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Weltgeschichte sind mindestens 60 neutrale Bevölkerung vorhanden.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Weltgeschichte sind mindestens 60 neutrale Bevölkerung vorhanden.'
+  - id: 'RA002'
+    name: 'Politisierte Straßen'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Am Ende der Weltgeschichte sind weniger als 65 neutrale Bevölkerung vorhanden.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Weltgeschichte sind weniger als 65 neutrale Bevölkerung vorhanden.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Weltgeschichte sind weniger als 65 neutrale Bevölkerung vorhanden.'
+  - id: 'RA003'
+    name: 'Kleine Keimzelle'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+  - id: 'RA004'
+    name: 'Volkspartei'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Bevölkerung.'
+  - id: 'RA005'
+    name: 'Vier Lager'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Am Ende der Weltgeschichte haben alle vier Fraktionen mindestens 1 Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Weltgeschichte haben alle vier Fraktionen mindestens 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Weltgeschichte haben alle vier Fraktionen mindestens 1 Bevölkerung.'
+  - id: 'RA006'
+    name: 'Mobilisierung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte hat mindestens eine Fraktion 2 oder mehr Bevölkerung rekrutiert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte hat mindestens eine Fraktion 2 oder mehr Bevölkerung rekrutiert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte hat mindestens eine Fraktion 2 oder mehr Bevölkerung rekrutiert.'
+  - id: 'RA007'
+    name: 'Enttäuschung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte wurden insgesamt mindestens 2 Bevölkerung neutralisiert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte wurden insgesamt mindestens 2 Bevölkerung neutralisiert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte wurden insgesamt mindestens 2 Bevölkerung neutralisiert.'
+  - id: 'RA008'
+    name: 'Wechselstimmung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte hat dieselbe Fraktion Bevölkerung verloren und Bevölkerung rekrutiert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte hat dieselbe Fraktion Bevölkerung verloren und Bevölkerung rekrutiert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte hat dieselbe Fraktion Bevölkerung verloren und Bevölkerung rekrutiert.'
+  - id: 'RA009'
+    name: 'Machtblock'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion erreicht in der Weltgeschichte mindestens 13 finale Macht.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Fraktion erreicht in der Weltgeschichte mindestens 13 finale Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Fraktion erreicht in der Weltgeschichte mindestens 13 finale Macht.'
+  - id: 'RA010'
+    name: 'Schwache Runde'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Keine Fraktion erreicht in der Weltgeschichte mehr als 10 finale Macht.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Keine Fraktion erreicht in der Weltgeschichte mehr als 10 finale Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Keine Fraktion erreicht in der Weltgeschichte mehr als 10 finale Macht.'
+  - id: 'RA011'
+    name: 'Knappes Gefecht'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Ein erfolgreicher Angriff erfolgt mit höchstens 3 Macht Vorsprung.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Ein erfolgreicher Angriff erfolgt mit höchstens 3 Macht Vorsprung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Ein erfolgreicher Angriff erfolgt mit höchstens 3 Macht Vorsprung.'
+  - id: 'RA012'
+    name: 'Alle gegen alle'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Mindestens drei Fraktionen haben in dieser Weltgeschichte ein Angriffsziel gegen eine andere Fraktion.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Mindestens drei Fraktionen haben in dieser Weltgeschichte ein Angriffsziel gegen eine andere Fraktion.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Mindestens drei Fraktionen haben in dieser Weltgeschichte ein Angriffsziel gegen eine andere Fraktion.'
+  - id: 'RA013'
+    name: 'Leerlauf'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Mindestens eine Fraktion hat Macht, aber kein Angriffsziel gegen eine andere Fraktion.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Mindestens eine Fraktion hat Macht, aber kein Angriffsziel gegen eine andere Fraktion.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Mindestens eine Fraktion hat Macht, aber kein Angriffsziel gegen eine andere Fraktion.'
+  - id: 'RA014'
+    name: 'Abgewehrt'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Ein Angriff wird verhindert oder seine Kampfwirkung wird auf 0 reduziert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Ein Angriff wird verhindert oder seine Kampfwirkung wird auf 0 reduziert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Ein Angriff wird verhindert oder seine Kampfwirkung wird auf 0 reduziert.'
+  - id: 'RA015'
+    name: 'Gleichstand der Macht'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:weltgeschichte_kampf', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Mindestens zwei nicht ausgelöschte Fraktionen haben am Ende der Machtberechnung dieselbe finale Macht.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Mindestens zwei nicht ausgelöschte Fraktionen haben am Ende der Machtberechnung dieselbe finale Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Mindestens zwei nicht ausgelöschte Fraktionen haben am Ende der Machtberechnung dieselbe finale Macht.'
+  - id: 'RA016'
+    name: 'Neue Schlagzeile'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_EVENT'
+    condition: 'In dieser Runde wurde neue Propaganda einer Fraktion ausgelegt, die vorher keine Propagandakarte in der Leiste hatte.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Runde wurde neue Propaganda einer Fraktion ausgelegt, die vorher keine Propagandakarte in der Leiste hatte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Runde wurde neue Propaganda einer Fraktion ausgelegt, die vorher keine Propagandakarte in der Leiste hatte.'
+  - id: 'RA017'
+    name: 'Alte Erzählung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Am Ende der Runde liegt dieselbe Propagandakarte in Slot 4 wie zu Beginn der Runde.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Runde liegt dieselbe Propagandakarte in Slot 4 wie zu Beginn der Runde.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Runde liegt dieselbe Propagandakarte in Slot 4 wie zu Beginn der Runde.'
+  - id: 'RA018'
+    name: 'Propagandabruch'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_EVENT'
+    condition: 'In dieser Runde wurde mindestens eine Propagandakarte entfernt.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Runde wurde mindestens eine Propagandakarte entfernt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Runde wurde mindestens eine Propagandakarte entfernt.'
+  - id: 'RA019'
+    name: 'Verdrängte Wahrheit'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_EVENT'
+    condition: 'In dieser Runde wurde mindestens eine Propagandakarte verdrängt.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Runde wurde mindestens eine Propagandakarte verdrängt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Runde wurde mindestens eine Propagandakarte verdrängt.'
+  - id: 'RA020'
+    name: 'Einfarbiger Block'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Am Ende der Runde liegen mindestens zwei Propagandakarten derselben Fraktion aus.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Runde liegen mindestens zwei Propagandakarten derselben Fraktion aus.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Runde liegen mindestens zwei Propagandakarten derselben Fraktion aus.'
+  - id: 'RA021'
+    name: 'Bunte Presse'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Am Ende der Runde liegen Propagandakarten von mindestens drei verschiedenen Fraktionen aus.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Runde liegen Propagandakarten von mindestens drei verschiedenen Fraktionen aus.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Runde liegen Propagandakarten von mindestens drei verschiedenen Fraktionen aus.'
+  - id: 'RA022'
+    name: 'Leere Wand'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Am Ende der Runde liegen weniger als drei Propagandakarten aus.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Runde liegen weniger als drei Propagandakarten aus.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Runde liegen weniger als drei Propagandakarten aus.'
+  - id: 'RA023'
+    name: 'Schweigende Fraktion'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion hat Propaganda in der Leiste, aber keine Karte in der Weltgeschichtsreihe.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Fraktion hat Propaganda in der Leiste, aber keine Karte in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Fraktion hat Propaganda in der Leiste, aber keine Karte in der Weltgeschichtsreihe.'
+  - id: 'RA024'
+    name: 'Festgesetztes Narrativ'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Eine Propagandakarte bleibt vom Beginn bis zum Ende der Runde im selben Propagandaslot.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Propagandakarte bleibt vom Beginn bis zum Ende der Runde im selben Propagandaslot.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Propagandakarte bleibt vom Beginn bis zum Ende der Runde im selben Propagandaslot.'
+  - id: 'RA025'
+    name: 'Umkämpfte Redaktion'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'In dieser Runde wurde mindestens 1 Quelle gegen den Journalisten eingesetzt.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Runde wurde mindestens 1 Quelle gegen den Journalisten eingesetzt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Runde wurde mindestens 1 Quelle gegen den Journalisten eingesetzt.'
+  - id: 'RA026'
+    name: 'Vertrauensbeweis'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Der Journalist bleibt im Amt, obwohl mindestens 1 Quelle gegen ihn eingesetzt wurde.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Der Journalist bleibt im Amt, obwohl mindestens 1 Quelle gegen ihn eingesetzt wurde.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Der Journalist bleibt im Amt, obwohl mindestens 1 Quelle gegen ihn eingesetzt wurde.'
+  - id: 'RA027'
+    name: 'Gespaltene Öffentlichkeit'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Bei der Medienmogulwahl entsteht ein Gleichstand.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Bei der Medienmogulwahl entsteht ein Gleichstand.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Bei der Medienmogulwahl entsteht ein Gleichstand.'
+  - id: 'RA028'
+    name: 'Wechsel der Bühne'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Der Medienmogul dieser Runde war in der Vorrunde nicht Medienmogul.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Der Medienmogul dieser Runde war in der Vorrunde nicht Medienmogul.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Der Medienmogul dieser Runde war in der Vorrunde nicht Medienmogul.'
+  - id: 'RA029'
+    name: 'Keine klare Linie'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:chaos_gleichgewicht', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Keine Fraktion hat am Ende der Machtberechnung die alleinige höchste Macht.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Keine Fraktion hat am Ende der Machtberechnung die alleinige höchste Macht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Keine Fraktion hat am Ende der Machtberechnung die alleinige höchste Macht.'
+  - id: 'RA030'
+    name: 'Breites Feld'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:chaos_gleichgewicht', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Alle vier Fraktionen haben mindestens eine Karte in der Weltgeschichtsreihe.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Alle vier Fraktionen haben mindestens eine Karte in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Alle vier Fraktionen haben mindestens eine Karte in der Weltgeschichtsreihe.'
+  - id: 'RA031'
+    name: 'Paarbildung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:chaos_gleichgewicht', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Eine Fraktion hat in der Weltgeschichtsreihe ein Paar.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Eine Fraktion hat in der Weltgeschichtsreihe ein Paar.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Eine Fraktion hat in der Weltgeschichtsreihe ein Paar.'
+  - id: 'RA032'
+    name: 'Stillstand'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:chaos_gleichgewicht', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'In dieser Weltgeschichte verliert keine Fraktion Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte verliert keine Fraktion Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte verliert keine Fraktion Bevölkerung.'
+  - id: 'RA033'
+    name: 'Asche'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:kollaps_wiederaufbau', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte wird mindestens 1 Bevölkerung vernichtet.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte wird mindestens 1 Bevölkerung vernichtet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte wird mindestens 1 Bevölkerung vernichtet.'
+  - id: 'RA034'
+    name: 'Wiederkehr'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:kollaps_wiederaufbau', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte wird mindestens 1 Bevölkerung wiederhergestellt.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: In dieser Weltgeschichte wird mindestens 1 Bevölkerung wiederhergestellt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: In dieser Weltgeschichte wird mindestens 1 Bevölkerung wiederhergestellt.'
+  - id: 'RA035'
+    name: 'Schrumpfende Welt'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:kollaps_wiederaufbau', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Am Ende der Weltgeschichte sind weniger als 95 Bevölkerung im aktiven Spiel.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Am Ende der Weltgeschichte sind weniger als 95 Bevölkerung im aktiven Spiel.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Am Ende der Weltgeschichte sind weniger als 95 Bevölkerung im aktiven Spiel.'
+  - id: 'RA036'
+    name: 'Niemand fällt'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:1', 'category:kollaps_wiederaufbau', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 1
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Keine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 1 Quelle(n), wenn erfüllt: Keine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 1. Bedingung: Keine Fraktion hat am Ende der Weltgeschichte 5 oder weniger Bevölkerung.'
+  - id: 'RA037'
+    name: 'Tiefer Graben'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt mindestens 12.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt mindestens 12.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt mindestens 12.'
+  - id: 'RA038'
+    name: 'Fast Gleichstand'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:bevoelkerung', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt höchstens 3.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt höchstens 3.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Der Unterschied zwischen der Fraktion mit der meisten Bevölkerung und der Fraktion mit der wenigsten Bevölkerung beträgt höchstens 3.'
+  - id: 'RA039'
+    name: 'Massiver Zuwachs'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte hat mindestens eine Fraktion 4 oder mehr Bevölkerung rekrutiert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: In dieser Weltgeschichte hat mindestens eine Fraktion 4 oder mehr Bevölkerung rekrutiert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: In dieser Weltgeschichte hat mindestens eine Fraktion 4 oder mehr Bevölkerung rekrutiert.'
+  - id: 'RA040'
+    name: 'Großer Verlust'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte wurden insgesamt mindestens 4 Bevölkerung neutralisiert.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: In dieser Weltgeschichte wurden insgesamt mindestens 4 Bevölkerung neutralisiert.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: In dieser Weltgeschichte wurden insgesamt mindestens 4 Bevölkerung neutralisiert.'
+  - id: 'RA041'
+    name: 'Gewaltiger Vorsprung'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Ein erfolgreicher Angriff erfolgt mit mindestens 8 Macht Vorsprung.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Ein erfolgreicher Angriff erfolgt mit mindestens 8 Macht Vorsprung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Ein erfolgreicher Angriff erfolgt mit mindestens 8 Macht Vorsprung.'
+  - id: 'RA042'
+    name: 'Härtefall'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Eine Kampfwirkung beträgt nach allen Modifikationen mindestens 4.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Kampfwirkung beträgt nach allen Modifikationen mindestens 4.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Kampfwirkung beträgt nach allen Modifikationen mindestens 4.'
+  - id: 'RA043'
+    name: 'Mehrfrontenlage'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Eine Fraktion ist Ziel von mindestens zwei Angriffen.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion ist Ziel von mindestens zwei Angriffen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion ist Ziel von mindestens zwei Angriffen.'
+  - id: 'RA044'
+    name: 'Friedhof der Pläne'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:weltgeschichte_kampf', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion mit mindestens 10 finaler Macht berechnet keinen erfolgreichen Angriff.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion mit mindestens 10 finaler Macht berechnet keinen erfolgreichen Angriff.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion mit mindestens 10 finaler Macht berechnet keinen erfolgreichen Angriff.'
+  - id: 'RA045'
+    name: 'Kettenreaktion'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Durch ein einzelnes Ereignis werden mindestens zwei Karteneffekte ausgelöst.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Durch ein einzelnes Ereignis werden mindestens zwei Karteneffekte ausgelöst.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Durch ein einzelnes Ereignis werden mindestens zwei Karteneffekte ausgelöst.'
+  - id: 'RA046'
+    name: 'Propagandamacht'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:propaganda', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Propaganda'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Propagandamacht.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Propagandamacht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion hat am Ende der Weltgeschichte mindestens 12 Propagandamacht.'
+  - id: 'RA047'
+    name: 'Medienbruch'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:propaganda', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Propaganda'
+    scope: 'ROUND_EVENT'
+    condition: 'Eine Fraktion verliert in dieser Runde ihre letzte Propagandakarte.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion verliert in dieser Runde ihre letzte Propagandakarte.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion verliert in dieser Runde ihre letzte Propagandakarte.'
+  - id: 'RA048'
+    name: 'Slotwechsel'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:propaganda', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Propaganda'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte wurde mindestens eine Propagandakarte verschoben.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: In dieser Weltgeschichte wurde mindestens eine Propagandakarte verschoben.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: In dieser Weltgeschichte wurde mindestens eine Propagandakarte verschoben.'
+  - id: 'RA049'
+    name: 'Einstimmigkeit'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Ein Spieler erhält bei der Medienmogulwahl mindestens 3 Stimmen.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Ein Spieler erhält bei der Medienmogulwahl mindestens 3 Stimmen.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Ein Spieler erhält bei der Medienmogulwahl mindestens 3 Stimmen.'
+  - id: 'RA050'
+    name: 'Königsmacher'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Der Journalist entscheidet einen Gleichstand bei der Medienmogulwahl.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Der Journalist entscheidet einen Gleichstand bei der Medienmogulwahl.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Der Journalist entscheidet einen Gleichstand bei der Medienmogulwahl.'
+  - id: 'RA051'
+    name: 'Einseitige Geschichte'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:chaos_gleichgewicht', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Eine Fraktion hat mindestens 4 Karten in der Weltgeschichtsreihe.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion hat mindestens 4 Karten in der Weltgeschichtsreihe.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion hat mindestens 4 Karten in der Weltgeschichtsreihe.'
+  - id: 'RA052'
+    name: 'Kleine Straße'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:chaos_gleichgewicht', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Eine Fraktion hat in der Weltgeschichtsreihe eine Straße aus drei Machtwerten.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion hat in der Weltgeschichtsreihe eine Straße aus drei Machtwerten.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion hat in der Weltgeschichtsreihe eine Straße aus drei Machtwerten.'
+  - id: 'RA053'
+    name: 'Kahlschlag'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:kollaps_wiederaufbau', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte werden insgesamt mindestens 3 Bevölkerung vernichtet.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: In dieser Weltgeschichte werden insgesamt mindestens 3 Bevölkerung vernichtet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: In dieser Weltgeschichte werden insgesamt mindestens 3 Bevölkerung vernichtet.'
+  - id: 'RA054'
+    name: 'Auslöschung droht'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:2', 'category:kollaps_wiederaufbau', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 2
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Eine Fraktion hat am Ende der Weltgeschichte genau 1 Bevölkerung.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 2 Quelle(n), wenn erfüllt: Eine Fraktion hat am Ende der Weltgeschichte genau 1 Bevölkerung.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 2. Bedingung: Eine Fraktion hat am Ende der Weltgeschichte genau 1 Bevölkerung.'
+  - id: 'RA055'
+    name: 'Historischer Erdrutsch'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:bevoelkerung', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Bevölkerung'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte verändert sich die Bevölkerung derselben Fraktion insgesamt um mindestens 6. Dabei zählen Rekrutierung, Neutralisierung, Vernichtung aus dem Fraktionspool und direkte Bewegung zu oder von dieser Fraktion.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Bevölkerung'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: In dieser Weltgeschichte verändert sich die Bevölkerung derselben Fraktion insgesamt um mindestens 6. Dabei zählen Rekrutierung, Neutralisierung, Vernichtung aus dem Fraktionspool und direkte Bewegung zu oder von dieser Fraktion.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: In dieser Weltgeschichte verändert sich die Bevölkerung derselben Fraktion insgesamt um mindestens 6. Dabei zählen Rekrutierung, Neutralisierung, Vernichtung aus dem Fraktionspool und direkte Bewegung zu oder von dieser Fraktion.'
+  - id: 'RA056'
+    name: 'Propagandistische Vorherrschaft'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:propaganda', 'scope:round_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Propaganda'
+    scope: 'ROUND_END'
+    condition: 'Am Ende der Runde hat eine Fraktion mindestens 3 Propagandakarten in der Propagandaleiste und mindestens 15 Propagandamacht.'
+    timing: 'ROUND_END'
+    archetype: 'Propaganda'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: Am Ende der Runde hat eine Fraktion mindestens 3 Propagandakarten in der Propagandaleiste und mindestens 15 Propagandamacht.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: Am Ende der Runde hat eine Fraktion mindestens 3 Propagandakarten in der Propagandaleiste und mindestens 15 Propagandamacht.'
+  - id: 'RA057'
+    name: 'Dreifacher Schlag'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:weltgeschichte_kampf', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Weltgeschichte/Kampf'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'In dieser Weltgeschichte werden mindestens drei erfolgreiche Angriffe berechnet.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Weltgeschichte/Kampf'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: In dieser Weltgeschichte werden mindestens drei erfolgreiche Angriffe berechnet.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: In dieser Weltgeschichte werden mindestens drei erfolgreiche Angriffe berechnet.'
+  - id: 'RA058'
+    name: 'Doppelkombo'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:chaos_gleichgewicht', 'scope:world_history_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Chaos/Gleichgewicht'
+    scope: 'WORLD_HISTORY_EVENT'
+    condition: 'Dieselbe Fraktion hat in der Weltgeschichtsreihe mindestens zwei verschiedene Komboarten aus Paar, Drilling und Straße.'
+    timing: 'WORLD_HISTORY_EVENT'
+    archetype: 'Chaos/Gleichgewicht'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: Dieselbe Fraktion hat in der Weltgeschichtsreihe mindestens zwei verschiedene Komboarten aus Paar, Drilling und Straße.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: Dieselbe Fraktion hat in der Weltgeschichtsreihe mindestens zwei verschiedene Komboarten aus Paar, Drilling und Straße.'
+  - id: 'RA059'
+    name: 'Redaktionsputsch'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:rollen_aemter', 'scope:round_event']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Rollen/Ämter'
+    scope: 'ROUND_EVENT'
+    condition: 'Der Journalist wird gestürzt, und gegen ihn wurden insgesamt mindestens 3 Quellen eingesetzt.'
+    timing: 'ROUND_EVENT'
+    archetype: 'Rollen/Ämter'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: Der Journalist wird gestürzt, und gegen ihn wurden insgesamt mindestens 3 Quellen eingesetzt.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: Der Journalist wird gestürzt, und gegen ihn wurden insgesamt mindestens 3 Quellen eingesetzt.'
+  - id: 'RA060'
+    name: 'Rand des Zusammenbruchs'
+    type: research_order
+    faction: neutral
+    strength: 0
+    count: 1
+    tags: ['v0_3', 'research_order', 'points:3', 'category:kollaps_wiederaufbau', 'scope:world_history_end']
+    enabled: true
+    rules_version: '0.3'
+    points: 3
+    category: 'Kollaps/Wiederaufbau'
+    scope: 'WORLD_HISTORY_END'
+    condition: 'Am Ende der Weltgeschichte sind weniger als 80 Bevölkerung im aktiven Spiel.'
+    timing: 'WORLD_HISTORY_END'
+    archetype: 'Kollaps/Wiederaufbau'
+    effect_text: 'Erhalte 3 Quelle(n), wenn erfüllt: Am Ende der Weltgeschichte sind weniger als 80 Bevölkerung im aktiven Spiel.'
+    action_effects: []
+    propaganda_effects: []
+    notes: 'Rechercheauftrag v0.3. Quellen-Ertrag: 3. Bedingung: Am Ende der Weltgeschichte sind weniger als 80 Bevölkerung im aktiven Spiel.'

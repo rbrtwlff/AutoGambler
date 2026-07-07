@@ -185,6 +185,19 @@ def _round_sections(round_rows: list[dict[str, Any]], events: list[dict[str, Any
                 "neutral_population": row.get("neutral_population"),
                 "propaganda_slots": _parse_json(row.get("propaganda_slots"), fallback=[]),
                 "actions": _round_actions(round_events),
+                "draft": _payloads(round_events, {"draft_started", "draft_contributed", "card_drafted", "draft_finished"}),
+                "journalist": row.get("journalist_player"),
+                "media_mogul": row.get("media_mogul_player"),
+                "source_counts": _parse_json(row.get("source_counts"), fallback={}),
+                "hand_counts": _parse_json(row.get("hand_counts"), fallback={}),
+                "world_history_row": _parse_json(row.get("world_history_row"), fallback=[]),
+                "base_power_by_faction": _parse_json(row.get("base_power_by_faction"), fallback={}),
+                "activated_propaganda_power_by_faction": _parse_json(row.get("activated_propaganda_power_by_faction"), fallback={}),
+                "final_power_by_faction": _parse_json(row.get("final_power_by_faction"), fallback={}),
+                "combat_requested_deltas": _parse_json(row.get("combat_requested_deltas"), fallback={}),
+                "combat_applied_deltas": _parse_json(row.get("combat_applied_deltas"), fallback={}),
+                "victory_checks": _payloads(round_events, {"victory_checked"}),
+                "research_assignments": _payloads(round_events, {"research_assignments_checked", "research_order_completed", "research_order_discarded"}),
                 "effects": [event["payload"] for event in round_events if event.get("event_type") == "effect_triggered"],
                 "attacks_this_round": row.get("attacks_this_round"),
                 "supports_this_round": row.get("supports_this_round"),
@@ -224,6 +237,14 @@ def _round_actions(round_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             }
         )
     return actions
+
+
+def _payloads(round_events: list[dict[str, Any]], event_types: set[str]) -> list[dict[str, Any]]:
+    return [
+        {"event_type": event.get("event_type"), **(event.get("payload") or {})}
+        for event in round_events
+        if event.get("event_type") in event_types
+    ]
 
 
 def _victory_section(game_row: dict[str, Any], events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -377,8 +398,21 @@ def _markdown_rounds(rounds: list[dict[str, Any]]) -> str:
                 f"- Population Gap: {round_info['population_gap']}",
                 f"- Bevoelkerung: {json.dumps(round_info['populations'], ensure_ascii=True, sort_keys=True)}",
                 f"- Neutraler Pool: {round_info['neutral_population']}",
+                f"- Journalist: {round_info.get('journalist')}",
+                f"- Medienmogul: {round_info.get('media_mogul')}",
+                f"- Quellen: {json.dumps(round_info.get('source_counts', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Handkarten: {json.dumps(round_info.get('hand_counts', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Draft: {json.dumps(round_info.get('draft', []), ensure_ascii=True, sort_keys=True)}",
                 f"- Propagandaleiste: {json.dumps(round_info['propaganda_slots'], ensure_ascii=True)}",
+                f"- Urne / Weltgeschichte: {json.dumps(round_info.get('world_history_row', []), ensure_ascii=True)}",
+                f"- Basismacht: {json.dumps(round_info.get('base_power_by_faction', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Aktivierte Propagandamacht: {json.dumps(round_info.get('activated_propaganda_power_by_faction', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Finale Macht: {json.dumps(round_info.get('final_power_by_faction', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Stossrichtungen / angeforderte Kampfdeltas: {json.dumps(round_info.get('combat_requested_deltas', {}), ensure_ascii=True, sort_keys=True)}",
+                f"- Kampf / angewendete Deltas: {json.dumps(round_info.get('combat_applied_deltas', {}), ensure_ascii=True, sort_keys=True)}",
                 f"- Aktionen: {json.dumps(round_info['actions'], ensure_ascii=True, sort_keys=True)}",
+                f"- Siegpruefung: {json.dumps(round_info.get('victory_checks', []), ensure_ascii=True, sort_keys=True)}",
+                f"- Rechercheauftraege: {json.dumps(round_info.get('research_assignments', []), ensure_ascii=True, sort_keys=True)}",
                 "",
             ]
         )

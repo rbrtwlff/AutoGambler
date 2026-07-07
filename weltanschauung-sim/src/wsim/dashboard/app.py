@@ -34,13 +34,13 @@ def main() -> None:
         [
             "Start / Simulation starten",
             "Overview",
-            "Last 1000 Games",
-            "Population Over Time",
-            "Faction Balance",
-            "Cards",
+            "Population",
             "Propaganda",
-            "Bots",
-            "Interesting Games",
+            "World History",
+            "Combat",
+            "Victory",
+            "Sources / Journalist",
+            "Research Assignments",
             "Single Game Viewer",
             "Raw Data",
             "Export fuer ChatGPT",
@@ -52,19 +52,22 @@ def main() -> None:
     with tabs[1]:
         _overview_tab(selected_run)
     with tabs[2]:
-        _last_games_tab(selected_run)
+        _chart_tab(selected_run, ["average_population_by_round.html", "neutral_population_by_round.html", "destroyed_population_by_round.html"])
     with tabs[3]:
-        _chart_tab(selected_run, ["average_population_by_round.html", "neutral_population_by_round.html"])
-    with tabs[4]:
-        _chart_tab(selected_run, ["winrates_by_faction.html", "winrates_by_player_position.html", "round_length_histogram.html"])
-    with tabs[5]:
-        _json_metric_tab(selected_run, "metrics_cards.json", "Kartenmetriken")
-    with tabs[6]:
+        _chart_tab(selected_run, ["propaganda_power_by_round.html", "activated_propaganda_power_by_round.html"])
         _json_metric_tab(selected_run, "metrics_propaganda.json", "Propagandametriken")
+    with tabs[4]:
+        _chart_tab(selected_run, ["final_power_by_round.html"])
+        _json_metric_tab(selected_run, "metrics_v0_3.json", "Weltgeschichte")
+    with tabs[5]:
+        _chart_tab(selected_run, ["combat_impact_histogram.html"])
+        _json_metric_tab(selected_run, "metrics_v0_3.json", "Kampf")
+    with tabs[6]:
+        _chart_tab(selected_run, ["winrates_by_faction.html", "winrates_by_player_position.html", "winrates_by_victory_type.html", "round_length_histogram.html"])
     with tabs[7]:
-        _json_metric_tab(selected_run, "metrics_bots.json", "Botmetriken")
+        _chart_tab(selected_run, ["sources_by_round.html", "journalist_changes.html", "media_mogul_distribution.html"])
     with tabs[8]:
-        _interesting_games_tab(selected_run)
+        _json_metric_tab(selected_run, "metrics_v0_3.json", "Rechercheauftraege")
     with tabs[9]:
         _single_game_tab(selected_run)
     with tabs[10]:

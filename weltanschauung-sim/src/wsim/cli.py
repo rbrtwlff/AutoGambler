@@ -150,8 +150,8 @@ def benchmark(
     output: Path | None = typer.Option(None, "--output", help="Ausgabeordner fuer den Benchmark."),
 ) -> None:
     """Misst Durchsatz und Output-Groesse fuer Massensimulationen."""
-    rules_path = Path("configs/rules/base_rules.yaml")
-    cards_path = Path("configs/cards/base_cards.yaml")
+    rules_path = Path("configs/rules/rules_v0_3.yaml")
+    cards_path = Path("configs/cards/cards_v0_3.yaml")
     bots_path = Path("configs/bots/bot_profiles.yaml")
     output_dir = output or Path("outputs/runs") / f"benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     try:
