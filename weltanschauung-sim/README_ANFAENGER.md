@@ -76,6 +76,18 @@ Jeder Run hat einen eigenen Ordner. Darin finden Sie unter anderem:
 
 Im Dashboard koennen Sie einen vorhandenen Run links in der Seitenleiste laden.
 
+## Hinweis zu Karten
+
+In den Karten-Dateien kann bei einer Karte `count` stehen. Das bedeutet:
+Diese Kartenart liegt mehrfach im Deck. Das Programm behandelt jede einzelne
+Kopie getrennt, damit Nachziehstapel, Ablagestapel, Handkarten und
+Propagandaleiste korrekt nachvollziehbar bleiben.
+
+Wenn der Nachziehstapel leer ist, wird der Ablagestapel automatisch gemischt
+und weiterverwendet. Karten, die aus dem Spiel entfernt wurden oder gerade auf
+der Hand, auf der Propagandaleiste, als Quelle oder als Research Order liegen,
+kommen dabei nicht zurueck.
+
 ## Schritt 7: Analysepaket exportieren
 
 Im Tab `Export fuer ChatGPT` klicken Sie auf:

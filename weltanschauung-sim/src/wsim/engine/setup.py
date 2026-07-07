@@ -4,6 +4,7 @@ from wsim.config import ConfigError
 from wsim.core.events import EventBus, EventType
 from wsim.core.models import CardConfig, GameConfig
 from wsim.core.state import (
+    CardInstance,
     DeckState,
     FactionState,
     GameRng,
@@ -40,23 +41,18 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
         },
     )
 
-    enabled_cards = [card for card in cards if card.enabled]
-    disabled_cards = sorted(card.id for card in cards if not card.enabled)
-    regular_deck = sorted(card.id for card in enabled_cards if card.type != "research_order")
-    research_order_pool = sorted(card.id for card in enabled_cards if card.type == "research_order")
-    rng.shuffle(regular_deck)
-    rng.shuffle(research_order_pool)
+    deck = build_deck(cards, rng)
 
     needed_hand_cards = config.draft.starting_hand_size * len(ordered_players)
-    if len(regular_deck) < needed_hand_cards:
+    if len(deck.draw_pile) < needed_hand_cards:
         raise ConfigError(
-            f"Not enough enabled non-research cards for starting hands: {len(regular_deck)} < {needed_hand_cards}."
+            f"Not enough enabled non-research card instances for starting hands: {len(deck.draw_pile)} < {needed_hand_cards}."
         )
     needed_research_orders = config.draft.hidden_research_orders * len(ordered_players)
-    if len(research_order_pool) < needed_research_orders:
+    if len(deck.research_order_pool) < needed_research_orders:
         raise ConfigError(
-            "Not enough enabled research_order cards for hidden research orders: "
-            f"{len(research_order_pool)} < {needed_research_orders}."
+            "Not enough enabled research_order card instances for hidden research orders: "
+            f"{len(deck.research_order_pool)} < {needed_research_orders}."
         )
 
     start_player_id = _choose_start_player(config, player_ids, rng)
@@ -76,19 +72,26 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
         if player.id in saboteur_player_ids:
             roles.append("saboteur")
 
-        hand = _draw_many(regular_deck, config.draft.starting_hand_size)
-        hidden_orders = _draw_many(research_order_pool, config.draft.hidden_research_orders)
-        for card_id in hand:
-            event_bus.emit(
-                EventType.CARD_DRAWN,
-                {"player_id": player.id, "card_id": card_id, "destination": "hand", "reason": "starting_hand"},
-            )
-        for card_id in hidden_orders:
+        hand = deck.draw_cards(
+            config.draft.starting_hand_size,
+            config=config.deck,
+            rng=rng,
+            event_bus=event_bus,
+            reason="starting_hand",
+            player_id=player.id,
+            destination="hand",
+            game_id=config.game_id,
+            round_number=0,
+            phase="setup",
+        )
+        hidden_orders = _draw_many(deck.research_order_pool, config.draft.hidden_research_orders)
+        for instance_id in hidden_orders:
             event_bus.emit(
                 EventType.CARD_DRAWN,
                 {
                     "player_id": player.id,
-                    "card_id": card_id,
+                    "card_id": deck.logical_card_id(instance_id),
+                    "instance_id": instance_id,
                     "destination": "hidden_research_orders",
                     "reason": "initial_research_order",
                 },
@@ -116,8 +119,8 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
             "secret_faction_by_player": secret_faction_by_player,
             "hand_size": config.draft.starting_hand_size,
             "hidden_research_orders": config.draft.hidden_research_orders,
-            "remaining_draw_pile": len(regular_deck),
-            "remaining_research_order_pool": len(research_order_pool),
+            "remaining_draw_pile": len(deck.draw_pile),
+            "remaining_research_order_pool": len(deck.research_order_pool),
             "neutral_population": config.population.neutral_start,
             "faction_population": {faction_id: faction.population for faction_id, faction in factions.items()},
         },
@@ -129,11 +132,7 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
         players=players,
         factions=factions,
         neutral_population=config.population.neutral_start,
-        deck=DeckState(
-            draw_pile=regular_deck,
-            research_order_pool=research_order_pool,
-            disabled_cards=disabled_cards,
-        ),
+        deck=deck,
         propaganda_track=PropagandaTrackState(
             slots=[None for _ in range(config.propaganda.slots)],
             overflow=config.propaganda.overflow,
@@ -145,6 +144,37 @@ def create_initial_state(config: GameConfig, cards: list[CardConfig], seed: int)
             role_assignment_notes=media_mogul_notes,
         ),
         event_log=event_bus.event_log,
+    )
+
+
+def build_deck(cards: list[CardConfig], rng: GameRng) -> DeckState:
+    instances: dict[str, CardInstance] = {}
+    regular_deck: list[str] = []
+    research_order_pool: list[str] = []
+    disabled_cards = sorted(card.id for card in cards if not card.enabled)
+    for card in sorted((card for card in cards if card.enabled), key=lambda item: item.id):
+        for copy_index in range(card.count):
+            instance_id = card.id if card.count == 1 else f"{card.id}__{copy_index + 1:03d}"
+            instances[instance_id] = CardInstance(
+                instance_id=instance_id,
+                card_id=card.id,
+                name=card.name,
+                type=card.type,
+                faction=card.faction,
+                strength=card.strength,
+                tags=list(card.tags),
+            )
+            if card.type == "research_order":
+                research_order_pool.append(instance_id)
+            else:
+                regular_deck.append(instance_id)
+    rng.shuffle(regular_deck)
+    rng.shuffle(research_order_pool)
+    return DeckState(
+        draw_pile=regular_deck,
+        research_order_pool=research_order_pool,
+        disabled_cards=disabled_cards,
+        card_instances=instances,
     )
 
 
@@ -166,6 +196,10 @@ def _choose_journalist(config: GameConfig, player_ids: list[str], start_player_i
 
 
 def _choose_media_mogul(config: GameConfig, player_ids: list[str], start_player_id: str) -> tuple[str, list[str]]:
+    if config.roles.first_media_mogul == "none":
+        return start_player_id, [
+            "TODO: media_mogul initial_holder none requires v0.3 media_mogul_election; assigned to start_player as explicit placeholder."
+        ]
     if config.roles.first_media_mogul == "normal_rules":
         return start_player_id, [
             "TODO: first_media_mogul normal_rules are not implemented yet; assigned to start_player as explicit placeholder."

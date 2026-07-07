@@ -34,6 +34,7 @@ def test_cards_load() -> None:
 
     assert len(cards) >= 64
     assert {card.type for card in cards} >= {"action", "hybrid", "propaganda", "research_order", "source"}
+    assert all(card.count == 1 for card in cards)
     for faction_id in ["red", "black", "yellow", "green"]:
         faction_cards = [card for card in cards if card.faction == faction_id and card.type in {"action", "hybrid"}]
         assert len(faction_cards) >= 8
@@ -80,4 +81,3 @@ def test_cli_validate_cards_works() -> None:
     assert result.exit_code == 0
     assert "Cards OK" in result.stdout
     assert "disabled=1" in result.stdout
-

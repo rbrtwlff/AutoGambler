@@ -5,7 +5,18 @@ from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from wsim.core.events import EventLog
+from wsim.core.events import EventBus, EventLog, EventType
+from wsim.core.models import CardConfig, DeckConfig
+
+
+class GameRuleError(RuntimeError):
+    """Raised when a configured game rule cannot be fulfilled."""
+
+    def __init__(self, message: str, *, game_id: str | None = None, round_number: int | None = None, phase: str | None = None) -> None:
+        self.game_id = game_id
+        self.round_number = round_number
+        self.phase = phase
+        super().__init__(message)
 
 T = TypeVar("T")
 
@@ -52,11 +63,142 @@ class PlayerState(BaseModel):
     max_sources: int = Field(ge=0)
 
 
+class CardInstance(BaseModel):
+    instance_id: str
+    card_id: str
+    name: str
+    type: Literal["action", "propaganda", "hybrid", "source", "research_order"]
+    faction: str | None = None
+    strength: int = 0
+    tags: list[str] = Field(default_factory=list)
+
+
 class DeckState(BaseModel):
     draw_pile: list[str]
     discard_pile: list[str] = Field(default_factory=list)
+    removed_from_game: list[str] = Field(default_factory=list)
     research_order_pool: list[str] = Field(default_factory=list)
     disabled_cards: list[str] = Field(default_factory=list)
+    card_instances: dict[str, CardInstance] = Field(default_factory=dict)
+
+    def logical_card_id(self, instance_id: str) -> str:
+        return self.card_instances.get(instance_id, CardInstance(instance_id=instance_id, card_id=instance_id, name=instance_id, type="action")).card_id
+
+    def draw_cards(
+        self,
+        count: int,
+        *,
+        config: DeckConfig,
+        rng: GameRng,
+        event_bus: EventBus,
+        reason: str,
+        player_id: str | None = None,
+        destination: str = "hand",
+        game_id: str | None = None,
+        round_number: int | None = None,
+        phase: str | None = None,
+    ) -> list[str]:
+        drawn: list[str] = []
+        for _ in range(count):
+            if not self.draw_pile:
+                event_bus.emit(
+                    EventType.DRAW_PILE_EMPTY,
+                    {
+                        "reason": reason,
+                        "player_id": player_id,
+                        "discard_count": len(self.discard_pile),
+                    },
+                )
+                if self.discard_pile and config.reshuffle_discard_when_empty:
+                    self.reshuffle_discard_into_draw_pile(config=config, rng=rng, event_bus=event_bus, reason=reason)
+            if not self.draw_pile:
+                missing = count - len(drawn)
+                event_bus.emit(
+                    EventType.NOT_ENOUGH_CARDS_TO_DRAW,
+                    {
+                        "requested": count,
+                        "drawn": len(drawn),
+                        "missing": missing,
+                        "reason": reason,
+                        "policy": config.when_not_enough_cards,
+                        "player_id": player_id,
+                    },
+                )
+                if config.when_not_enough_cards == "error":
+                    raise GameRuleError(
+                        f"Not enough cards to draw: requested={count}, drawn={len(drawn)}, reason={reason}.",
+                        game_id=game_id,
+                        round_number=round_number,
+                        phase=phase,
+                    )
+                break
+            instance_id = self.draw_pile.pop(0)
+            drawn.append(instance_id)
+            event_bus.emit(
+                EventType.CARD_DRAWN,
+                {
+                    "player_id": player_id,
+                    "card_id": self.logical_card_id(instance_id),
+                    "instance_id": instance_id,
+                    "destination": destination,
+                    "reason": reason,
+                },
+            )
+        return drawn
+
+    def discard_card(self, instance_id: str, *, event_bus: EventBus, reason: str, player_id: str | None = None) -> None:
+        self.discard_pile.append(instance_id)
+        event_bus.emit(
+            EventType.CARD_DISCARDED,
+            {
+                "player_id": player_id,
+                "card_id": self.logical_card_id(instance_id),
+                "instance_id": instance_id,
+                "reason": reason,
+            },
+        )
+
+    def remove_from_game(self, instance_id: str, *, event_bus: EventBus, reason: str, player_id: str | None = None) -> None:
+        self.removed_from_game.append(instance_id)
+        event_bus.emit(
+            EventType.CARD_REMOVED_FROM_GAME,
+            {
+                "player_id": player_id,
+                "card_id": self.logical_card_id(instance_id),
+                "instance_id": instance_id,
+                "reason": reason,
+                "destination": "removed_from_game",
+            },
+        )
+
+    def reshuffle_discard_into_draw_pile(
+        self,
+        *,
+        config: DeckConfig,
+        rng: GameRng,
+        event_bus: EventBus,
+        reason: str,
+    ) -> None:
+        moved_count = len(self.discard_pile)
+        self.draw_pile = list(self.discard_pile)
+        self.discard_pile.clear()
+        rng.shuffle(self.draw_pile)
+        if config.log_reshuffle_events:
+            event_bus.emit(
+                EventType.DECK_RESHUFFLED,
+                {
+                    "reason": reason,
+                    "moved_count": moved_count,
+                    "draw_pile_count": len(self.draw_pile),
+                    "discard_pile_count": len(self.discard_pile),
+                },
+            )
+
+    def cards_remaining(self) -> int:
+        return len(self.draw_pile)
+
+    def discard_count(self) -> int:
+        return len(self.discard_pile)
 
 
 class PropagandaTrackState(BaseModel):

@@ -1,0 +1,239 @@
+game:
+  name: weltanschauung
+  version: "0.3"
+  player_count: 4
+  max_rounds: 12
+  start_player_mode: random
+
+factions:
+  - red
+  - black
+  - yellow
+  - green
+
+population:
+  total: 100
+  start:
+    red: 5
+    black: 5
+    yellow: 5
+    green: 5
+    neutral: 80
+    destroyed: 0
+  pools:
+    - red
+    - black
+    - yellow
+    - green
+    - neutral
+    - destroyed
+  eliminated_factions_do_not_return: true
+
+cards:
+  starting_hand_size: 5
+  automatic_refill_to_hand_size: false
+  hand_size_public: true
+  hand_content_secret: true
+
+deck:
+  shared_main_deck: true
+  expected_cards_per_faction: 60
+  reshuffle_discard_when_empty: true
+  when_not_enough_cards: draw_less
+  banished_cards_return: false
+
+zones:
+  - draw_deck
+  - discard_pile
+  - banished
+  - player_hands
+  - draft_pool
+  - journalist_pool
+  - media_mogul_pool
+  - propaganda_track
+  - urn
+  - world_history_row
+  - research_assignment_deck
+  - research_assignment_discard
+  - player_research_assignments
+
+roles:
+  journalist:
+    enabled: true
+    initial_holder: left_of_start_player
+    permanent_until_overthrown_by_sources: true
+  media_mogul:
+    enabled: true
+    initial_holder: none
+    elected_each_round: true
+
+sources:
+  starting_sources: 0
+  max_sources: 3
+  used_sources_are_spent: true
+
+research_assignments:
+  starting_assignments: 2
+  max_assignments: 2
+  max_completed_per_round: 1
+  source_reward: 1
+  allow_discard_and_redraw_if_none_completed: true
+
+round_flow:
+  - round_start
+  - journalist_check
+  - media_mogul_election
+  - draft
+  - journalist_and_media_mogul
+  - discussion
+  - urn
+  - world_history_and_combat
+  - victory_check
+  - research_assignments
+  - round_end
+
+propaganda:
+  slots: 4
+  slot_factors: [1, 1, 2, 2]
+  slot_1_is_newest: true
+  slot_4_is_oldest: true
+  new_propaganda_goes_to_slot_1: true
+  displaced_goes_to_discard: true
+  removed_goes_to_discard: true
+  banished_goes_to_banished: true
+  close_gaps_after_removal: true
+  activation_requires_world_history_card_of_same_faction: true
+  victory_power_uses_objective_track_power: true
+
+draft:
+  contribution_required: true
+  contribution_cards_per_player: 1
+  if_no_hand_card_draw_one_forced_contribution: true
+  start_player_draws_extra_cards: 2
+  cards_seen_each_pick: 3
+  cards_taken_each_pick: 1
+  cards_passed_each_pick: 2
+  final_two_cards_go_to_journalist: true
+
+journalist_phase:
+  journalist_draws_extra_card: 1
+  journalist_pool_size: 3
+  options:
+    - future_set
+    - remove_propaganda
+  future_set:
+    choose_one_card_to_top_of_draw_deck: true
+    remaining_two_to_media_mogul: true
+  remove_propaganda:
+    requires_nonempty_propaganda_track: true
+    removed_propaganda_to_discard: true
+    discard_one_pool_card_as_cost: true
+    remaining_two_to_media_mogul: true
+
+media_mogul_phase:
+  receives_cards: 2
+  chooses_one_as_new_propaganda: true
+  unchosen_to_discard: true
+
+urn:
+  min_cards_per_player_with_hand: 1
+  max_cards_per_player: 3
+  anonymous: true
+  shuffle_before_reveal: true
+
+world_history:
+  reveal_all_urn_cards: true
+  order_relevant: true
+  resolve_left_to_right: true
+  discard_world_history_after_victory_check_if_game_continues: true
+
+power:
+  temporary_per_world_history: true
+  cannot_go_below_zero: true
+  base_power_from_world_history_cards: true
+  add_activated_propaganda_power: true
+
+patterns:
+  pair:
+    enabled: true
+    required_same_printed_power_count: 2
+  three_of_a_kind:
+    enabled: true
+    required_same_printed_power_count: 3
+  straight:
+    enabled: true
+    sequences:
+      - [1, 2, 3]
+      - [2, 3, 4]
+      - [3, 4, 5]
+
+targeting:
+  determine_from_world_history_transitions: true
+  last_target_effect_wins: true
+  faction_cannot_attack_itself: true
+  no_target_attacks_neutral: true
+
+neutral_impulse:
+  enabled: true
+  threshold_for_high_recruit: 12
+  recruit_low: 1
+  recruit_high: 2
+  is_not_attack: true
+  is_not_successful_attack: true
+  is_not_combat_impact: true
+
+combat:
+  simultaneous: true
+  success_requires_attacker_power_greater_than_defender_power: true
+  tie_attack_success_if_effect_allows: true
+  successful_tie_attack_base_impact: 1
+  impact_by_margin:
+    - min: 1
+      max: 3
+      impact: 1
+    - min: 4
+      max: 7
+      impact: 2
+    - min: 8
+      max: 11
+      impact: 3
+    - min: 12
+      max: null
+      impact: 4
+  no_general_impact_cap: true
+  default_success_effect: neutralize_defender_population
+
+victory:
+  check_after_world_history_and_combat: true
+  check_before_research_assignments: true
+  order:
+    - collapse
+    - hegemony
+    - dominance
+    - breakthrough
+  collapse:
+    enabled: true
+    all_factions_zero: true
+    neutral_does_not_prevent: true
+    winner: eliminaten
+  hegemony:
+    enabled: true
+    exactly_one_faction_has_population: true
+    neutral_does_not_prevent: true
+  dominance:
+    enabled: true
+    population_threshold: 55
+    propaganda_power_threshold: 15
+  breakthrough:
+    enabled: true
+    population_threshold: 35
+    own_propaganda_cards_threshold: 3
+    final_power_threshold: 12
+    requires_new_own_propaganda_by_media_mogul_this_round: true
+  simultaneous_same_tier_wins_continue_game: true
+
+tie_breakers:
+  faction_tiebreaker:
+    mode: random_at_game_start_or_configured
+  player_tiebreaker:
+    mode: clockwise_from_current_start_player

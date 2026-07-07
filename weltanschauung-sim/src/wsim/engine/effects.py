@@ -140,6 +140,9 @@ class ConditionEvaluator:
             return None
         slots = context.state.propaganda_track.get_slots()
         if context.source_card.id not in slots:
+            for index, card_id in enumerate(slots):
+                if card_id is not None and card_id in self.cards_by_id and self.cards_by_id[card_id].id == context.source_card.id:
+                    return index + 1
             return None
         return slots.index(context.source_card.id) + 1
 
@@ -228,12 +231,19 @@ class EffectExecutor:
         amount = _effect_amount(effect, default=1)
         player_id = self._effect_player(effect, context)
         drawn: list[str] = []
-        for _ in range(amount):
-            if not context.state.deck.draw_pile:
-                break
-            card_id = context.state.deck.draw_pile.pop(0)
-            context.state.players[player_id].hand.append(card_id)
-            drawn.append(card_id)
+        drawn = context.state.deck.draw_cards(
+            amount,
+            config=context.config.deck,
+            rng=context.state.rng,
+            event_bus=context.event_bus,
+            reason="effect_draw_card",
+            player_id=player_id,
+            destination="hand",
+            game_id=context.config.game_id,
+            round_number=context.state.round.round_number,
+            phase=context.state.round.phase,
+        )
+        context.state.players[player_id].hand.extend(drawn)
         return self._result("draw_card", len(drawn), context, {"player_id": player_id, "drawn_card_ids": drawn})
 
     def _discard_card(self, effect: dict[str, Any], context: EffectContext) -> EffectResult:
@@ -242,7 +252,7 @@ class EffectExecutor:
         discarded = None
         if card_id is not None and card_id in context.state.players[player_id].hand:
             context.state.players[player_id].hand.remove(card_id)
-            context.state.deck.discard_pile.append(card_id)
+            context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="effect_discard_card", player_id=player_id)
             discarded = card_id
         return self._result("discard_card", 1 if discarded else 0, context, {"player_id": player_id, "card_id": discarded})
 
@@ -250,9 +260,11 @@ class EffectExecutor:
         card_id = effect.get("card_id")
         if card_id in (None, "this_card") and context.source_card is not None:
             card_id = context.source_card.id
+        if isinstance(card_id, str) and card_id not in context.state.propaganda_track.get_slots():
+            card_id = _find_propaganda_instance(context, card_id)
         removed = context.state.propaganda_track.remove_card(card_id) if isinstance(card_id, str) else None
         if removed is not None:
-            context.state.deck.discard_pile.append(removed)
+            context.state.deck.discard_card(removed, event_bus=context.event_bus, reason="effect_remove_propaganda")
         return self._result("remove_propaganda", 1 if removed else 0, context, {"card_id": removed})
 
     def _effect_target_faction(self, effect: dict[str, Any], context: EffectContext) -> str:
@@ -385,3 +397,13 @@ def _normalize_faction(faction: str | None) -> str | None:
     if faction in (None, "", "neutral"):
         return None
     return faction
+
+
+def _find_propaganda_instance(context: EffectContext, logical_card_id: str) -> str | None:
+    for instance_id in context.state.propaganda_track.get_slots():
+        if instance_id is None:
+            continue
+        if instance_id in context.state.deck.card_instances:
+            if context.state.deck.card_instances[instance_id].card_id == logical_card_id:
+                return instance_id
+    return None

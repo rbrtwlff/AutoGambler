@@ -84,6 +84,11 @@ draft:
   last_player_discard_count: 0
   direction: clockwise
 
+deck:
+  reshuffle_discard_when_empty: true
+  when_not_enough_cards: draw_less
+  log_reshuffle_events: true
+
 victory:
   check_timing:
     - after_population_change

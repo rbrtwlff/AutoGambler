@@ -44,6 +44,7 @@ class GameEngine:
         self.cards = cards
         self.seed = seed
         self.state = create_initial_state(config, cards, seed=seed)
+        self.cards_by_id = self._build_card_lookup(cards)
         self.event_bus = EventBus(
             run_id=f"{config.game_id}-{seed}",
             game_id=config.game_id,
@@ -63,9 +64,9 @@ class GameEngine:
             for player in config.players
         ]
         self.bots = BotFactory().create_all(bot_configs)
-        self.cards_by_id = {card.id: card for card in cards}
         self.victory_checker = VictoryChecker(config)
         self.effect_engine = EffectEngine(config, cards, self.event_bus)
+        self.effect_engine.cards_by_id.update(self.cards_by_id)
         self._validate_state_if_strict()
 
     def run_game(self) -> GameResult:
@@ -189,17 +190,8 @@ class GameEngine:
 
             remaining_cards = [card_id for card_id in draft_pack if card_id not in picked_cards]
             for card_id in remaining_cards:
-                context.state.deck.discard_pile.append(card_id)
+                context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="mvp_draft_remainder_discarded", player_id=player_id)
                 discarded_count += 1
-                context.event_bus.emit(
-                    EventType.CARD_DISCARDED,
-                    {
-                        "player_id": player_id,
-                        "card_id": card_id,
-                        "reason": "mvp_draft_remainder_discarded",
-                        "future_pass_count": draft.pass_count,
-                    },
-                )
 
         context.event_bus.emit(
             EventType.DRAFT_FINISHED,
@@ -249,10 +241,10 @@ class GameEngine:
             context.state.players[media_mogul_player_id].hand.remove(chosen_card_id)
         for card_id in drawn_cards:
             if card_id != chosen_card_id:
-                context.state.deck.discard_pile.append(card_id)
+                context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="media_mogul_unpicked", player_id=media_mogul_player_id)
         removed_card_id = context.state.propaganda_track.place_card(chosen_card_id)
         if removed_card_id is not None:
-            context.state.deck.discard_pile.append(removed_card_id)
+            context.state.deck.discard_card(removed_card_id, event_bus=context.event_bus, reason="overflow_remove_oldest")
             context.event_bus.emit(
                 EventType.PROPAGANDA_REMOVED,
                 {
@@ -322,11 +314,12 @@ class GameEngine:
 
         destination = "discard_pile"
         if action == "discard_one":
-            context.state.deck.discard_pile.append(removed_card_id)
+            context.state.deck.discard_card(removed_card_id, event_bus=context.event_bus, reason=f"journalist_{action}", player_id=journalist_player_id)
         elif action == "place_one_on_top_of_deck":
             context.state.deck.draw_pile.insert(0, removed_card_id)
             destination = "top_of_deck"
         elif action == "remove_one_propaganda_card_from_game":
+            context.state.deck.remove_from_game(removed_card_id, event_bus=context.event_bus, reason=f"journalist_{action}", player_id=journalist_player_id)
             destination = "removed_from_game"
         else:
             context.event_bus.emit(EventType.WARNING, {"player_id": journalist_player_id, "message": f"Unknown journalist action: {action}"})
@@ -373,22 +366,26 @@ class GameEngine:
         for _ in range(context.config.propaganda.media_mogul_draw_count):
             if not context.state.deck.draw_pile:
                 break
-            card_id = context.state.deck.draw_pile.pop(0)
+            drawn = context.state.deck.draw_cards(
+                1,
+                config=context.config.deck,
+                rng=context.state.rng,
+                event_bus=context.event_bus,
+                reason="media_mogul_draw",
+                player_id=context.state.round.media_mogul_player_id,
+                destination="media_mogul_choices",
+                game_id=context.config.game_id,
+                round_number=context.state.round.round_number,
+                phase=context.phase_name,
+            )
+            if not drawn:
+                break
+            card_id = drawn[0]
             inspected_cards.append(card_id)
             if card_id in self.cards_by_id and self.cards_by_id[card_id].type in allowed_types:
                 drawn_cards.append(card_id)
             else:
-                context.state.deck.discard_pile.append(card_id)
-        if inspected_cards:
-            context.event_bus.emit(
-                EventType.CARD_DRAWN,
-                {
-                    "player_id": context.state.round.media_mogul_player_id,
-                    "card_ids": inspected_cards,
-                    "destination": "media_mogul_choices",
-                    "reason": "media_mogul_draw",
-                },
-            )
+                context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="media_mogul_ineligible", player_id=context.state.round.media_mogul_player_id)
         return drawn_cards
 
     def _emit_prop_combo_if_detected(self, context: PhaseContext, chosen_card_id: str) -> None:
@@ -511,11 +508,7 @@ class GameEngine:
             resolved_action = self._resolve_action(context, revealed_action)
             context.state.resolved_actions.append(resolved_action)
             for card_id in revealed_action.committed_card_ids:
-                context.state.deck.discard_pile.append(card_id)
-                context.event_bus.emit(
-                    EventType.CARD_DISCARDED,
-                    {"player_id": revealed_action.player_id, "card_id": card_id, "reason": "action_resolved"},
-                )
+                context.state.deck.discard_card(card_id, event_bus=context.event_bus, reason="action_resolved", player_id=revealed_action.player_id)
             context.event_bus.emit(EventType.ACTION_RESOLVED, resolved_action.model_dump())
             self.effect_engine.trigger(
                 "after_action_resolution",
@@ -625,26 +618,21 @@ class GameEngine:
     def _draw_draft_pack(self, player_id: str, draw_count: int, context: PhaseContext) -> list[str]:
         draft_pack: list[str] = []
         for _ in range(draw_count):
-            if not context.state.deck.draw_pile:
-                context.event_bus.emit(
-                    EventType.WARNING,
-                    {
-                        "player_id": player_id,
-                        "message": "Draft deck is empty before configured draw_count was reached.",
-                    },
-                )
-                break
-            card_id = context.state.deck.draw_pile.pop(0)
-            draft_pack.append(card_id)
-            context.event_bus.emit(
-                EventType.CARD_DRAWN,
-                {
-                    "player_id": player_id,
-                    "card_id": card_id,
-                    "destination": "draft_pack",
-                    "reason": "draft",
-                },
+            drawn = context.state.deck.draw_cards(
+                1,
+                config=context.config.deck,
+                rng=context.state.rng,
+                event_bus=context.event_bus,
+                reason="draft",
+                player_id=player_id,
+                destination="draft_pack",
+                game_id=context.config.game_id,
+                round_number=context.state.round.round_number,
+                phase=context.phase_name,
             )
+            if not drawn:
+                break
+            draft_pack.append(drawn[0])
         return draft_pack
 
     def _choose_draft_picks(
@@ -709,3 +697,11 @@ class GameEngine:
     def _validate_state_if_strict(self) -> None:
         if self.config.quality.strict_mode:
             validate_game_state(self.config, self.state, self.cards)
+
+    def _build_card_lookup(self, cards: list[CardConfig]) -> dict[str, CardConfig]:
+        lookup = {card.id: card for card in cards}
+        logical_cards = lookup
+        for instance_id, instance in self.state.deck.card_instances.items():
+            if instance.card_id in logical_cards:
+                lookup[instance_id] = logical_cards[instance.card_id]
+        return lookup

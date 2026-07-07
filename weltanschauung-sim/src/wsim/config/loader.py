@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from wsim.core.models import BotConfig, CardConfig, GameConfig
+from wsim.core.models import BotConfig, CardConfig, GameConfig, RulesV03Config
 
 
 class ConfigError(ValueError):
@@ -37,6 +37,8 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
 
 def load_rules_config(path: str | Path) -> GameConfig:
     data = load_yaml(path)
+    if _is_v03_rules_config(data):
+        return _load_v03_rules_config(data, Path(path))
     try:
         return GameConfig.model_validate(data)
     except ValidationError as exc:
@@ -44,6 +46,108 @@ def load_rules_config(path: str | Path) -> GameConfig:
             f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
         )
         raise ConfigError(f"Invalid rules config {Path(path)}: {details}") from exc
+
+
+def _is_v03_rules_config(data: dict[str, Any]) -> bool:
+    return isinstance(data.get("game"), dict) and isinstance(data.get("round_flow"), list)
+
+
+def _load_v03_rules_config(data: dict[str, Any], path: Path) -> GameConfig:
+    try:
+        v03 = RulesV03Config.model_validate(data)
+        return GameConfig.model_validate(_v03_to_game_config_data(v03))
+    except ValidationError as exc:
+        details = "; ".join(
+            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
+        )
+        raise ConfigError(f"Invalid v0.3 rules config {path}: {details}") from exc
+
+
+def _v03_to_game_config_data(v03: RulesV03Config) -> dict[str, Any]:
+    faction_start = {faction_id: v03.population.start[faction_id] for faction_id in v03.factions}
+    players = [
+        {
+            "id": f"P{index + 1}",
+            "seat": index,
+            "faction_id": v03.factions[index % len(v03.factions)],
+        }
+        for index in range(v03.game.player_count)
+    ]
+    journalist_options = []
+    if "future_set" in v03.journalist_phase.options:
+        journalist_options.append("place_one_on_top_of_deck")
+    if "remove_propaganda" in v03.journalist_phase.options:
+        journalist_options.append("remove_one_propaganda_card_from_game")
+    if not journalist_options:
+        journalist_options = ["discard_one"]
+
+    return {
+        "game_id": f"{v03.game.name}_{v03.game.version}".replace(".", "_"),
+        "player_count": v03.game.player_count,
+        "factions": [
+            {
+                "id": faction_id,
+                "name": faction_id.title(),
+                "start_population": faction_start[faction_id],
+                "eliminated_at_start": False,
+            }
+            for faction_id in v03.factions
+        ],
+        "population": {
+            "total_population": v03.population.total,
+            "neutral_start": v03.population.start["neutral"],
+        },
+        "players": players,
+        "roles": {
+            "start_player": v03.game.start_player_mode,
+            "first_journalist": v03.roles.journalist.initial_holder,
+            "first_media_mogul": v03.roles.media_mogul.initial_holder,
+            "saboteur": {
+                "enabled": False,
+                "count": 0,
+            },
+        },
+        "propaganda": {
+            "slots": v03.propaganda.slots,
+            "overflow": "remove_oldest",
+            "journalist_options": journalist_options,
+            "media_mogul_draw_count": v03.media_mogul_phase.receives_cards,
+            "media_mogul_choice_count": 1,
+            "allowed_sources_for_propaganda": "both",
+            "media_mogul_card_source": "hand",
+            "media_mogul_card_types": ["propaganda", "hybrid"],
+        },
+        "round_flow": {
+            "max_rounds": v03.game.max_rounds,
+            "phases": v03.round_flow,
+        },
+        "draft": {
+            "enabled": True,
+            "starting_hand_size": v03.cards.starting_hand_size,
+            "hidden_research_orders": v03.research_assignments.starting_assignments,
+            "max_sources": v03.sources.max_sources,
+            "draw_count": v03.draft.cards_seen_each_pick,
+            "pick_count": v03.draft.cards_taken_each_pick,
+            "pass_count": v03.draft.cards_passed_each_pick,
+            "last_player_discard_count": 0,
+            "direction": "clockwise",
+        },
+        "deck": {
+            "reshuffle_discard_when_empty": v03.deck.reshuffle_discard_when_empty,
+            "when_not_enough_cards": v03.deck.when_not_enough_cards,
+            "log_reshuffle_events": True,
+        },
+        "victory": {
+            "check_timing": ["end_of_round", "game_end"],
+            "faction_win_mode": "highest_population_at_game_end",
+            "tie_breakers": "shared_win",
+            "saboteur_win_conditions": [],
+        },
+        "analytics": {},
+        "quality": {},
+        "cards": [],
+        "bots": [],
+    }
 
 
 def load_cards_config(path: str | Path, rules_config: GameConfig | None = None) -> list[CardConfig]:

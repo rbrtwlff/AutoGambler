@@ -86,7 +86,7 @@ def _validate_population(config: GameConfig, state: GameState, errors: list[str]
 
 
 def _validate_card_locations(state: GameState, cards: list[CardConfig], errors: list[str]) -> None:
-    known_cards = {card.id for card in cards}
+    known_cards = set(state.deck.card_instances) or {card.id for card in cards}
     locations: dict[str, list[str]] = {}
 
     def add(card_id: str | None, location: str) -> None:
@@ -98,6 +98,8 @@ def _validate_card_locations(state: GameState, cards: list[CardConfig], errors: 
         add(card_id, "draw_pile")
     for card_id in state.deck.discard_pile:
         add(card_id, "discard_pile")
+    for card_id in state.deck.removed_from_game:
+        add(card_id, "removed_from_game")
     for card_id in state.deck.research_order_pool:
         add(card_id, "research_order_pool")
     for card_id in state.deck.disabled_cards:
@@ -113,19 +115,20 @@ def _validate_card_locations(state: GameState, cards: list[CardConfig], errors: 
         add(card_id, f"propaganda[{position}]")
 
     discard_set = set(state.deck.discard_pile)
-    revealed_card_ids = {
-        card_id
-        for action in state.revealed_actions
-        for card_id in action.committed_card_ids
-    }
-    for player_id, action in state.planned_actions.items():
-        for card_id in action.committed_card_ids:
-            if card_id not in discard_set and card_id not in revealed_card_ids:
-                add(card_id, f"{player_id}.planned_action")
-    for action in state.revealed_actions:
-        for card_id in action.committed_card_ids:
-            if card_id not in discard_set:
-                add(card_id, f"{action.player_id}.revealed_action")
+    if state.round.phase in {"planning", "reveal", "action_resolution"}:
+        revealed_card_ids = {
+            card_id
+            for action in state.revealed_actions
+            for card_id in action.committed_card_ids
+        }
+        for player_id, action in state.planned_actions.items():
+            for card_id in action.committed_card_ids:
+                if card_id not in discard_set and card_id not in revealed_card_ids:
+                    add(card_id, f"{player_id}.planned_action")
+        for action in state.revealed_actions:
+            for card_id in action.committed_card_ids:
+                if card_id not in discard_set:
+                    add(card_id, f"{action.player_id}.revealed_action")
 
     for card_id, card_locations in sorted(locations.items()):
         unique_locations = sorted(set(card_locations))

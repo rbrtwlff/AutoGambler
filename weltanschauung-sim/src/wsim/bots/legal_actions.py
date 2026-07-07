@@ -14,11 +14,15 @@ class LegalActionProvider:
         self.cards_by_id = {card.id: card for card in cards}
 
     def build_context(self, state: GameState, player_id: str) -> BotContext:
+        cards_by_id = dict(self.cards_by_id)
+        for instance_id, instance in state.deck.card_instances.items():
+            if instance.card_id in self.cards_by_id:
+                cards_by_id[instance_id] = self.cards_by_id[instance.card_id]
         return BotContext(
             player_id=player_id,
             public_view=state.to_public_view(player_id),
             rules=self.rules,
-            cards_by_id=self.cards_by_id,
+            cards_by_id=cards_by_id,
         )
 
     def draft_pick_options(self, context: BotContext) -> list[str]:
