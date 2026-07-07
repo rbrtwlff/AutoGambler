@@ -100,6 +100,8 @@ analytics:
   outputs_dir: outputs/runs
   event_log_format: jsonl
   save_all_events: false
+  sampled_event_logging: true
+  minimal_logging: false
   save_last_n_games_events: 1000
   save_interesting_games: true
   faction_winrate_min: 0.18

@@ -88,6 +88,8 @@ class AnalyticsConfig(BaseModel):
     outputs_dir: str = "outputs/runs"
     event_log_format: Literal["jsonl"] | str = "jsonl"
     save_all_events: bool = False
+    sampled_event_logging: bool = True
+    minimal_logging: bool = False
     save_last_n_games_events: int = Field(default=1000, ge=0)
     save_interesting_games: bool = True
     faction_winrate_min: float = Field(default=0.18, ge=0, le=1)

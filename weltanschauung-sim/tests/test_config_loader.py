@@ -39,6 +39,8 @@ def test_valid_config_loads() -> None:
     assert config.draft.max_sources == 3
     assert config.propaganda.slots == 3
     assert config.propaganda.overflow == "remove_oldest"
+    assert config.analytics.sampled_event_logging is True
+    assert config.analytics.minimal_logging is False
     assert config.quality.strict_mode is True
     assert config.quality.debug_export_on_error is True
 

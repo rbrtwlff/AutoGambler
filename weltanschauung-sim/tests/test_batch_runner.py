@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import polars as pl
+from typer.testing import CliRunner
 
+from wsim.cli import app
 from wsim.config import load_bots_config, load_cards_config, load_rules_config
 from wsim.engine import SimulationBatchRunner
 
@@ -32,11 +34,28 @@ def run_batch(output_dir: Path, games: int = 10, seed: int = 123):
     ).run()
 
 
+def run_batch_with_rules(output_dir: Path, rules, games: int = 6, seed: int = 123):
+    cards = load_cards_config(CARDS_PATH, rules_config=rules)
+    bots = load_bots_config(BOTS_PATH, rules_config=rules)
+    return SimulationBatchRunner(
+        rules=rules,
+        cards=cards,
+        bots=bots,
+        games=games,
+        master_seed=seed,
+        output_dir=output_dir,
+        show_progress=False,
+    ).run()
+
+
 def test_batch_runner_runs_100_games_without_error(tmp_path):
     result = run_batch(tmp_path / "run_100", games=100, seed=123)
 
     assert result.game_summary_count == 100
     assert result.round_summary_count > 0
+    assert result.elapsed_seconds > 0
+    assert result.games_per_second > 0
+    assert result.output_size_bytes > 0
 
 
 def test_same_seed_produces_same_summaries(tmp_path):
@@ -76,3 +95,55 @@ def test_round_summary_contains_population_columns(tmp_path):
     assert "yellow_population" in frame.columns
     assert "green_population" in frame.columns
     assert "neutral_population" in frame.columns
+
+
+def test_minimal_logging_writes_fewer_sampled_events(tmp_path):
+    full_rules, _, _ = load_batch_inputs()
+    full_rules.analytics.save_all_events = True
+    full_rules.analytics.minimal_logging = False
+    full_result = run_batch_with_rules(tmp_path / "full_events", full_rules, games=3, seed=111)
+
+    minimal_rules, _, _ = load_batch_inputs()
+    minimal_rules.analytics.save_all_events = False
+    minimal_rules.analytics.sampled_event_logging = True
+    minimal_rules.analytics.minimal_logging = True
+    minimal_rules.analytics.save_last_n_games_events = 3
+    minimal_result = run_batch_with_rules(tmp_path / "minimal_events", minimal_rules, games=3, seed=111)
+
+    assert minimal_result.event_sample_count < full_result.event_sample_count
+
+
+def test_minimal_logging_keeps_results_reproducible(tmp_path):
+    rules_a, _, _ = load_batch_inputs()
+    rules_a.analytics.minimal_logging = True
+    rules_a.analytics.save_last_n_games_events = 2
+    rules_b, _, _ = load_batch_inputs()
+    rules_b.analytics.minimal_logging = True
+    rules_b.analytics.save_last_n_games_events = 2
+
+    run_batch_with_rules(tmp_path / "minimal_a", rules_a, games=5, seed=222)
+    run_batch_with_rules(tmp_path / "minimal_b", rules_b, games=5, seed=222)
+
+    games_a = (tmp_path / "minimal_a" / "game_summaries.csv").read_text(encoding="utf-8")
+    games_b = (tmp_path / "minimal_b" / "game_summaries.csv").read_text(encoding="utf-8")
+
+    assert games_a.replace("minimal_a", "RUN") == games_b.replace("minimal_b", "RUN")
+
+
+def test_benchmark_cli_runs(tmp_path):
+    result = CliRunner().invoke(
+        app,
+        [
+            "benchmark",
+            "--games",
+            "3",
+            "--seed",
+            "123",
+            "--output",
+            str(tmp_path / "benchmark"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (tmp_path / "benchmark" / "benchmark_report.md").exists()
+    assert "games_per_second" in result.output

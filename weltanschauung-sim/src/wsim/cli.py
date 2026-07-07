@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -136,7 +137,71 @@ def run_batch(
     console.print(f"game_summaries: {result.game_summary_count}")
     console.print(f"round_summaries: {result.round_summary_count}")
     console.print(f"event_sample_rows: {result.event_sample_count}")
+    console.print(f"elapsed_seconds: {result.elapsed_seconds:.2f}")
+    console.print(f"games_per_second: {result.games_per_second:.2f}")
+    console.print(f"output_size_bytes: {result.output_size_bytes}")
     console.print(f"output: {result.output_dir}")
+
+
+@app.command("benchmark")
+def benchmark(
+    games: int = typer.Option(1000, "--games", min=1, help="Anzahl Benchmark-Spiele."),
+    seed: int = typer.Option(123, "--seed", help="Master-Seed fuer reproduzierbare Benchmarks."),
+    output: Path | None = typer.Option(None, "--output", help="Ausgabeordner fuer den Benchmark."),
+) -> None:
+    """Misst Durchsatz und Output-Groesse fuer Massensimulationen."""
+    rules_path = Path("configs/rules/base_rules.yaml")
+    cards_path = Path("configs/cards/base_cards.yaml")
+    bots_path = Path("configs/bots/bot_profiles.yaml")
+    output_dir = output or Path("outputs/runs") / f"benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    try:
+        rules_config = load_rules_config(rules_path)
+        rules_config.analytics.save_all_events = False
+        rules_config.analytics.sampled_event_logging = True
+        rules_config.analytics.minimal_logging = True
+        rules_config.analytics.save_last_n_games_events = min(100, games)
+        card_configs = load_cards_config(cards_path, rules_config=rules_config)
+        bot_configs = load_bots_config(bots_path, rules_config=rules_config)
+        result = SimulationBatchRunner(
+            rules=rules_config,
+            cards=card_configs,
+            bots=bot_configs,
+            games=games,
+            master_seed=seed,
+            output_dir=output_dir,
+            source_paths={"rules": str(rules_path), "cards": str(cards_path), "bots": str(bots_path)},
+        ).run()
+    except ConfigError as exc:
+        console.print(f"[red]Benchmark failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    report_path = output_dir / "benchmark_report.md"
+    report_path.write_text(
+        "\n".join(
+            [
+                f"# Benchmark Report: {output_dir.name}",
+                "",
+                f"- Spiele: {result.games}",
+                f"- Seed: {result.master_seed}",
+                f"- Laufzeit: {result.elapsed_seconds:.3f} Sekunden",
+                f"- Spiele pro Sekunde: {result.games_per_second:.2f}",
+                f"- Events gesamt intern: {result.total_event_count}",
+                f"- Event-Sample-Zeilen gespeichert: {result.event_sample_count}",
+                f"- Output-Groesse: {result.output_size_bytes} Bytes",
+                f"- Minimal Logging: {rules_config.analytics.minimal_logging}",
+                f"- Save All Events: {rules_config.analytics.save_all_events}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    console.print("[green]Benchmark complete[/green]")
+    console.print(f"games: {result.games}")
+    console.print(f"elapsed_seconds: {result.elapsed_seconds:.2f}")
+    console.print(f"games_per_second: {result.games_per_second:.2f}")
+    console.print(f"total_events: {result.total_event_count}")
+    console.print(f"output_size_bytes: {result.output_size_bytes}")
+    console.print(f"report: {report_path}")
 
 
 @app.command("dashboard")

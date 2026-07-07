@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,10 @@ class BatchRunResult(BaseModel):
     game_summary_count: int
     round_summary_count: int
     event_sample_count: int
+    total_event_count: int
+    elapsed_seconds: float
+    games_per_second: float
+    output_size_bytes: int
 
 
 class SimulationBatchRunner:
@@ -47,11 +52,13 @@ class SimulationBatchRunner:
         self.source_paths = source_paths or {}
 
     def run(self) -> BatchRunResult:
+        started_at = time.perf_counter()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         game_summaries: list[dict[str, Any]] = []
         round_summaries: list[dict[str, Any]] = []
         bot_metrics: list[dict[str, Any]] = []
         event_samples: list[dict[str, Any]] = []
+        total_event_count = 0
         iterable = range(self.games)
         if self.show_progress:
             iterable = track(iterable, total=self.games, description="Simulating games")
@@ -60,13 +67,25 @@ class SimulationBatchRunner:
             seed = self._subseed(game_index)
             engine = GameEngine(self.rules, self.cards, seed=seed, bots=self.bots)
             result = engine.run_game()
+            total_event_count += result.event_count
             game_summaries.append(self._game_summary(game_index, seed, result))
             round_summaries.extend(self._round_summaries(game_index, seed, engine))
             bot_metrics.extend(self._bot_metrics(game_index, seed, engine))
             if self._should_sample_events(game_index):
                 event_samples.extend(self._event_sample_rows(game_index, seed, engine))
 
-        self._write_outputs(game_summaries, round_summaries, bot_metrics, event_samples)
+        elapsed_seconds = time.perf_counter() - started_at
+        games_per_second = self.games / elapsed_seconds if elapsed_seconds > 0 else float(self.games)
+        self._write_outputs(
+            game_summaries,
+            round_summaries,
+            bot_metrics,
+            event_samples,
+            total_event_count=total_event_count,
+            elapsed_seconds=elapsed_seconds,
+            games_per_second=games_per_second,
+        )
+        output_size_bytes = _directory_size(self.output_dir)
         return BatchRunResult(
             run_id=self.run_id,
             output_dir=self.output_dir,
@@ -75,6 +94,10 @@ class SimulationBatchRunner:
             game_summary_count=len(game_summaries),
             round_summary_count=len(round_summaries),
             event_sample_count=len(event_samples),
+            total_event_count=total_event_count,
+            elapsed_seconds=elapsed_seconds,
+            games_per_second=games_per_second,
+            output_size_bytes=output_size_bytes,
         )
 
     def _subseed(self, game_index: int) -> int:
@@ -221,12 +244,17 @@ class SimulationBatchRunner:
     def _should_sample_events(self, game_index: int) -> bool:
         if self.rules.analytics.save_all_events:
             return True
+        if not self.rules.analytics.sampled_event_logging:
+            return False
         return game_index >= max(0, self.games - self.rules.analytics.save_last_n_games_events)
 
     def _event_sample_rows(self, game_index: int, seed: int, engine: GameEngine) -> list[dict[str, Any]]:
+        events = engine.state.export_events_as_dicts()
+        if self.rules.analytics.minimal_logging:
+            events = [event for event in events if event["event_type"] in _minimal_event_types()]
         return [
             {"run_id": self.run_id, "game_index": game_index, "seed": seed, **event}
-            for event in engine.state.export_events_as_dicts()
+            for event in events
         ]
 
     def _write_outputs(
@@ -235,6 +263,10 @@ class SimulationBatchRunner:
         round_summaries: list[dict[str, Any]],
         bot_metrics: list[dict[str, Any]],
         event_samples: list[dict[str, Any]],
+        *,
+        total_event_count: int,
+        elapsed_seconds: float,
+        games_per_second: float,
     ) -> None:
         game_frame = pl.DataFrame(game_summaries)
         round_frame = pl.DataFrame(round_summaries)
@@ -254,6 +286,12 @@ class SimulationBatchRunner:
             "game_id": self.rules.game_id,
             "games": self.games,
             "master_seed": self.master_seed,
+            "performance": {
+                "elapsed_seconds": elapsed_seconds,
+                "games_per_second": games_per_second,
+                "total_event_count": total_event_count,
+                "sampled_event_count": len(event_samples),
+            },
             "analytics": self.rules.analytics.model_dump(),
             "source_paths": self.source_paths,
             "outputs": [
@@ -271,3 +309,26 @@ class SimulationBatchRunner:
             json.dumps(metadata, ensure_ascii=True, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+        metadata["performance"]["output_size_bytes"] = _directory_size(self.output_dir)
+        (self.output_dir / "run_metadata.json").write_text(
+            json.dumps(metadata, ensure_ascii=True, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+
+def _minimal_event_types() -> set[str]:
+    return {
+        "game_started",
+        "initial_state_created",
+        "round_started",
+        "population_changed",
+        "victory_checked",
+        "game_ended",
+        "warning",
+    }
+
+
+def _directory_size(path: Path) -> int:
+    if not path.exists():
+        return 0
+    return sum(file.stat().st_size for file in path.rglob("*") if file.is_file())
