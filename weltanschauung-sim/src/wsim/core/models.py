@@ -233,6 +233,12 @@ class V03MediaMogulPhaseSection(BaseModel):
     unchosen_to_discard: bool = True
 
 
+class V03DiscussionSection(BaseModel):
+    enabled: bool = True
+    mechanical_effects: Literal["none", "configured"] = "none"
+    notes: str | None = None
+
+
 class V03UrnSection(BaseModel):
     min_cards_per_player_with_hand: int = Field(ge=0)
     max_cards_per_player: int = Field(ge=0)
@@ -324,6 +330,7 @@ class RulesV03Config(BaseModel):
     draft: V03DraftSection
     journalist_phase: V03JournalistPhaseSection
     media_mogul_phase: V03MediaMogulPhaseSection
+    discussion: V03DiscussionSection = Field(default_factory=V03DiscussionSection)
     urn: V03UrnSection
     world_history: V03WorldHistorySection
     power: V03PowerSection

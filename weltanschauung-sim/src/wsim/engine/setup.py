@@ -198,11 +198,11 @@ def _choose_journalist(config: GameConfig, player_ids: list[str], start_player_i
 def _choose_media_mogul(config: GameConfig, player_ids: list[str], start_player_id: str) -> tuple[str, list[str]]:
     if config.roles.first_media_mogul == "none":
         return start_player_id, [
-            "TODO: media_mogul initial_holder none requires v0.3 media_mogul_election; assigned to start_player as explicit placeholder."
+            "Initial media mogul holder is temporary; v0.3 media_mogul_election assigns the active holder each round."
         ]
     if config.roles.first_media_mogul == "normal_rules":
         return start_player_id, [
-            "TODO: first_media_mogul normal_rules are not implemented yet; assigned to start_player as explicit placeholder."
+            "Initial media mogul holder resolved to start_player until the first configured media mogul phase."
         ]
     if config.roles.first_media_mogul in player_ids:
         return config.roles.first_media_mogul, []

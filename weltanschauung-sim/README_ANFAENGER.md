@@ -50,13 +50,14 @@ Das Dashboard startet lokal. Normalerweise oeffnet sich automatisch ein Browserf
 
 ## Schritt 5: Simulation starten
 
-Im Tab `Start / Simulation starten` sind einfache Default-Dateien vorausgewaehlt:
+Im Tab `Start` sind einfache Default-Dateien vorausgewaehlt:
 
 - Regeln: `configs/rules/rules_v0_3.yaml`
 - Karten: `configs/cards/cards_v0_3.yaml`
 - Bots: `configs/bots/bot_profiles.yaml`
 
 Fuer den ersten Beispiel-Run sind 10 Spiele und Seed 123 voreingestellt. Klicken Sie auf `Simulation starten`.
+Nach dem Lauf wird der neue Run automatisch im Dashboard geladen.
 
 ## Schritt 6: Report finden
 
@@ -75,6 +76,14 @@ Jeder Run hat einen eigenen Ordner. Darin finden Sie unter anderem:
 - `charts/`
 
 Im Dashboard koennen Sie einen vorhandenen Run links in der Seitenleiste laden.
+
+Die wichtigsten Dashboard-Bereiche:
+
+- `Ueberblick`: wichtigste Kennzahlen, Siegquoten und automatische Warnungen.
+- `Population`, `Propaganda`, `Weltgeschichte`, `Kampf`: Grafiken und v0.3-Details.
+- `Auffaellige Spiele`: schnelle Auswahl interessanter Einzelspiele.
+- `Einzelspiel`: ein gespeichertes Spiel Runde fuer Runde ansehen.
+- `ChatGPT Export`: Analysepaket als ZIP erzeugen.
 
 ## Hinweis zu Karten
 

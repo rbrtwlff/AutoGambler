@@ -551,6 +551,7 @@ class GameEngine:
         if displaced is not None:
             context.state.deck.discard_card(displaced, event_bus=context.event_bus, reason="v03_propaganda_displaced")
             context.event_bus.emit(EventType.PROPAGANDA_REMOVED, {"card_id": displaced, "reason": "v03_slot_4_displaced", "slots": context.state.propaganda_track.get_slots()})
+            self._apply_v03_displaced_propaganda_effect(displaced, context)
         for unchosen in list(context.state.media_mogul_pool):
             context.state.deck.discard_card(unchosen, event_bus=context.event_bus, reason="v03_media_mogul_unchosen", player_id=media_mogul_id)
         context.state.media_mogul_pool.clear()
@@ -558,7 +559,16 @@ class GameEngine:
         context.event_bus.emit(EventType.MEDIA_MOGUL_ACTION_TAKEN, {"player_id": media_mogul_id, "card_id": chosen, "reason": media_decision.reason})
 
     def _phase_discussion(self, context: PhaseContext) -> None:
-        context.event_bus.emit(EventType.DISCUSSION_HELD, {"mode": "noop", "message": "Discussion/Intrigue is a v0.3 no-op placeholder."})
+        discussion = context.config.v03.get("discussion", {}) if self._is_v03_rules() else {}
+        mode = str(discussion.get("mechanical_effects", "none"))
+        context.event_bus.emit(
+            EventType.DISCUSSION_HELD,
+            {
+                "mode": mode,
+                "mechanical_effects_applied": False,
+                "notes": discussion.get("notes") or "Discussion/Intrigue has no configured automatic mechanics.",
+            },
+        )
 
     def _phase_urn(self, context: PhaseContext) -> None:
         context.state.urn.clear()
@@ -600,6 +610,7 @@ class GameEngine:
         context.event_bus.emit(EventType.WORLD_HISTORY_REVEALED, {"card_ids": row, "order_relevant": True})
         base_power = self._world_history_base_power(row)
         propaganda_power = self._active_propaganda_power(base_power)
+        interpretation_authority = self._v03_interpretation_authority(propaganda_power)
         total_power = {
             faction_id: base_power.get(faction_id, 0) + propaganda_power.get(faction_id, 0)
             for faction_id in context.state.factions
@@ -610,13 +621,16 @@ class GameEngine:
             {
                 "base_power": base_power,
                 "propaganda_power": propaganda_power,
+                "interpretation_authority": interpretation_authority,
                 "power_modifiers": power_modifiers,
                 "total_power": total_power,
             },
         )
+        propaganda_effects = self._apply_v03_propaganda_text_effects(row, total_power, context)
         population_effects = self._apply_v03_population_text_effects(row, total_power, context)
         deltas = {faction_id: 0 for faction_id in context.state.factions}
-        attack_pairs, target_effects = self._v03_attack_pairs(row, total_power, context)
+        attack_pairs, target_effects = self._v03_attack_pairs(row, total_power, interpretation_authority, context)
+        combat_tiebreakers = self._v03_combat_tiebreakers(row, total_power, context)
         attackers_with_targets = {attacker for attacker, defender in attack_pairs if defender is not None}
         for faction_id, power in total_power.items():
             if power > 0 and faction_id not in attackers_with_targets:
@@ -626,14 +640,17 @@ class GameEngine:
             if defender is None or defender not in deltas or attacker == defender:
                 continue
             margin = total_power.get(attacker, 0) - total_power.get(defender, 0)
-            if margin <= 0:
+            tie_won = margin == 0 and attacker in combat_tiebreakers
+            if margin < 0 or (margin == 0 and not tie_won):
                 continue
-            base_impact = self._combat_impact(margin)
+            base_impact = self._combat_impact(margin, tie_won=tie_won)
             attack_records.append(
                 {
                     "attacker": attacker,
                     "defender": defender,
                     "margin": margin,
+                    "tie_won": tie_won,
+                    "tie_breaker_cards": combat_tiebreakers.get(attacker, []),
                     "base_impact": base_impact,
                     "impact": base_impact,
                     "destroyed_impact": 0,
@@ -641,16 +658,21 @@ class GameEngine:
                     "modifiers": [],
                 }
             )
-        combat_modifiers = self._apply_v03_combat_text_modifiers(row, attack_records, total_power, context)
+        combat_modifiers = self._apply_v03_combat_text_modifiers(row, attack_records, total_power, interpretation_authority, context)
         destroyed_by_faction = {faction_id: 0 for faction_id in context.state.factions}
         for record in attack_records:
             impact = max(0, int(record.get("impact", 0)))
             destroyed_impact = min(impact, max(0, int(record.get("destroyed_impact", 0))))
+            transferred_impact = min(impact - destroyed_impact, max(0, int(record.get("transferred_impact", 0))))
             record["destroyed_impact"] = destroyed_impact
+            record["transferred_impact"] = transferred_impact
             defender = str(record["defender"])
             deltas[defender] -= impact
             destroyed_by_faction[defender] += destroyed_impact
-            deltas["neutral"] = deltas.get("neutral", 0) + impact - destroyed_impact
+            transfer_target = record.get("transfer_target_faction")
+            if transferred_impact and transfer_target in deltas:
+                deltas[str(transfer_target)] += transferred_impact
+            deltas["neutral"] = deltas.get("neutral", 0) + impact - destroyed_impact - transferred_impact
 
         before = {faction_id: faction.population for faction_id, faction in context.state.factions.items()}
         neutral_before = context.state.neutral_population
@@ -674,14 +696,27 @@ class GameEngine:
                 faction.population += actual
                 context.state.neutral_population -= actual
                 applied[faction_id] = actual
+        utility_effects = self._apply_v03_utility_text_effects(
+            row,
+            total_power,
+            attack_records,
+            applied,
+            propaganda_effects,
+            population_effects,
+            context,
+        )
         context.event_bus.emit(
             EventType.COMBAT_RESOLVED,
             {
                 "base_power": base_power,
                 "propaganda_power": propaganda_power,
+                "interpretation_authority": interpretation_authority,
                 "total_power": total_power,
+                "propaganda_effects": propaganda_effects,
                 "population_effects": population_effects,
+                "utility_effects": utility_effects,
                 "target_effects": target_effects,
+                "combat_tiebreakers": combat_tiebreakers,
                 "attack_pairs": [{"attacker": attacker, "defender": defender} for attacker, defender in attack_pairs],
                 "attack_records": attack_records,
                 "combat_modifiers": combat_modifiers,
@@ -1035,10 +1070,14 @@ class GameEngine:
     def _phase_research_assignments(self, context: PhaseContext) -> None:
         if self.ended_by is not None:
             return
+        max_assignments = int(context.config.v03.get("research_assignments", {}).get("max_assignments", 2)) if self._is_v03_rules() else 2
         completed_count = 0
         discarded_count = 0
+        checked_count = 0
+        refilled_count = 0
         for player_id in self._ordered_player_ids_from_start():
             player = context.state.players[player_id]
+            player_completed = 0
             if player.hidden_research_orders:
                 bot_context = self.legal_actions.build_context(context.state, player_id)
                 decision = self.bots[player_id].choose_completed_research_assignment_to_score(
@@ -1047,6 +1086,7 @@ class GameEngine:
                     context.state.rng,
                 )
                 selected = str(decision.choice) if decision.choice in player.hidden_research_orders else player.hidden_research_orders[0]
+                checked_count += 1
                 if self._research_order_is_fulfilled(selected, context):
                     player.hidden_research_orders.remove(selected)
                     context.state.deck.discard_card(selected, event_bus=context.event_bus, reason="v03_research_order_completed", player_id=player_id)
@@ -1060,6 +1100,7 @@ class GameEngine:
                     for _ in range(source_reward):
                         player.sources.append(f"source_token_{context.state.round.round_number}_{player_id}_{len(player.sources) + 1}")
                     completed_count += 1
+                    player_completed += 1
                     context.event_bus.emit(
                         EventType.RESEARCH_ORDER_COMPLETED,
                         {
@@ -1068,10 +1109,13 @@ class GameEngine:
                             "card_points": configured_reward,
                             "source_reward": source_reward,
                             "source_limit": player.max_sources,
+                            "sources_after": len(player.sources),
                             "reason": decision.reason,
                         },
                     )
                 else:
+                    if player_completed >= 1:
+                        continue
                     redraw_decision = self.bots[player_id].choose_whether_to_discard_research_assignment(
                         bot_context,
                         [True, False],
@@ -1095,12 +1139,13 @@ class GameEngine:
                             "card_id": selected,
                             "redraw_reason": redraw_decision.reason,
                             "discard_reason": discard_decision.reason,
-                            "reason": "v0.3 TODO fulfillment stub allowed redraw.",
+                            "reason": "v03_no_completed_assignment_discard_and_redraw",
                         },
                     )
-            while len(player.hidden_research_orders) < 2 and context.state.deck.research_order_pool:
+            while len(player.hidden_research_orders) < max_assignments and context.state.deck.research_order_pool:
                 drawn = context.state.deck.research_order_pool.pop(0)
                 player.hidden_research_orders.append(drawn)
+                refilled_count += 1
                 context.event_bus.emit(
                     EventType.CARD_DRAWN,
                     {
@@ -1113,7 +1158,13 @@ class GameEngine:
                 )
         context.event_bus.emit(
             EventType.RESEARCH_ASSIGNMENTS_CHECKED,
-            {"completed_count": completed_count, "discarded_count": discarded_count, "todo": "Concrete assignment fulfillment logic is not implemented yet."},
+            {
+                "checked_count": checked_count,
+                "completed_count": completed_count,
+                "discarded_count": discarded_count,
+                "refilled_count": refilled_count,
+                "max_assignments": max_assignments,
+            },
         )
 
     def _phase_round_end(self, context: PhaseContext) -> None:
@@ -1293,6 +1344,516 @@ class GameEngine:
         context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
         return payload
 
+    def _apply_v03_propaganda_text_effects(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        effects: list[dict[str, Any]] = []
+        sources: list[tuple[str, CardConfig, int | None, Literal["world_history", "propaganda"]]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is not None:
+                sources.append((card_id, card, None, "world_history"))
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is not None:
+                sources.append((str(card_id), card, slot_index, "propaganda"))
+
+        for instance_id, card, slot_index, source in sources:
+            text = self._normalize_condition(card.effect_text or "")
+            if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not any(marker in text for marker in ["entferne", "verschiebe", "tausche"]):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            effect = self._v03_apply_single_propaganda_effect(instance_id, card, text, total_power, context)
+            if effect is not None:
+                effects.append(effect)
+        return effects
+
+    def _v03_apply_single_propaganda_effect(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        text: str,
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        if "tausche zwei benachbarte propagandakarten" in text:
+            return self._v03_swap_adjacent_propaganda(instance_id, context)
+        if "verschiebe die propagandakarte aus slot 1 in slot 4" in text:
+            return self._v03_move_slot_one_to_slot_four(instance_id, context)
+        move_faction = self._v03_move_back_faction(text)
+        if move_faction is not None:
+            return self._v03_move_faction_propaganda_back(instance_id, move_faction, context)
+        target = self._v03_propaganda_removal_target(text, card, total_power, context)
+        if target is not None:
+            removed_effect = self._v03_remove_propaganda_card(instance_id, target, "text_remove_propaganda", context)
+            if (
+                removed_effect is not None
+                and "wenn danach keine propagandakarte dieser fraktion mehr ausliegt" in text
+                and not any(self._card_faction(card_id) == removed_effect.get("removed_faction_id") for card_id in context.state.propaganda_track.get_slots())
+            ):
+                self._v03_apply_neutral_destruction(instance_id, 1, "text_remove_last_propaganda_destroy_neutral", context)
+            return removed_effect
+        return None
+
+    def _v03_propaganda_removal_target(
+        self,
+        text: str,
+        card: CardConfig,
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> str | None:
+        slots = context.state.propaganda_track.get_slots()
+        occupied = [card_id for card_id in slots if card_id is not None]
+        if not occupied or "entferne" not in text:
+            return None
+        if "propagandakarte aus slot 1" in text:
+            return slots[0] if slots else None
+        if "propagandakarte mit dem hoechsten einzelnen propagandamachtwert" in text:
+            return self._v03_highest_single_propaganda_card(slots)
+        if "propagandakarte der fraktion mit der hoechsten propagandamacht" in text:
+            powers = self._objective_propaganda_power(slots)
+            faction_id = self._power_tiebreak(max(powers.values()), powers)
+            return self._v03_oldest_propaganda_for_faction(faction_id, slots)
+        if "propagandakarte der fraktion mit der hoechsten macht" in text:
+            faction_id = self._power_tiebreak(max(total_power.values()), total_power)
+            return self._v03_oldest_propaganda_for_faction(faction_id, slots)
+        for faction_name, faction_id in self._v03_faction_name_map().items():
+            if f"entferne 1 {self._v03_faction_adjective(faction_id)} propagandakarte" in text or f"entferne eine {self._v03_faction_adjective(faction_id)} propagandakarte" in text:
+                return self._v03_oldest_propaganda_for_faction(faction_id, slots)
+        if "entferne 1 propagandakarte" in text:
+            return occupied[0]
+        return None
+
+    def _v03_remove_propaganda_card(
+        self,
+        source_card_id: str,
+        target_card_id: str,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        removed = context.state.propaganda_track.remove_card(target_card_id)
+        if removed is None:
+            return None
+        removed_faction = self._card_faction(removed)
+        context.state.deck.discard_card(removed, event_bus=context.event_bus, reason=reason)
+        payload = {
+            "card_id": source_card_id,
+            "effect_type": "v03_propaganda_removed",
+            "reason": reason,
+            "removed_card_id": removed,
+            "removed_faction_id": removed_faction,
+            "slots": context.state.propaganda_track.get_slots(),
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        context.event_bus.emit(
+            EventType.PROPAGANDA_REMOVED,
+            {
+                "card_id": removed,
+                "source_card_id": source_card_id,
+                "reason": reason,
+                "slots": context.state.propaganda_track.get_slots(),
+            },
+        )
+        return payload
+
+    def _v03_swap_adjacent_propaganda(self, source_card_id: str, context: PhaseContext) -> dict[str, Any] | None:
+        slots = context.state.propaganda_track.slots
+        for index in range(len(slots) - 1):
+            if slots[index] is not None and slots[index + 1] is not None:
+                before = list(slots)
+                slots[index], slots[index + 1] = slots[index + 1], slots[index]
+                return self._v03_emit_propaganda_moved(source_card_id, "text_swap_adjacent_propaganda", before, context)
+        return None
+
+    def _v03_move_slot_one_to_slot_four(self, source_card_id: str, context: PhaseContext) -> dict[str, Any] | None:
+        slots = context.state.propaganda_track.slots
+        if not slots or slots[0] is None:
+            return None
+        before = list(slots)
+        card_id = slots.pop(0)
+        slots.append(card_id)
+        return self._v03_emit_propaganda_moved(source_card_id, "text_move_slot_1_to_slot_4", before, context)
+
+    def _v03_move_faction_propaganda_back(
+        self,
+        source_card_id: str,
+        faction_id: str,
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        slots = context.state.propaganda_track.slots
+        for index, card_id in enumerate(slots[:-1]):
+            if self._card_faction(card_id) != faction_id or slots[index + 1] is not None:
+                continue
+            before = list(slots)
+            slots[index], slots[index + 1] = slots[index + 1], slots[index]
+            return self._v03_emit_propaganda_moved(source_card_id, "text_move_faction_propaganda_back", before, context)
+        for index, card_id in enumerate(slots[:-1]):
+            if self._card_faction(card_id) == faction_id:
+                before = list(slots)
+                slots[index], slots[index + 1] = slots[index + 1], slots[index]
+                return self._v03_emit_propaganda_moved(source_card_id, "text_move_faction_propaganda_back", before, context)
+        return None
+
+    def _v03_emit_propaganda_moved(
+        self,
+        source_card_id: str,
+        reason: str,
+        before: list[str | None],
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        payload = {
+            "card_id": source_card_id,
+            "effect_type": "v03_propaganda_moved",
+            "reason": reason,
+            "slots_before": before,
+            "slots_after": context.state.propaganda_track.get_slots(),
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_move_back_faction(self, text: str) -> str | None:
+        for faction_id in self.state.factions:
+            if f"verschiebe eine {self._v03_faction_adjective(faction_id)} propagandakarte einen slot nach hinten" in text:
+                return faction_id
+        return None
+
+    def _v03_oldest_propaganda_for_faction(self, faction_id: str, slots: list[str | None]) -> str | None:
+        for card_id in slots:
+            if self._card_faction(card_id) == faction_id:
+                return card_id
+        return None
+
+    def _v03_highest_single_propaganda_card(self, slots: list[str | None]) -> str | None:
+        candidates: list[tuple[int, int, str]] = []
+        slot_factors = self.config.v03.get("propaganda", {}).get("slot_factors", [1 for _ in slots])
+        for index, card_id in enumerate(slots):
+            card = self.cards_by_id.get(card_id or "")
+            if card is None:
+                continue
+            factor = int(slot_factors[index]) if index < len(slot_factors) else 1
+            candidates.append((max(0, int(card.strength)) * factor, -index, str(card_id)))
+        if not candidates:
+            return None
+        return max(candidates)[2]
+
+    def _apply_v03_displaced_propaganda_effect(self, card_id: str, context: PhaseContext) -> dict[str, Any] | None:
+        card = self.cards_by_id.get(card_id)
+        if card is None or not card.effect_text:
+            return None
+        text = self._normalize_condition(card.effect_text)
+        if "wenn diese karte verdraengt wird" not in text:
+            return None
+        if "rekrutiert" in text and card.faction in context.state.factions:
+            amount = self._v03_recruit_amount(text, card, context) or 0
+            if amount > 0:
+                return self._v03_apply_population_delta(card_id, card.faction, amount, "v03_displaced_recruit", context)
+        if "stelle" in text:
+            controls = {"prevent_first_restore": False, "restore_prevented_used": False, "restore_limit": None, "restore_used": 0}
+            return self._v03_apply_restoration(card_id, self._v03_restore_amount(text), controls, context)
+        destroyed_neutral = self._v03_destroy_neutral_amount(text, context)
+        if destroyed_neutral > 0:
+            return self._v03_apply_neutral_destruction(card_id, destroyed_neutral, "v03_displaced_destroy_neutral", context)
+        return None
+
+    def _apply_v03_utility_text_effects(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        attack_records: list[dict[str, Any]],
+        applied_deltas: dict[str, int],
+        propaganda_effects: list[dict[str, Any]],
+        population_effects: list[dict[str, Any]],
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        effects: list[dict[str, Any]] = []
+        sources: list[tuple[str, CardConfig, int | None, Literal["world_history", "propaganda"]]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is not None:
+                sources.append((card_id, card, None, "world_history"))
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is not None:
+                sources.append((str(card_id), card, slot_index, "propaganda"))
+        utility_controls: dict[str, Any] = {
+            "draw_limit_per_player": None,
+            "drawn_by_player": {},
+        }
+        for instance_id, card, slot_index, source in sources:
+            text = self._normalize_condition(card.effect_text or "")
+            if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            draw_limit_match = re.search(r"kein spieler kann .* mehr als\s+(\d+)\s+karte ziehen", text)
+            if draw_limit_match:
+                current = utility_controls["draw_limit_per_player"]
+                amount = int(draw_limit_match.group(1))
+                utility_controls["draw_limit_per_player"] = amount if current is None else min(int(current), amount)
+                context.event_bus.emit(
+                    EventType.EFFECT_TRIGGERED,
+                    {
+                        "card_id": instance_id,
+                        "effect_type": "v03_utility_control",
+                        "reason": "draw_limit_per_player",
+                        "amount": amount,
+                    },
+                )
+        for instance_id, card, slot_index, source in sources:
+            text = self._normalize_condition(card.effect_text or "")
+            if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not any(marker in text for marker in ["zieht", "wirft", "quelle", "rechercheauftrag", "nachziehstapel"]):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            effect = self._v03_apply_single_utility_effect(
+                instance_id,
+                card,
+                text,
+                total_power,
+                attack_records,
+                applied_deltas,
+                propaganda_effects,
+                population_effects,
+                utility_controls,
+                context,
+            )
+            if effect is not None:
+                effects.append(effect)
+        return effects
+
+    def _v03_apply_single_utility_effect(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        text: str,
+        total_power: dict[str, int],
+        attack_records: list[dict[str, Any]],
+        applied_deltas: dict[str, int],
+        propaganda_effects: list[dict[str, Any]],
+        population_effects: list[dict[str, Any]],
+        utility_controls: dict[str, Any],
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        if "spieler mit den wenigsten handkarten" in text and "zieht" in text:
+            if "erfolgreichen angriff" in text and not self._v03_has_successful_attack(card.faction, attack_records):
+                return None
+            if "rekrutiert" in text and card.faction not in {
+                effect.get("target_faction_id")
+                for effect in population_effects
+                if effect.get("reason") == "text_recruit" and int(effect.get("applied_delta", 0)) > 0
+            }:
+                return None
+            player_id = self._v03_player_with_fewest_handcards(context)
+            return self._v03_draw_to_player(instance_id, player_id, 1, "text_draw_fewest_handcards", context, utility_controls)
+        if "medienmogul zieht" in text:
+            draw_match = re.search(r"medienmogul zieht\s+(\d+)\s+karte", text)
+            amount = int(draw_match.group(1)) if draw_match else 1
+            player_id = context.state.round.media_mogul_player_id
+            draw_effect = self._v03_draw_to_player(instance_id, player_id, amount, "text_media_mogul_draw", context, utility_controls)
+            if "wirft" in text:
+                discard_effect = self._v03_discard_player_hand_card(instance_id, player_id, "text_media_mogul_discard", context)
+                if discard_effect is not None:
+                    draw_effect["discard_effect"] = discard_effect
+            return draw_effect
+        if "medienmogul wirft 1 handkarte ab" in text:
+            discard_effect = self._v03_discard_player_hand_card(instance_id, context.state.round.media_mogul_player_id, "text_media_mogul_discard", context)
+            return discard_effect
+        if "journalist" in text and "erhaelt" in text and "quelle" in text:
+            if "propagandakarte entfernt" in text and not any(effect.get("effect_type") == "v03_propaganda_removed" for effect in propaganda_effects):
+                return None
+            if "propagandakarte verschoben" in text and not any(effect.get("effect_type") == "v03_propaganda_moved" for effect in propaganda_effects):
+                return None
+            if "fraktion mit hoeherer propagandamacht angreift" in text and not self._v03_attack_higher_propaganda_power(card.faction, attack_records, context):
+                return None
+            return self._v03_give_source_to_player(instance_id, context.state.round.journalist_player_id, "text_journalist_gain_source", context)
+        if "journalist" in text and "zieht" in text and "rechercheauftrag" in text:
+            return self._v03_draw_research_order_to_player(instance_id, context.state.round.journalist_player_id, "text_journalist_draw_research_order", context)
+        if "sieht die obersten" in text and "nachziehstapel" in text:
+            player_id = context.state.round.journalist_player_id if "journalist" in text else context.state.round.start_player_id
+            return self._v03_peek_and_reorder_deck(instance_id, player_id, text, context)
+        return None
+
+    def _v03_has_successful_attack(self, faction_id: str | None, attack_records: list[dict[str, Any]]) -> bool:
+        return faction_id is not None and any(record["attacker"] == faction_id and int(record.get("impact", 0)) > 0 for record in attack_records)
+
+    def _v03_player_with_fewest_handcards(self, context: PhaseContext) -> str:
+        hand_counts = {player_id: len(player.hand) for player_id, player in context.state.players.items()}
+        return self._value_tiebreak(min(hand_counts.values()), hand_counts)
+
+    def _v03_draw_to_player(
+        self,
+        card_id: str,
+        player_id: str,
+        amount: int,
+        reason: str,
+        context: PhaseContext,
+        utility_controls: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        requested_amount = amount
+        if utility_controls is not None and utility_controls.get("draw_limit_per_player") is not None:
+            already_drawn = int(utility_controls["drawn_by_player"].get(player_id, 0))
+            remaining = max(0, int(utility_controls["draw_limit_per_player"]) - already_drawn)
+            amount = min(amount, remaining)
+        drawn = context.state.deck.draw_cards(
+            amount,
+            config=context.config.deck,
+            rng=context.state.rng,
+            event_bus=context.event_bus,
+            reason=reason,
+            player_id=player_id,
+            destination="player_hand",
+            game_id=context.config.game_id,
+            round_number=context.state.round.round_number,
+            phase=context.phase_name,
+        )
+        context.state.players[player_id].hand.extend(drawn)
+        if utility_controls is not None:
+            utility_controls["drawn_by_player"][player_id] = int(utility_controls["drawn_by_player"].get(player_id, 0)) + len(drawn)
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_utility_effect",
+            "reason": reason,
+            "player_id": player_id,
+            "drawn_card_ids": drawn,
+            "requested_count": requested_amount,
+            "applied_count": len(drawn),
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_discard_player_hand_card(
+        self,
+        card_id: str,
+        player_id: str,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        player = context.state.players[player_id]
+        if not player.hand:
+            payload = {
+                "card_id": card_id,
+                "effect_type": "v03_utility_effect",
+                "reason": reason,
+                "player_id": player_id,
+                "discarded_card_id": None,
+                "applied_count": 0,
+            }
+            context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+            return payload
+        discarded = player.hand.pop(0)
+        context.state.deck.discard_card(discarded, event_bus=context.event_bus, reason=reason, player_id=player_id)
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_utility_effect",
+            "reason": reason,
+            "player_id": player_id,
+            "discarded_card_id": discarded,
+            "applied_count": 1,
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_give_source_to_player(
+        self,
+        card_id: str,
+        player_id: str,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        player = context.state.players[player_id]
+        before = len(player.sources)
+        if len(player.sources) < player.max_sources:
+            player.sources.append(f"source_token_{context.state.round.round_number}_{player_id}_{len(player.sources) + 1}")
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_utility_effect",
+            "reason": reason,
+            "player_id": player_id,
+            "sources_before": before,
+            "sources_after": len(player.sources),
+            "applied_count": len(player.sources) - before,
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_draw_research_order_to_player(
+        self,
+        card_id: str,
+        player_id: str,
+        reason: str,
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        drawn: list[str] = []
+        if context.state.deck.research_order_pool:
+            drawn.append(context.state.deck.research_order_pool.pop(0))
+        context.state.players[player_id].hidden_research_orders.extend(drawn)
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_utility_effect",
+            "reason": reason,
+            "player_id": player_id,
+            "drawn_research_order_ids": drawn,
+            "applied_count": len(drawn),
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_peek_and_reorder_deck(
+        self,
+        card_id: str,
+        player_id: str,
+        text: str,
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        count_match = re.search(r"obersten\s+(\d+)\s+karten", text)
+        count = int(count_match.group(1)) if count_match else 2
+        if len(context.state.deck.draw_pile) < count:
+            return None
+        before = context.state.deck.draw_pile[:count]
+        if "legt 1 oben" in text and "unter den nachziehstapel" in text and len(before) >= 2:
+            top = before[0]
+            bottom = before[1]
+            context.state.deck.draw_pile = [top, *context.state.deck.draw_pile[count:], bottom]
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_utility_effect",
+            "reason": "text_peek_and_reorder_deck",
+            "player_id": player_id,
+            "seen_count": count,
+            "changed_order": before != context.state.deck.draw_pile[:count],
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
+
+    def _v03_attack_higher_propaganda_power(
+        self,
+        faction_id: str | None,
+        attack_records: list[dict[str, Any]],
+        context: PhaseContext,
+    ) -> bool:
+        if faction_id is None:
+            return False
+        prop_power = self._objective_propaganda_power(context.state.propaganda_track.get_slots())
+        for record in attack_records:
+            if record["attacker"] == faction_id and int(record.get("impact", 0)) > 0:
+                if prop_power.get(str(record["defender"]), 0) > prop_power.get(faction_id, 0):
+                    return True
+        return False
+
     def _apply_v03_population_text_effects(
         self,
         row: list[str],
@@ -1300,6 +1861,7 @@ class GameEngine:
         context: PhaseContext,
     ) -> list[dict[str, Any]]:
         effects: list[dict[str, Any]] = []
+        controls = self._v03_population_controls(row, total_power, context)
         for card_id in row:
             card = self.cards_by_id.get(card_id)
             if card is None or not card.effect_text:
@@ -1312,6 +1874,7 @@ class GameEngine:
                     slot_index=None,
                     row=row,
                     total_power=total_power,
+                    controls=controls,
                     context=context,
                 )
             )
@@ -1327,6 +1890,7 @@ class GameEngine:
                     slot_index=slot_index,
                     row=row,
                     total_power=total_power,
+                    controls=controls,
                     context=context,
                 )
             )
@@ -1341,6 +1905,7 @@ class GameEngine:
         slot_index: int | None,
         row: list[str],
         total_power: dict[str, int],
+        controls: dict[str, Any],
         context: PhaseContext,
     ) -> list[dict[str, Any]]:
         text = self._normalize_condition(card.effect_text or "")
@@ -1356,14 +1921,247 @@ class GameEngine:
         effects: list[dict[str, Any]] = []
         recruit = self._v03_recruit_amount(text, card, context)
         if recruit is not None and card.faction in context.state.factions:
-            effects.append(self._v03_apply_population_delta(instance_id, card.faction, recruit, "text_recruit", context))
+            adjusted_recruit, modifiers = self._v03_adjust_recruitment(instance_id, card.faction, recruit, controls, context)
+            effects.extend(modifiers)
+            if adjusted_recruit > 0:
+                applied = self._v03_apply_population_delta(instance_id, card.faction, adjusted_recruit, "text_recruit", context)
+                effects.append(applied)
+                if applied["applied_delta"] > 0:
+                    controls["recruited_factions"].add(card.faction)
+                    recruited_by_faction = controls["recruited_amount_by_faction"]
+                    recruited_by_faction[card.faction] = int(recruited_by_faction.get(card.faction, 0)) + int(applied["applied_delta"])
+                    controls["recruit_events"] += 1
         neutral_targets = self._v03_neutralize_targets(text, card, total_power, context)
         for faction_id, amount in neutral_targets:
             effects.append(self._v03_apply_population_delta(instance_id, faction_id, -amount, "text_neutralize", context))
         destroyed_neutral = self._v03_destroy_neutral_amount(text, context)
         if destroyed_neutral > 0:
             effects.append(self._v03_apply_neutral_destruction(instance_id, destroyed_neutral, "text_destroy_neutral", context))
+        restore = self._v03_restore_amount(text)
+        if restore > 0:
+            effects.append(self._v03_apply_restoration(instance_id, restore, controls, context))
         return [effect for effect in effects if effect]
+
+    def _v03_population_controls(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        controls: dict[str, Any] = {
+            "blocked_recruit_factions": set(),
+            "recruit_reduction_all": 0,
+            "recruit_reduction_if_at_least_two": 0,
+            "recruit_limit": None,
+            "recruited_amount_by_faction": {},
+            "extra_first_recruit_by_faction": {},
+            "restore_limit": None,
+            "prevent_first_restore": False,
+            "restore_used": 0,
+            "restore_prevented_used": False,
+            "recruited_factions": set(),
+            "recruit_events": 0,
+            "control_events": [],
+        }
+        sources: list[tuple[str, CardConfig, int | None, Literal["world_history", "propaganda"]]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is not None:
+                sources.append((card_id, card, None, "world_history"))
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is not None:
+                sources.append((str(card_id), card, slot_index, "propaganda"))
+
+        for instance_id, card, slot_index, source in sources:
+            text = self._normalize_condition(card.effect_text or "")
+            if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            control_events = self._v03_population_controls_from_text(instance_id, card, text, context)
+            for event in control_events:
+                reason = event["reason"]
+                if reason == "block_recruit":
+                    controls["blocked_recruit_factions"].update(event["faction_ids"])
+                elif reason == "reduce_all_recruit":
+                    controls["recruit_reduction_all"] += int(event["amount"])
+                elif reason == "reduce_recruit_if_at_least_two":
+                    controls["recruit_reduction_if_at_least_two"] += int(event["amount"])
+                elif reason == "recruit_limit":
+                    current = controls["recruit_limit"]
+                    controls["recruit_limit"] = int(event["amount"]) if current is None else min(int(current), int(event["amount"]))
+                elif reason == "extra_first_recruit":
+                    extras = controls["extra_first_recruit_by_faction"]
+                    extras[event["faction_id"]] = int(extras.get(event["faction_id"], 0)) + int(event["amount"])
+                elif reason == "restore_limit":
+                    current = controls["restore_limit"]
+                    controls["restore_limit"] = int(event["amount"]) if current is None else min(int(current), int(event["amount"]))
+                elif reason == "prevent_first_restore":
+                    controls["prevent_first_restore"] = True
+                controls["control_events"].append(event)
+                context.event_bus.emit(EventType.EFFECT_TRIGGERED, event)
+        return controls
+
+    def _v03_population_controls_from_text(
+        self,
+        instance_id: str,
+        card: CardConfig,
+        text: str,
+        context: PhaseContext,
+    ) -> list[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        if "kann ab jetzt bis zum ende dieser weltgeschichte nicht rekrutieren" in text or "kann in dieser weltgeschichte nicht rekrutieren" in text:
+            blocked = self._v03_recruit_block_targets(text, card, context)
+            if blocked:
+                events.append(
+                    {
+                        "card_id": instance_id,
+                        "effect_type": "v03_population_control",
+                        "reason": "block_recruit",
+                        "faction_ids": blocked,
+                    }
+                )
+        if "jede fraktion, die in dieser weltgeschichte rekrutieren wuerde, rekrutiert 1 bevoelkerung weniger" in text:
+            events.append(
+                {
+                    "card_id": instance_id,
+                    "effect_type": "v03_population_control",
+                    "reason": "reduce_all_recruit",
+                    "amount": 1,
+                }
+            )
+        if "2 oder mehr bevoelkerung rekrutieren wuerde, rekrutiert sie 1 bevoelkerung weniger" in text:
+            events.append(
+                {
+                    "card_id": instance_id,
+                    "effect_type": "v03_population_control",
+                    "reason": "reduce_recruit_if_at_least_two",
+                    "amount": 1,
+                }
+            )
+        recruit_limit_match = re.search(r"kann keine fraktion mehr als\s+(\d+)\s+bevoelkerung pro weltgeschichte rekrutieren", text)
+        if recruit_limit_match:
+            events.append(
+                {
+                    "card_id": instance_id,
+                    "effect_type": "v03_population_control",
+                    "reason": "recruit_limit",
+                    "amount": int(recruit_limit_match.group(1)),
+                }
+            )
+        for faction_id in context.state.factions:
+            faction_name = self._v03_faction_display_name(faction_id)
+            if f"wenn {faction_name} rekrutiert, rekrutiert {faction_name} 1 zusaetzliche bevoelkerung" in text:
+                events.append(
+                    {
+                        "card_id": instance_id,
+                        "effect_type": "v03_population_control",
+                        "reason": "extra_first_recruit",
+                        "faction_id": faction_id,
+                        "amount": 1,
+                    }
+                )
+        restore_limit_match = re.search(r"kann hoechstens\s+(\d+)\s+bevoelkerung wiederhergestellt werden", text)
+        if restore_limit_match:
+            events.append(
+                {
+                    "card_id": instance_id,
+                    "effect_type": "v03_population_control",
+                    "reason": "restore_limit",
+                    "amount": int(restore_limit_match.group(1)),
+                }
+            )
+        if "wiederhergestellt wuerde, wird diese wiederherstellung verhindert" in text:
+            events.append(
+                {
+                    "card_id": instance_id,
+                    "effect_type": "v03_population_control",
+                    "reason": "prevent_first_restore",
+                }
+            )
+        return events
+
+    def _v03_recruit_block_targets(self, text: str, card: CardConfig, context: PhaseContext) -> list[str]:
+        blocked: set[str] = set()
+        for faction_name, faction_id in self._v03_faction_name_map().items():
+            if f"{faction_name} kann" in text:
+                blocked.add(faction_id)
+        if "diese fraktion kann" in text or "fraktion mit der meisten bevoelkerung kann" in text:
+            blocked.add(self._population_tiebreak(max, context))
+        if "fraktion mit der wenigsten bevoelkerung" in text and "kann" in text:
+            blocked.add(self._population_tiebreak(min, context))
+        if "jede fraktion mit mindestens 12 bevoelkerung" in text:
+            blocked.update(
+                faction_id
+                for faction_id, faction in context.state.factions.items()
+                if faction.population >= 12
+            )
+        if card.faction in context.state.factions and "kann in dieser weltgeschichte nicht rekrutieren" in text:
+            blocked.add(card.faction)
+        return sorted(blocked)
+
+    def _v03_adjust_recruitment(
+        self,
+        card_id: str,
+        faction_id: str,
+        requested: int,
+        controls: dict[str, Any],
+        context: PhaseContext,
+    ) -> tuple[int, list[dict[str, Any]]]:
+        amount = requested
+        modifiers: list[dict[str, Any]] = []
+        if faction_id in controls["blocked_recruit_factions"]:
+            modifiers.append(self._v03_emit_population_adjustment(card_id, faction_id, "recruit_blocked", -amount, requested, 0, context))
+            return 0, modifiers
+        extras = controls["extra_first_recruit_by_faction"]
+        if faction_id in extras and faction_id not in controls["recruited_factions"]:
+            extra = int(extras[faction_id])
+            before = amount
+            amount += extra
+            modifiers.append(self._v03_emit_population_adjustment(card_id, faction_id, "extra_first_recruit", extra, before, amount, context))
+        if amount >= 2 and controls["recruit_reduction_if_at_least_two"]:
+            reduction = min(amount, int(controls["recruit_reduction_if_at_least_two"]))
+            before = amount
+            amount -= reduction
+            modifiers.append(self._v03_emit_population_adjustment(card_id, faction_id, "reduce_recruit_if_at_least_two", -reduction, before, amount, context))
+        if controls["recruit_reduction_all"]:
+            reduction = min(amount, int(controls["recruit_reduction_all"]))
+            before = amount
+            amount -= reduction
+            modifiers.append(self._v03_emit_population_adjustment(card_id, faction_id, "reduce_all_recruit", -reduction, before, amount, context))
+        if controls["recruit_limit"] is not None:
+            already_recruited = int(controls["recruited_amount_by_faction"].get(faction_id, 0))
+            remaining = max(0, int(controls["recruit_limit"]) - already_recruited)
+            if amount > remaining:
+                before = amount
+                amount = remaining
+                modifiers.append(self._v03_emit_population_adjustment(card_id, faction_id, "recruit_limit", amount - before, before, amount, context))
+        return max(0, amount), modifiers
+
+    def _v03_emit_population_adjustment(
+        self,
+        card_id: str,
+        faction_id: str,
+        reason: str,
+        amount: int,
+        before: int,
+        after: int,
+        context: PhaseContext,
+    ) -> dict[str, Any]:
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_population_adjustment",
+            "reason": reason,
+            "target_faction_id": faction_id,
+            "amount": amount,
+            "before": before,
+            "after": after,
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        return payload
 
     def _v03_recruit_amount(self, text: str, card: CardConfig, context: PhaseContext) -> int | None:
         faction_id = card.faction
@@ -1371,6 +2169,8 @@ class GameEngine:
             return None
         faction_name = self._v03_faction_display_name(faction_id)
         match = re.search(rf"{faction_name}\s+rekrutiert\s+(?:bis\s+zu\s+)?(\d+)\s+bevoelkerung", text)
+        if match is None:
+            match = re.search(rf"rekrutiert\s+{faction_name}\s+(?:bis\s+zu\s+)?(\d+)\s+bevoelkerung", text)
         if match is None:
             match = re.search(r"rekrutiert\s+(?:bis\s+zu\s+)?(\d+)\s+bevoelkerung", text)
         if match is None:
@@ -1432,6 +2232,12 @@ class GameEngine:
 
     def _v03_destroy_neutral_amount(self, text: str, context: PhaseContext) -> int:
         match = re.search(r"vernichte\s+(?:bis\s+zu\s+)?(\d+)\s+neutrale\s+bevoelkerung", text)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    def _v03_restore_amount(self, text: str) -> int:
+        match = re.search(r"stelle\s+(?:am ende dieser weltgeschichte\s+)?(\d+)\s+bevoelkerung\s+wieder her", text)
         if match:
             return int(match.group(1))
         return 0
@@ -1522,6 +2328,65 @@ class GameEngine:
         )
         return payload
 
+    def _v03_apply_restoration(
+        self,
+        card_id: str,
+        amount: int,
+        controls: dict[str, Any],
+        context: PhaseContext,
+    ) -> dict[str, Any] | None:
+        if controls["prevent_first_restore"] and not controls["restore_prevented_used"]:
+            controls["restore_prevented_used"] = True
+            payload = {
+                "card_id": card_id,
+                "effect_type": "v03_population_adjustment",
+                "reason": "restore_prevented",
+                "requested_delta": amount,
+                "applied_delta": 0,
+            }
+            context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+            return payload
+        restore_limit = controls["restore_limit"]
+        if restore_limit is not None:
+            available_by_limit = max(0, int(restore_limit) - int(controls["restore_used"]))
+            amount = min(amount, available_by_limit)
+        if amount <= 0:
+            return None
+        total_population = context.config.population.total_population
+        destroyed_population = max(0, total_population - context.state.total_population())
+        applied = min(amount, destroyed_population)
+        neutral_before = context.state.neutral_population
+        context.state.neutral_population += applied
+        controls["restore_used"] += applied
+        payload = {
+            "card_id": card_id,
+            "effect_type": "v03_population_restored",
+            "reason": "text_restore",
+            "requested_delta": amount,
+            "applied_delta": applied,
+            "neutral_before": neutral_before,
+            "neutral_after": context.state.neutral_population,
+            "destroyed_population_before": destroyed_population,
+            "destroyed_population_after": max(0, total_population - context.state.total_population()),
+        }
+        context.event_bus.emit(EventType.EFFECT_TRIGGERED, payload)
+        if applied:
+            context.event_bus.emit(
+                EventType.POPULATION_CHANGED,
+                {
+                    "player_id": None,
+                    "action_type": "text_restore",
+                    "target_faction_id": "neutral",
+                    "population_before": neutral_before,
+                    "population_after": context.state.neutral_population,
+                    "neutral_before": neutral_before,
+                    "neutral_after": context.state.neutral_population,
+                    "applied_delta": applied,
+                    "card_id": card_id,
+                },
+            )
+        return payload
+
     def _population_tiebreak(self, selector: Any, context: PhaseContext) -> str:
         selected_value = selector(faction.population for faction in context.state.factions.values())
         candidates = [
@@ -1576,6 +2441,9 @@ class GameEngine:
         ]
         populations = {key: value.population for key, value in context.state.factions.items()}
         values = list(populations.values())
+        total_population = context.config.population.total_population
+        destroyed_population = max(0, total_population - context.state.total_population())
+        current_round_destroyed = self._event_payload_sum(self._current_round_events(context), "destroyed_population_delta")
 
         own_adjective = self._v03_faction_adjective(faction_id)
         own_name = self._v03_faction_display_name(faction_id)
@@ -1586,6 +2454,19 @@ class GameEngine:
         card_count_match = re.search(rf"mindestens\s+(\d+)\s+{own_adjective}\s+karten", text)
         if card_count_match and row_factions.count(faction_id) < int(card_count_match.group(1)):
             return False
+        printed_strength_match = re.search(rf"{own_name}\s+genau\s+(\d+)\s+karten\s+mit\s+gedrucktem\s+machtwert\s+(\d+)", text)
+        if printed_strength_match:
+            expected_count = int(printed_strength_match.group(1))
+            expected_strength = int(printed_strength_match.group(2))
+            actual_count = sum(
+                1
+                for card_id in row
+                if card_id in self.cards_by_id
+                and self.cards_by_id[card_id].faction == faction_id
+                and int(self.cards_by_id[card_id].strength) == expected_strength
+            )
+            if actual_count != expected_count:
+                return False
         if f"{own_name} ein paar" in text and not self._has_pair(strengths):
             return False
         if f"{own_name} einen drilling" in text and not self._has_three_of_a_kind(strengths):
@@ -1632,6 +2513,12 @@ class GameEngine:
         if "mindestens 10 propagandamacht" in text and self._objective_propaganda_power(context.state.propaganda_track.get_slots()).get(faction_id, 0) < 10:
             return False
         if "gelbe propagandamacht aktiviert wird" in text and propaganda_power.get("yellow", 0) <= 0:
+            return False
+        if "mindestens 1 bevoelkerung vernichtet ist" in text and destroyed_population < 1:
+            return False
+        if "in dieser weltgeschichte bevoelkerung vernichtet wurde" in text and current_round_destroyed < 1:
+            return False
+        if "in dieser weltgeschichte mindestens 1 bevoelkerung vernichtet wurde" in text and current_round_destroyed < 1:
             return False
         return True
 
@@ -1728,13 +2615,27 @@ class GameEngine:
         self,
         row: list[str],
         total_power: dict[str, int],
+        interpretation_authority: str | None,
         context: PhaseContext,
     ) -> tuple[list[tuple[str, str | None]], list[dict[str, Any]]]:
-        targets: dict[str, str | None] = {}
+        markers: dict[str, dict[str, int]] = {faction_id: {} for faction_id in context.state.factions}
         target_effects: list[dict[str, Any]] = []
         for attacker, defender in self._world_history_transitions(row):
-            if attacker is not None:
-                targets[attacker] = defender
+            if attacker is not None and defender is not None and attacker != defender:
+                self._v03_add_target_marker(
+                    markers,
+                    attacker,
+                    defender,
+                    1,
+                    {
+                        "effect_type": "v03_target_marker",
+                        "reason": "world_history_transition",
+                        "attacker": attacker,
+                        "defender": defender,
+                        "marker_count": 1,
+                    },
+                    target_effects,
+                )
         for card_id in row:
             card = self.cards_by_id.get(card_id)
             if card is None or not card.effect_text:
@@ -1742,7 +2643,19 @@ class GameEngine:
             effect = self._v03_target_from_text(card_id, card, row, total_power, context)
             if effect is None:
                 continue
-            targets[effect["attacker"]] = effect["defender"]
+            if self._v03_target_change_is_ignored(effect, row, context):
+                ignored = {
+                    "card_id": effect["card_id"],
+                    "effect_type": "v03_target_modifier_ignored",
+                    "reason": "first_target_change_to_faction_ignored",
+                    "attacker": effect["attacker"],
+                    "defender": effect["defender"],
+                }
+                target_effects.append(ignored)
+                context.event_bus.emit(EventType.EFFECT_TRIGGERED, ignored)
+                continue
+            effect["marker_count"] = 2
+            self._v03_add_target_marker(markers, effect["attacker"], effect["defender"], 2, effect, target_effects)
             target_effects.append(effect)
             context.event_bus.emit(EventType.EFFECT_TRIGGERED, effect)
         for card_id in context.state.propaganda_track.get_slots():
@@ -1752,16 +2665,114 @@ class GameEngine:
             effect = self._v03_target_from_text(str(card_id), card, row, total_power, context)
             if effect is None:
                 continue
-            targets[effect["attacker"]] = effect["defender"]
+            if self._v03_target_change_is_ignored(effect, row, context):
+                ignored = {
+                    "card_id": effect["card_id"],
+                    "effect_type": "v03_target_modifier_ignored",
+                    "reason": "first_target_change_to_faction_ignored",
+                    "attacker": effect["attacker"],
+                    "defender": effect["defender"],
+                }
+                target_effects.append(ignored)
+                context.event_bus.emit(EventType.EFFECT_TRIGGERED, ignored)
+                continue
+            effect["marker_count"] = 3
+            self._v03_add_target_marker(markers, effect["attacker"], effect["defender"], 3, effect, target_effects)
             target_effects.append(effect)
             context.event_bus.emit(EventType.EFFECT_TRIGGERED, effect)
-        return [(attacker, defender) for attacker, defender in targets.items() if defender is not None], target_effects
+        target_summary = {
+            attacker: dict(defenders)
+            for attacker, defenders in markers.items()
+            if defenders
+        }
+        if target_summary:
+            target_effects.append(
+                {
+                    "effect_type": "v03_target_marker_summary",
+                    "reason": "target_markers_collected",
+                    "markers": target_summary,
+                    "interpretation_authority": interpretation_authority,
+                }
+            )
+        pairs: list[tuple[str, str | None]] = []
+        for attacker, defenders in markers.items():
+            if not defenders:
+                continue
+            defender = self._v03_choose_marker_target(attacker, defenders, interpretation_authority)
+            if defender is not None:
+                pairs.append((attacker, defender))
+        return pairs, target_effects
+
+    def _v03_add_target_marker(
+        self,
+        markers: dict[str, dict[str, int]],
+        attacker: str,
+        defender: str | None,
+        amount: int,
+        effect: dict[str, Any],
+        target_effects: list[dict[str, Any]],
+    ) -> None:
+        if attacker not in markers or defender not in markers or attacker == defender:
+            return
+        markers[attacker][defender] = markers[attacker].get(defender, 0) + amount
+
+    def _v03_choose_marker_target(
+        self,
+        attacker: str,
+        defenders: dict[str, int],
+        interpretation_authority: str | None,
+    ) -> str | None:
+        if not defenders:
+            return None
+        highest = max(defenders.values())
+        candidates = [defender for defender, value in defenders.items() if value == highest and defender != attacker]
+        if not candidates:
+            return None
+        if len(candidates) == 1:
+            return candidates[0]
+        if interpretation_authority in candidates:
+            return interpretation_authority
+        return self._tiebreak_factions(candidates)
+
+    def _v03_interpretation_authority(self, activated_propaganda_power: dict[str, int]) -> str | None:
+        positive = {faction_id: power for faction_id, power in activated_propaganda_power.items() if power > 0}
+        if not positive:
+            return None
+        highest = max(positive.values())
+        candidates = [faction_id for faction_id, power in positive.items() if power == highest]
+        return self._tiebreak_factions(candidates)
+
+    def _v03_target_change_is_ignored(self, effect: dict[str, Any], row: list[str], context: PhaseContext) -> bool:
+        defender = effect.get("defender")
+        if defender not in context.state.factions:
+            return False
+        if not self._v03_faction_ignores_first_target_change(str(defender), row, context):
+            return False
+        return not any(
+            event.event_type == EventType.EFFECT_TRIGGERED
+            and event.payload.get("effect_type") == "v03_target_modifier_ignored"
+            and event.payload.get("defender") == defender
+            for event in self._current_round_events(context)
+        )
+
+    def _v03_faction_ignores_first_target_change(self, faction_id: str, row: list[str], context: PhaseContext) -> bool:
+        sources: list[str] = list(row) + [card_id for card_id in context.state.propaganda_track.get_slots() if card_id is not None]
+        faction_name = self._v03_faction_display_name(faction_id)
+        for card_id in sources:
+            card = self.cards_by_id.get(card_id)
+            if card is None or not card.effect_text:
+                continue
+            text = self._normalize_condition(card.effect_text)
+            if f"erste zielaenderung, die {faction_name} zum ziel eines angriffs machen wuerde, wird ignoriert" in text:
+                return True
+        return False
 
     def _apply_v03_combat_text_modifiers(
         self,
         row: list[str],
         attack_records: list[dict[str, Any]],
         total_power: dict[str, int],
+        interpretation_authority: str | None,
         context: PhaseContext,
     ) -> list[dict[str, Any]]:
         modifiers: list[dict[str, Any]] = []
@@ -1787,7 +2798,7 @@ class GameEngine:
                 continue
             if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
                 continue
-            produced = self._v03_combat_modifiers_from_text(instance_id, card, text, attack_records, total_power, context)
+            produced = self._v03_combat_modifiers_from_text(instance_id, card, text, attack_records, total_power, interpretation_authority, context)
             for modifier in produced:
                 modifiers.append(modifier)
                 context.event_bus.emit(EventType.EFFECT_TRIGGERED, modifier)
@@ -1800,6 +2811,7 @@ class GameEngine:
         text: str,
         attack_records: list[dict[str, Any]],
         total_power: dict[str, int],
+        interpretation_authority: str | None,
         context: PhaseContext,
     ) -> list[dict[str, Any]]:
         if not attack_records:
@@ -1905,6 +2917,17 @@ class GameEngine:
         if destroyed_amount > 0 and destroyed_attacker is not None:
             records = [record for record in attack_records if record["attacker"] == destroyed_attacker and int(record.get("impact", 0)) > 0]
             for record in records[:1]:
+                margin_match = re.search(r"mindestens\s+(\d+)\s+macht vorsprung", text)
+                if margin_match and int(record.get("margin", 0)) < int(margin_match.group(1)):
+                    continue
+                if record.get("prevented"):
+                    continue
+                if record.get("replacement_effect") is not None:
+                    ignored = self._v03_record_combat_modifier(instance_id, "replacement_ignored", record, 0, int(record.get("destroyed_impact", 0)), int(record.get("destroyed_impact", 0)))
+                    ignored["ignored_by"] = record["replacement_effect"]["card_id"]
+                    record["modifiers"].append(ignored)
+                    modifiers.append(ignored)
+                    continue
                 before = int(record.get("destroyed_impact", 0))
                 record["destroyed_impact"] = min(int(record["impact"]), before + destroyed_amount)
                 modifier = self._v03_record_combat_modifier(
@@ -1915,6 +2938,40 @@ class GameEngine:
                     before,
                     int(record["destroyed_impact"]),
                 )
+                modifier["interpretation_authority"] = interpretation_authority
+                record["replacement_effect"] = modifier
+                record["modifiers"].append(modifier)
+                modifiers.append(modifier)
+
+        transfer = self._v03_transfer_replacement(text, faction_id)
+        if transfer is not None:
+            transfer_attacker, transfer_target, transfer_amount = transfer
+            records = [record for record in attack_records if record["attacker"] == transfer_attacker and int(record.get("impact", 0)) > 0]
+            for record in records[:1]:
+                if record.get("prevented"):
+                    continue
+                if context.state.factions[str(record["defender"])].population >= context.state.factions[transfer_target].population:
+                    continue
+                if record.get("replacement_effect") is not None:
+                    ignored = self._v03_record_combat_modifier(instance_id, "replacement_ignored", record, 0, int(record.get("transferred_impact", 0)), int(record.get("transferred_impact", 0)))
+                    ignored["ignored_by"] = record["replacement_effect"]["card_id"]
+                    record["modifiers"].append(ignored)
+                    modifiers.append(ignored)
+                    continue
+                before = int(record.get("transferred_impact", 0))
+                record["transferred_impact"] = min(int(record["impact"]), before + transfer_amount)
+                record["transfer_target_faction"] = transfer_target
+                modifier = self._v03_record_combat_modifier(
+                    instance_id,
+                    "transfer_instead_of_neutralize",
+                    record,
+                    int(record["transferred_impact"]) - before,
+                    before,
+                    int(record["transferred_impact"]),
+                )
+                modifier["transfer_target_faction"] = transfer_target
+                modifier["interpretation_authority"] = interpretation_authority
+                record["replacement_effect"] = modifier
                 record["modifiers"].append(modifier)
                 modifiers.append(modifier)
 
@@ -1993,8 +3050,25 @@ class GameEngine:
     def _v03_destroyed_instead_amount(self, text: str) -> int:
         if "neutralisierte bevoelkerung stattdessen vernichtet" not in text:
             return 0
-        match = re.search(r"(\d+)\s+durch .*? neutralisierte bevoelkerung stattdessen vernichtet", text)
+        match = re.search(r"(?:wird\s+)?(\d+)\s+durch .*? neutralisierte bevoelkerung stattdessen vernichtet", text)
         return int(match.group(1)) if match else 1
+
+    def _v03_transfer_replacement(self, text: str, fallback_faction_id: str | None) -> tuple[str, str, int] | None:
+        if "neutralisierte bevoelkerung stattdessen direkt zu" not in text:
+            return None
+        attacker = fallback_faction_id
+        target = None
+        for faction_id in self.state.factions:
+            display = self._v03_faction_display_name(faction_id)
+            if f"angriff von {display}" in text:
+                attacker = faction_id
+            if f"direkt zu {display}" in text:
+                target = faction_id
+        match = re.search(r"(\d+)\s+durch .*? neutralisierte bevoelkerung stattdessen direkt zu", text)
+        amount = int(match.group(1)) if match else 1
+        if attacker is None or target is None:
+            return None
+        return attacker, target, amount
 
     def _v03_boosted_attacker(self, text: str, fallback_faction_id: str | None) -> str | None:
         for faction_id in self.state.factions:
@@ -2003,6 +3077,8 @@ class GameEngine:
             if adjective in text and "angriff" in text:
                 return faction_id
             if f"wenn {display_name} einen erfolgreichen angriff" in text:
+                return faction_id
+            if f"wenn {display_name} " in text and "erfolgreich angreift" in text:
                 return faction_id
         if "erfolgreichen angriff" in text or "erfolgreiche" in text:
             return fallback_faction_id
@@ -2101,7 +3177,50 @@ class GameEngine:
             "defender": defender,
         }
 
-    def _combat_impact(self, margin: int) -> int:
+    def _v03_combat_tiebreakers(
+        self,
+        row: list[str],
+        total_power: dict[str, int],
+        context: PhaseContext,
+    ) -> dict[str, list[str]]:
+        tiebreakers: dict[str, list[str]] = {}
+        sources: list[tuple[str, CardConfig, int | None, Literal["world_history", "propaganda"]]] = []
+        for card_id in row:
+            card = self.cards_by_id.get(card_id)
+            if card is not None:
+                sources.append((card_id, card, None, "world_history"))
+        for slot_index, card_id in enumerate(context.state.propaganda_track.get_slots()):
+            card = self.cards_by_id.get(card_id or "")
+            if card is not None:
+                sources.append((str(card_id), card, slot_index, "propaganda"))
+        for instance_id, card, slot_index, source in sources:
+            text = self._normalize_condition(card.effect_text or "")
+            if "machtgleichstaende in kaempfen" not in text:
+                continue
+            if source == "world_history" and "solange diese karte als propaganda ausliegt" in text:
+                continue
+            if source == "propaganda" and not self._v03_slot_condition_matches(text, slot_index):
+                continue
+            if not self._v03_power_condition_matches(text, card, row, total_power, total_power, total_power, context):
+                continue
+            for faction_name, faction_id in self._v03_faction_name_map().items():
+                if faction_name in text and faction_id in context.state.factions:
+                    tiebreakers.setdefault(faction_id, []).append(instance_id)
+                    context.event_bus.emit(
+                        EventType.EFFECT_TRIGGERED,
+                        {
+                            "card_id": instance_id,
+                            "effect_type": "v03_combat_tiebreaker",
+                            "reason": "win_power_ties_in_combat",
+                            "target_faction_id": faction_id,
+                        },
+                    )
+                    break
+        return tiebreakers
+
+    def _combat_impact(self, margin: int, *, tie_won: bool = False) -> int:
+        if tie_won:
+            return 1
         bands = self.config.v03.get("combat", {}).get("impact_by_margin", [])
         for band in bands:
             minimum = int(band.get("min", 0))

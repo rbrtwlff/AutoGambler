@@ -99,6 +99,19 @@ def test_v03_does_not_use_legacy_action_phases() -> None:
     assert "action_resolution" not in engine.config.round_flow.phases
 
 
+def test_v03_discussion_phase_is_explicitly_configured_without_automatic_mechanics() -> None:
+    engine = _engine()
+
+    engine.run_phase("discussion")
+
+    discussion_events = [
+        event for event in engine.state.event_log.events if event.event_type == EventType.DISCUSSION_HELD
+    ]
+    assert discussion_events[-1].payload["mode"] == "none"
+    assert discussion_events[-1].payload["mechanical_effects_applied"] is False
+    assert "placeholder" not in str(discussion_events[-1].payload).lower()
+
+
 def test_v03_propaganda_slot_one_is_newest_and_slot_four_is_displaced() -> None:
     track = PropagandaTrackState(slots=[None, None, None, None], overflow="remove_oldest")
 

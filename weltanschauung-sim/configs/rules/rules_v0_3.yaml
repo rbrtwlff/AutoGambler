@@ -135,6 +135,11 @@ media_mogul_phase:
   chooses_one_as_new_propaganda: true
   unchosen_to_discard: true
 
+discussion:
+  enabled: true
+  mechanical_effects: none
+  notes: "Diskussion / Intrige ist in v0.3 als soziale Tischphase ohne automatische Simulationsmechanik modelliert."
+
 urn:
   min_cards_per_player_with_hand: 1
   max_cards_per_player: 3

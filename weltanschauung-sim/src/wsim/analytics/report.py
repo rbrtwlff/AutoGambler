@@ -532,11 +532,23 @@ def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFram
         "straights_by_faction": defaultdict(int),
         "transition_count": 0,
         "power_margins": [],
+        "interpretation_authority_by_faction": defaultdict(int),
     }
     combat = {
         "impacts": [],
         "successful_attacks": 0,
         "neutral_impulses": 0,
+        "target_marker_summaries": 0,
+        "target_marker_tiebreaks": 0,
+        "ignored_target_modifiers": 0,
+        "replacement_effects": 0,
+        "replacement_ignored": 0,
+        "transfer_replacements": 0,
+        "destroy_replacements": 0,
+        "prevented_attacks": 0,
+        "population_effects": defaultdict(int),
+        "utility_effects": defaultdict(int),
+        "propaganda_effects": defaultdict(int),
     }
     eliminated_counts: dict[str, int] = defaultdict(int)
 
@@ -576,6 +588,9 @@ def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFram
             prop = payload.get("propaganda_power") or {}
             total = payload.get("total_power") or {}
             propaganda["power_samples"].append({"base": base, "activated": prop, "final": total})
+            authority = payload.get("interpretation_authority")
+            if authority:
+                world_history["interpretation_authority_by_faction"][str(authority)] += 1
             values = [int(value or 0) for value in total.values()]
             if len(values) >= 2:
                 ordered = sorted(values, reverse=True)
@@ -590,6 +605,7 @@ def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFram
                     if int(value or 0) < 0:
                         combat["successful_attacks"] += 1
             combat["neutral_impulses"] += sum(1 for value in requested.values() if int(value or 0) > 0)
+            _collect_v03_combat_payload_metrics(payload, combat)
 
     for row in round_rows:
         for player_id, count in (_parse_json(row.get("source_counts"), fallback={}) or {}).items():
@@ -634,11 +650,15 @@ def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFram
             "pairs_by_faction": dict(world_history["pairs_by_faction"]),
             "three_of_a_kind_by_faction": dict(world_history["three_of_a_kind_by_faction"]),
             "straights_by_faction": dict(world_history["straights_by_faction"]),
+            "interpretation_authority_by_faction": dict(world_history["interpretation_authority_by_faction"]),
             "average_urn_cards": _average(world_history["urn_card_counts"]),
             "average_power_margin": _average(world_history["power_margins"]),
         },
         "combat": {
             **combat,
+            "population_effects": dict(combat["population_effects"]),
+            "utility_effects": dict(combat["utility_effects"]),
+            "propaganda_effects": dict(combat["propaganda_effects"]),
             "average_impact": _average(combat["impacts"]),
         },
         "research_assignments": {
@@ -650,6 +670,39 @@ def build_v03_metrics(events: list[dict[str, Any]], round_summaries: pl.DataFram
         "eliminated_factions": dict(eliminated_counts),
         "eliminaten": dict(eliminated_counts),
     }
+
+
+def _collect_v03_combat_payload_metrics(payload: dict[str, Any], combat: dict[str, Any]) -> None:
+    for effect in payload.get("target_effects") or []:
+        effect_type = str(effect.get("effect_type") or effect.get("reason") or "unknown")
+        if effect_type == "v03_target_marker_summary":
+            combat["target_marker_summaries"] += 1
+            if effect.get("tie_broken_by"):
+                combat["target_marker_tiebreaks"] += 1
+        elif effect_type == "v03_target_modifier_ignored":
+            combat["ignored_target_modifiers"] += 1
+
+    for record in payload.get("attack_records") or []:
+        if record.get("prevented"):
+            combat["prevented_attacks"] += 1
+        replacement = record.get("replacement_effect")
+        if replacement:
+            combat["replacement_effects"] += 1
+            reason = str(replacement.get("reason") or "")
+            if "transfer" in reason:
+                combat["transfer_replacements"] += 1
+            if "destroy" in reason:
+                combat["destroy_replacements"] += 1
+        for modifier in record.get("modifiers") or []:
+            if modifier.get("reason") == "replacement_ignored":
+                combat["replacement_ignored"] += 1
+
+    for effect in payload.get("population_effects") or []:
+        combat["population_effects"][str(effect.get("reason") or effect.get("effect_type") or "unknown")] += 1
+    for effect in payload.get("utility_effects") or []:
+        combat["utility_effects"][str(effect.get("reason") or effect.get("effect_type") or "unknown")] += 1
+    for effect in payload.get("propaganda_effects") or []:
+        combat["propaganda_effects"][str(effect.get("reason") or effect.get("effect_type") or "unknown")] += 1
 
 
 def _generate_charts_from_data(
@@ -1311,6 +1364,8 @@ def _markdown_top_metric(items: dict[str, dict[str, Any]], metric_name: str) -> 
 def _markdown_v03(metrics: dict[str, Any]) -> str:
     if not metrics or not metrics.get("event_log_available"):
         return "- Keine v0.3-Eventdaten vorhanden."
+    world_history = metrics.get("world_history", {})
+    combat = metrics.get("combat", {})
     return "\n".join(
         [
             f"- Siegbedingungen: {json.dumps(metrics.get('victory', {}).get('wins_by_condition', {}), ensure_ascii=True, sort_keys=True)}",
@@ -1318,8 +1373,13 @@ def _markdown_v03(metrics: dict[str, Any]) -> str:
             f"- Journalistwechsel: {metrics.get('roles', {}).get('journalist_changes', 0)}",
             f"- Medienmogul-Verteilung: {json.dumps(metrics.get('roles', {}).get('media_mogul_distribution', {}), ensure_ascii=True, sort_keys=True)}",
             f"- Propaganda: {json.dumps(metrics.get('propaganda', {}), ensure_ascii=True, sort_keys=True)}",
-            f"- Weltgeschichte: {json.dumps(metrics.get('world_history', {}), ensure_ascii=True, sort_keys=True)}",
-            f"- Kampf: {json.dumps(metrics.get('combat', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Weltgeschichte: {json.dumps(world_history, ensure_ascii=True, sort_keys=True)}",
+            f"- Deutungshoheit nach Fraktion: {json.dumps(world_history.get('interpretation_authority_by_faction', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Kampf: {json.dumps(combat, ensure_ascii=True, sort_keys=True)}",
+            f"- Zielmarker-Entscheidungen: summaries={combat.get('target_marker_summaries', 0)}, tiebreaks={combat.get('target_marker_tiebreaks', 0)}, ignorierte Zielaenderungen={combat.get('ignored_target_modifiers', 0)}",
+            f"- Ersatzeffekte: angewendet={combat.get('replacement_effects', 0)}, ignoriert={combat.get('replacement_ignored', 0)}, Transfers={combat.get('transfer_replacements', 0)}, Zerstoerung-statt-Neutralisierung={combat.get('destroy_replacements', 0)}",
+            f"- Utility-Effekte: {json.dumps(combat.get('utility_effects', {}), ensure_ascii=True, sort_keys=True)}",
+            f"- Propaganda-Effekte im Kampf: {json.dumps(combat.get('propaganda_effects', {}), ensure_ascii=True, sort_keys=True)}",
             f"- Rechercheauftraege: {json.dumps(metrics.get('research_assignments', {}), ensure_ascii=True, sort_keys=True)}",
             f"- Eliminaten / ausgeloeschte Fraktionen: {json.dumps(metrics.get('eliminaten', {}), ensure_ascii=True, sort_keys=True)}",
         ]

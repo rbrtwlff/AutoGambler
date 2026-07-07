@@ -39,9 +39,15 @@ def test_v03_run_creates_report(tmp_path: Path) -> None:
 
     assert (run_dir / "metrics_v0_3.json").exists()
     assert metrics["v0_3"]["event_log_available"] is True
+    assert "interpretation_authority_by_faction" in metrics["v0_3"]["world_history"]
+    assert "target_marker_summaries" in metrics["v0_3"]["combat"]
+    assert "utility_effects" in metrics["v0_3"]["combat"]
     assert "v0.3 Analyse" in report
     assert "Weltgeschichte" in report
     assert "Kampf" in report
+    assert "Deutungshoheit nach Fraktion" in report
+    assert "Zielmarker-Entscheidungen" in report
+    assert "Ersatzeffekte" in report
 
 
 def test_v03_run_creates_charts(tmp_path: Path) -> None:
@@ -71,7 +77,9 @@ def test_v03_single_game_export_contains_world_history_and_combat(tmp_path: Path
 
     assert "Urne / Weltgeschichte" in markdown
     assert "Finale Macht" in markdown
+    assert "Deutungshoheit / Machtberechnung" in markdown
     assert "Kampf / angewendete Deltas" in markdown
+    assert "Kampfdetails / Zielmarker / Ersatzeffekte" in markdown
     assert "Rechercheauftraege" in markdown
 
 

@@ -81,7 +81,7 @@ def run_one(
     cards: str = typer.Option(..., "--cards", help="Pfad zur Karten-YAML-Datei."),
     seed: int = typer.Option(123, "--seed", help="Seed fuer reproduzierbare Simulation."),
 ) -> None:
-    """Fuehrt ein einzelnes Spiel mit Stub-Phasen aus."""
+    """Fuehrt ein einzelnes Spiel mit dem gewaehlten Regelwerk aus."""
     try:
         rules_config = load_rules_config(rules)
         card_configs = load_cards_config(cards, rules_config=rules_config)
